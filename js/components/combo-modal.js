@@ -35,13 +35,20 @@ export function createComboState(product) {
       return basePrice + totalExtra;
     },
     getSelectedList() {
-      return Object.values(selected).map(opt => ({
-        group_name: opt.group_name,
-        option_id: opt.option_id,
-        option_name: opt.name,
-        name: opt.name,
-        extra_price: Number(opt.extra_price) || 0
-      }));
+      return Object.values(selected)
+        .filter(opt => {
+          if (!opt) return false;
+          if (opt.option_id && String(opt.option_id).startsWith('none_')) return false;
+          if (opt.name && opt.name.toLowerCase() === 'không thêm') return false;
+          return true;
+        })
+        .map(opt => ({
+          group_name: opt.group_name,
+          option_id: opt.option_id,
+          option_name: opt.name,
+          name: opt.name,
+          extra_price: Number(opt.extra_price) || 0
+        }));
     }
   };
 }

@@ -158,6 +158,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_2022",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "11079",
                   "name": "Thêm 2 Gói Tương Chua Ngọt",
                   "extra_price": 1000,
@@ -513,6 +521,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_2030",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "11114",
                   "name": "Thêm 2 Gói Tương Chua Ngọt",
                   "extra_price": 1000,
@@ -707,6 +723,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_97",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "2077",
                   "name": "Cacao sữa đá vừa",
@@ -1214,6 +1238,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_1872",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "10271",
                   "name": "Thêm 2 Gói Tương Cà",
@@ -1730,6 +1762,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_1871",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "10269",
                   "name": "Thêm 2 Gói Tương Cà",
                   "extra_price": 1000,
@@ -1985,6 +2025,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_89",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "2127",
                   "name": "Cacao sữa đá vừa",
@@ -2293,6 +2341,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_86",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "2148",
                   "name": "Cacao sữa đá vừa",
                   "extra_price": 20000,
@@ -2568,6 +2624,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_276",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "3162",
                   "name": "Cacao sữa đá vừa",
                   "extra_price": 20000,
@@ -2827,6 +2891,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_88",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "2134",
                   "name": "Cacao sữa đá vừa",
                   "extra_price": 20000,
@@ -3025,6 +3097,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_1877",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "10295",
                   "name": "Thêm 2 Gói Tương Cà",
                   "extra_price": 1000,
@@ -3179,6 +3259,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_1875",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "10291",
                   "name": "Thêm 2 Gói Tương Cà",
@@ -3358,6 +3446,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_1876",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "10293",
                   "name": "Thêm 2 Gói Tương Cà",
@@ -3625,6 +3721,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_100",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "2049",
                   "name": "Cacao sữa đá vừa",
@@ -3949,6 +4053,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_101",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "2056",
                   "name": "Cacao sữa đá vừa",
                   "extra_price": 20000,
@@ -4231,6 +4343,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_98",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "2070",
                   "name": "Cacao sữa đá vừa",
@@ -4584,6 +4704,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_94",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "2098",
                   "name": "Cacao sữa đá vừa",
                   "extra_price": 20000,
@@ -4883,6 +5011,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_93",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "2105",
                   "name": "Cacao sữa đá vừa",
                   "extra_price": 20000,
@@ -5158,6 +5294,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_92",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "2113",
                   "name": "Cacao sữa đá vừa",
                   "extra_price": 20000,
@@ -5416,6 +5560,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_95",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "2091",
                   "name": "Cacao sữa đá vừa",
@@ -5753,6 +5905,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_1949",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "10467",
                   "name": "Thêm 2 Gói Tương Cà",
                   "extra_price": 1000,
@@ -5900,6 +6060,14 @@
               "is_multi": false,
               "options": [
                 {
+                  "option_id": "none_1945",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
+                {
                   "option_id": "10432",
                   "name": "Thêm 2 Gói Tương Cà",
                   "extra_price": 1000,
@@ -6046,6 +6214,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_1873",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "10285",
                   "name": "Thêm 2 Gói Tương Cà",
@@ -6253,6 +6429,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_1128",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "8170",
                   "name": "Cacao sữa đá vừa",
@@ -6512,6 +6696,14 @@
               "is_required": false,
               "is_multi": false,
               "options": [
+                {
+                  "option_id": "none_1124",
+                  "name": "Không thêm",
+                  "extra_price": 0,
+                  "quantity": 0,
+                  "is_default": true,
+                  "image": ""
+                },
                 {
                   "option_id": "8135",
                   "name": "Cacao sữa đá vừa",

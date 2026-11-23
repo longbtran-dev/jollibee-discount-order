@@ -32,20 +32,35 @@ def main():
         
         option_groups = []
         for g in p.get("option_groups", []):
+            is_req = bool(g.get("is_required"))
+            title = g.get("title", "").strip()
+            # Các nhóm Thêm Sốt, Thêm Tương, Thêm Món hoặc không bắt buộc
+            is_optional = (not is_req) or title.lower().startswith("thêm")
+
             options = []
+            if is_optional:
+                options.append({
+                    "option_id": f"none_{g.get('group_id')}",
+                    "name": "Không thêm",
+                    "extra_price": 0,
+                    "quantity": 0,
+                    "is_default": True,
+                    "image": ""
+                })
+
             for sel in g.get("selections", []):
                 options.append({
                     "option_id": str(sel.get("selection_id") or sel.get("option_product_id")),
                     "name": sel.get("name", "").strip(),
                     "extra_price": int(sel.get("price_delta_vnd") or 0),
                     "quantity": int(sel.get("quantity") or 1),
-                    "is_default": bool(sel.get("selected_by_default")),
+                    "is_default": False if is_optional else bool(sel.get("selected_by_default")),
                     "image": sel.get("local_image_path") or ""
                 })
             
             option_groups.append({
                 "group_id": str(g.get("group_id")),
-                "group_name": g.get("title", "").strip(),
+                "group_name": title,
                 "is_required": bool(g.get("is_required")),
                 "is_multi": bool(g.get("is_multi")),
                 "options": options
