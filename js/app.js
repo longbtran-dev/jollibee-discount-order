@@ -42,16 +42,18 @@ class JollibeeApp {
     const iconDin = document.getElementById('top-icon-dinein');
     if (!btnDel || !btnDin) return;
 
+    const baseClass = 'w-full min-w-0 py-2 px-1.5 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-98';
+
     if (this.orderType === 'delivery') {
-      btnDel.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition bg-white text-gray-900 shadow-sm active:scale-98';
-      btnDin.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition text-white hover:bg-white/10 active:scale-98';
-      if (iconDel) iconDel.className = 'text-[#d71920] flex items-center';
-      if (iconDin) iconDin.className = 'text-white/70 flex items-center';
+      btnDel.className = `${baseClass} bg-white text-gray-900 shadow-sm`;
+      btnDin.className = `${baseClass} text-white hover:bg-white/10`;
+      if (iconDel) iconDel.className = 'text-[#d71920] flex items-center flex-shrink-0';
+      if (iconDin) iconDin.className = 'text-amber-200/80 flex items-center flex-shrink-0';
     } else {
-      btnDel.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition text-white hover:bg-white/10 active:scale-98';
-      btnDin.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition bg-[#ffc72c] text-gray-950 shadow-sm active:scale-98';
-      if (iconDel) iconDel.className = 'text-white/70 flex items-center';
-      if (iconDin) iconDin.className = 'text-gray-950 flex items-center';
+      btnDel.className = `${baseClass} text-white hover:bg-white/10`;
+      btnDin.className = `${baseClass} bg-[#ffc72c] text-gray-950 shadow-sm`;
+      if (iconDel) iconDel.className = 'text-white/80 flex items-center flex-shrink-0';
+      if (iconDin) iconDin.className = 'text-gray-950 flex items-center flex-shrink-0';
     }
   }
 

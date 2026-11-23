@@ -116,14 +116,16 @@
   <!-- Lightweight Confetti Library (10KB standalone, 0 dependencies) -->
   <script src="js/confetti.js"></script>
   <!-- Config script -->
-  <script src="config.js"></script>
+  <script src="config.js?v=1.1"></script>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased min-h-screen pb-36">
 
   <!-- Top Announcement Banner -->
-  <div id="top-banner" class="bg-[#ffc72c] text-gray-950 font-bold text-xs py-2 px-4 text-center border-b border-amber-300 flex items-center justify-center gap-2 shadow-xs shimmer-effect">
-    <span class="text-red-700 inline-flex items-center">
-      <svg class="w-4 h-4 animate-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+  <div id="top-banner" class="bg-[#ffc72c] text-gray-950 font-extrabold text-[11px] sm:text-xs py-1.5 px-3 text-center border-b border-amber-300 flex items-center justify-center gap-1.5 shadow-xs shimmer-effect leading-snug">
+    <span class="text-red-700 inline-flex items-center flex-shrink-0">
+      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
     </span>
-    <span id="banner-text">Giảm 15.000đ cho mỗi 100.000đ tiền gốc Jollibee! Đơn từ 200k Freeship!</span>
+    <span id="banner-text">Giảm 15.000đ cho mỗi 100k tiền gốc Jollibee! Đơn từ 200k Freeship!</span>
   </div>
 
   <!-- Header -->
@@ -150,13 +152,13 @@
     </div>
 
     <!-- Search Box -->
-    <div class="max-w-4xl mx-auto px-4 pb-2.5">
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 pb-2.5">
       <div class="relative flex items-center">
         <span class="absolute left-3.5 text-gray-400 pointer-events-none flex items-center">
           <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         </span>
-        <input type="text" id="menu-search-input" placeholder="Tìm kiếm món gà, mì ý, burger, nước ngọt..." 
-          class="w-full bg-white/95 text-gray-900 placeholder-gray-400 text-xs sm:text-sm pl-10 pr-10 py-2.5 rounded-xl shadow-inner focus:outline-hidden focus:ring-2 focus:ring-[#ffc72c]">
+        <input type="text" id="menu-search-input" placeholder="Tìm món gà, mì ý, burger, combo..." 
+          class="w-full bg-white/95 text-gray-900 placeholder-gray-400 text-xs sm:text-sm pl-10 pr-10 py-2 sm:py-2.5 rounded-xl shadow-inner focus:outline-hidden focus:ring-2 focus:ring-[#ffc72c]">
         <button type="button" id="clear-search-btn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1">
           <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
         </button>
@@ -164,23 +166,23 @@
     </div>
 
     <!-- Top Order Type Switcher (Khách chọn trước khi vào giỏ hàng) -->
-    <div class="max-w-4xl mx-auto px-2.5 sm:px-4 pb-3">
-      <div class="bg-black/25 p-1 rounded-xl flex items-center gap-1 backdrop-blur-xs border border-white/10 shadow-inner">
+    <div class="max-w-4xl mx-auto px-2.5 sm:px-4 pb-2.5">
+      <div class="bg-black/25 p-1 rounded-xl grid grid-cols-2 gap-1.5 backdrop-blur-xs border border-white/10 shadow-inner w-full">
         <button type="button" id="top-btn-delivery" 
-          class="flex-1 py-2 px-2 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-2 transition bg-white text-gray-900 shadow-sm active:scale-98">
+          class="w-full min-w-0 py-2 px-1.5 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-white text-gray-900 shadow-sm active:scale-98">
           <span id="top-icon-delivery" class="text-[#d71920] flex items-center flex-shrink-0">
-            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M5 14h5l3-6h4l1 3"/><path d="M14 17.5h-5.5"/><path d="M18 10h3"/><path d="M2 9h4"/></svg>
+            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M5 14h5l3-6h4l1 3"/><path d="M14 17.5h-5.5"/><path d="M18 10h3"/><path d="M2 9h4"/></svg>
           </span>
-          <span class="whitespace-nowrap">Giao Tận Nơi</span>
-          <span class="text-[9px] sm:text-[10px] bg-red-100 text-[#d71920] px-1.5 py-0.5 rounded-full font-extrabold whitespace-nowrap">≥200k Freeship</span>
+          <span class="truncate">Giao Tận Nơi</span>
+          <span class="text-[9px] bg-red-100 text-[#d71920] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">Freeship</span>
         </button>
         <button type="button" id="top-btn-dinein" 
-          class="flex-1 py-2 px-2 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-2 transition text-white hover:bg-white/10 active:scale-98">
+          class="w-full min-w-0 py-2 px-1.5 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition text-white hover:bg-white/10 active:scale-98">
           <span id="top-icon-dinein" class="text-amber-200 flex items-center flex-shrink-0">
-            <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/><path d="M15 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V2"/><path d="M15 11v9"/><path d="M6 2v18"/></svg>
+            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/><path d="M15 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V2"/><path d="M15 11v9"/><path d="M6 2v18"/></svg>
           </span>
-          <span class="whitespace-nowrap">Ăn Tại Quán</span>
-          <span class="text-[9px] sm:text-[10px] bg-amber-400/30 text-amber-100 px-1.5 py-0.5 rounded-full font-extrabold whitespace-nowrap">0đ ship</span>
+          <span class="truncate">Ăn Tại Quán</span>
+          <span class="text-[9px] bg-amber-400/30 text-amber-100 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">0đ ship</span>
         </button>
       </div>
     </div>
@@ -201,17 +203,15 @@
   </header>
 
   <!-- Main Content Area -->
-  <main class="max-w-4xl mx-auto px-4 py-4 space-y-8">
+  <main class="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4 space-y-6 sm:space-y-8">
     <!-- Notice Card -->
-    <div class="bg-gradient-to-r from-red-50 to-amber-50 border border-amber-200 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-[#d71920]/10 text-[#d71920] flex items-center justify-center flex-shrink-0">
-          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
-        </div>
-        <div>
-          <h2 class="font-extrabold text-sm text-gray-900">Cách Thức Đặt Hộ Cực Kỳ Đơn Giản:</h2>
-          <p class="text-xs text-gray-600 mt-0.5">1. Chọn món & combo tùy thích ➔ 2. Xem bảng báo giá trực tiếp ➔ 3. Bấm gửi qua Zalo/FB để chốt đơn!</p>
-        </div>
+    <div class="bg-gradient-to-r from-red-50 to-amber-50 border border-amber-200/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-xs flex items-center gap-2.5 sm:gap-3">
+      <div class="w-8 h-8 rounded-lg bg-[#d71920]/10 text-[#d71920] flex items-center justify-center flex-shrink-0">
+        <svg class="w-4 h-4 sm:w-5 sm:h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+      </div>
+      <div class="min-w-0 flex-1">
+        <h2 class="font-extrabold text-xs sm:text-sm text-gray-900 leading-tight">Đặt Hộ Cực Kỳ Đơn Giản:</h2>
+        <p class="text-[11px] text-gray-600 mt-0.5 leading-snug">1. Chọn món & combo ➔ 2. Xem bảng báo giá trực tiếp ➔ 3. Gửi Zalo/FB chốt đơn!</p>
       </div>
     </div>
 
@@ -229,38 +229,35 @@
   </main>
 
   <!-- Floating Bottom Cart Bar (Sticky Footer) -->
-  <div id="floating-cart-bar" class="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.12)] p-2.5 sm:p-3">
-    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+  <div id="floating-cart-bar" class="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.12)] p-2.5 sm:p-3 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2.5 sm:gap-3">
       
       <!-- Cart Info Preview -->
-      <button type="button" id="btn-open-cart-info" class="flex items-center gap-2 sm:gap-3 text-left focus:outline-hidden min-w-0 flex-1">
+      <button type="button" id="btn-open-cart-info" class="flex items-center gap-2.5 sm:gap-3 text-left focus:outline-hidden min-w-0 flex-1">
         <div class="relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#ffc72c] text-gray-900 font-extrabold shadow-sm active:scale-95 transition flex-shrink-0">
           <svg class="w-5 h-5 sm:w-6 sm:h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          <span id="floating-cart-badge" class="absolute -top-1.5 -right-1.5 bg-[#d71920] text-white text-[10px] sm:text-[11px] font-black w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+          <span id="floating-cart-badge" class="absolute -top-1 -right-1 bg-[#d71920] text-white text-[10px] sm:text-[11px] font-black w-5 h-5 min-w-[20px] rounded-full flex items-center justify-center border-2 border-white shadow-xs pointer-events-none">
             0
           </span>
         </div>
-        <div class="min-w-0 flex-1">
-          <div class="flex items-baseline gap-1.5 flex-wrap leading-tight">
-            <div id="floating-cart-original-wrapper" class="hidden text-[10px] sm:text-xs text-gray-400 whitespace-nowrap">
-              <span>Gốc:</span>
-              <span id="floating-cart-original-price" class="line-through font-bold text-gray-500">0 đ</span>
-            </div>
-            <div class="flex items-baseline gap-1 whitespace-nowrap">
-              <span class="text-[10px] sm:text-xs text-gray-600 font-bold">Thực trả:</span>
-              <span id="floating-cart-final-price" class="text-sm sm:text-lg font-black text-red-600">0 đ</span>
-            </div>
+        <div class="min-w-0 flex-1 flex flex-col justify-center">
+          <div class="flex items-baseline gap-1.5 leading-tight truncate">
+            <span class="text-[11px] sm:text-xs text-gray-500 font-bold flex-shrink-0">Thực trả:</span>
+            <span id="floating-cart-final-price" class="text-sm sm:text-lg font-black text-red-600 truncate">0 đ</span>
+            <span id="floating-cart-original-wrapper" class="hidden text-[11px] sm:text-xs text-gray-400 line-through font-semibold whitespace-nowrap">
+              <span id="floating-cart-original-price">0 đ</span>
+            </span>
           </div>
-          <div id="floating-cart-discount-hint" class="text-[10px] sm:text-[11px] text-green-600 font-bold truncate">
+          <div id="floating-cart-discount-hint" class="text-[10px] sm:text-[11px] text-green-700 font-bold truncate mt-0.5">
             (Chưa chọn món)
           </div>
         </div>
       </button>
 
       <!-- View Cart Button -->
-      <button type="button" id="btn-open-cart-drawer" class="bg-[#d71920] hover:bg-[#b81218] active:scale-98 text-white font-extrabold text-xs sm:text-sm py-2.5 sm:py-3 px-3.5 sm:px-6 rounded-xl shadow-md flex items-center gap-1.5 sm:gap-2 transition flex-shrink-0 whitespace-nowrap">
+      <button type="button" id="btn-open-cart-drawer" class="bg-[#d71920] hover:bg-[#b81218] active:scale-98 text-white font-extrabold text-xs sm:text-sm py-2.5 sm:py-3 px-3.5 sm:px-5 rounded-xl shadow-md flex items-center gap-1.5 transition flex-shrink-0 whitespace-nowrap">
         <span>Xem Giỏ</span>
-        <span class="hidden xs:inline sm:inline">& Báo Giá</span>
+        <span class="hidden sm:inline">& Báo Giá</span>
         <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </button>
 

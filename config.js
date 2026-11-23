@@ -18,6 +18,6 @@ window.JOLLIBEE_CONFIG = {
   standardShippingFee: 10000, // Phí ship 10k nếu tổng món gốc < 200k
 
   // Thông báo đầu trang & chính sách đơn tối thiểu
-  bannerNotice: "🔥 Ưu đãi đặt hộ: Giảm 15.000đ cho mỗi 100.000đ tiền gốc Jollibee! Đơn từ 200k Freeship toàn quốc!",
+  bannerNotice: "Giảm 15.000đ cho mỗi 100k tiền gốc Jollibee • Đơn từ 200k Freeship!",
   minOrderNotice: "Lưu ý: Đơn hàng phải từ 100.000đ trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!"
 };
