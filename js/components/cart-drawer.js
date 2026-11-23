@@ -160,10 +160,12 @@ export class CartDrawer {
         let optionsDetailsHtml = '';
         if (item.selectedOptions && item.selectedOptions.length > 0) {
           const listItems = item.selectedOptions.map(opt => `
-            <li class="flex items-start gap-1.5 text-xs text-gray-700 font-medium leading-snug">
-              <span class="text-[#d71920] font-bold text-[10px] mt-0.5">•</span>
-              <span class="break-words">${opt.option_name || opt.name}</span>
-              ${opt.extra_price > 0 ? `<span class="text-red-600 font-bold text-[10px] bg-red-100/80 px-1 rounded flex-shrink-0">(+${formatCurrency(opt.extra_price)})</span>` : ''}
+            <li class="flex items-center gap-1.5 text-xs text-gray-700 font-medium leading-snug">
+              <span class="text-[#d71920] font-bold text-[10px] flex-shrink-0">•</span>
+              <div class="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
+                <span class="break-words">${opt.option_name || opt.name}</span>
+                ${opt.extra_price > 0 ? `<span class="inline-flex items-center text-red-600 font-extrabold text-[10px] bg-red-100/90 px-1.5 py-0.5 rounded-md leading-none flex-shrink-0">(+${formatCurrency(opt.extra_price)})</span>` : ''}
+              </div>
             </li>
           `).join('');
 
@@ -181,9 +183,9 @@ export class CartDrawer {
         } else if (item.optionsText) {
           const parts = item.optionsText.split(',').map(s => s.trim()).filter(Boolean);
           const listItems = parts.map(part => `
-            <li class="flex items-start gap-1.5 text-xs text-gray-700 font-medium leading-snug">
-              <span class="text-[#d71920] font-bold text-[10px] mt-0.5">•</span>
-              <span class="break-words">${part}</span>
+            <li class="flex items-center gap-1.5 text-xs text-gray-700 font-medium leading-snug">
+              <span class="text-[#d71920] font-bold text-[10px] flex-shrink-0">•</span>
+              <span class="break-words flex-1 min-w-0">${part}</span>
             </li>
           `).join('');
 
@@ -201,9 +203,9 @@ export class CartDrawer {
         } else if (item.description && item.description.includes('+')) {
           const parts = item.description.split('+').map(s => s.trim()).filter(Boolean);
           const listItems = parts.map(part => `
-            <li class="flex items-start gap-1.5 text-xs text-gray-700 font-medium leading-snug">
-              <span class="text-[#d71920] font-bold text-[10px] mt-0.5">•</span>
-              <span class="break-words">${part}</span>
+            <li class="flex items-center gap-1.5 text-xs text-gray-700 font-medium leading-snug">
+              <span class="text-[#d71920] font-bold text-[10px] flex-shrink-0">•</span>
+              <span class="break-words flex-1 min-w-0">${part}</span>
             </li>
           `).join('');
 
