@@ -9,16 +9,15 @@ import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '..
  * Khởi tạo bộ quản lý trạng thái chọn option cho Combo
  */
 export function createComboState(product) {
-  const basePrice = Number(product.price) || 0;
+  const basePrice = Number(product.base_price !== undefined ? product.base_price : product.price) || 0;
   const groups = product.option_groups || [];
   const selected = {};
 
-  // Chọn mặc định cho từng nhóm: Luôn ưu tiên option tiêu chuẩn 0đ, không tự ý chọn option tăng tiền
+  // Chọn mặc định cho từng nhóm theo cấu hình cờ is_default
   groups.forEach(group => {
     if (group.options && group.options.length > 0) {
       const defaultOpt = 
-        group.options.find(o => o.is_default && (Number(o.extra_price) || 0) === 0) ||
-        group.options.find(o => (Number(o.extra_price) || 0) === 0) ||
+        group.options.find(o => o.is_default) ||
         group.options[0];
       selected[group.group_id] = { ...defaultOpt, group_name: group.group_name };
     }
@@ -43,7 +42,7 @@ export function createComboState(product) {
         .filter(opt => {
           if (!opt) return false;
           if (opt.option_id && String(opt.option_id).startsWith('none_')) return false;
-          if (opt.name && opt.name.toLowerCase() === 'không thêm') return false;
+          if (opt.name && opt.name.toLowerCase().startsWith('không thêm')) return false;
           return true;
         })
         .map(opt => ({
@@ -178,7 +177,7 @@ export class ComboModal {
             ${product.image ? `<img src="${product.image}" alt="${product.name}" class="w-16 h-16 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-xs flex-shrink-0" onerror="this.style.display='none'">` : ''}
             <div>
               <p class="text-xs text-gray-500 line-clamp-2">${product.description || 'Tùy chọn từng món ăn và nước ngọt theo sở thích của bạn'}</p>
-              <p class="text-xs text-red-600 font-semibold mt-1">Giá gốc combo: ${Number(product.price).toLocaleString('vi-VN')} đ</p>
+              <p class="text-xs text-red-600 font-semibold mt-1">Giá combo: <span id="combo-modal-top-price">${formatCurrency(currentPrice)}</span></p>
             </div>
           </div>
 
@@ -254,6 +253,8 @@ export class ComboModal {
             if (origEl) origEl.innerText = formatCurrency(price);
             const priceEl = document.getElementById('combo-modal-price');
             if (priceEl) priceEl.innerText = formatCurrency(finalEst);
+            const topPriceEl = document.getElementById('combo-modal-top-price');
+            if (topPriceEl) topPriceEl.innerText = formatCurrency(price);
 
             // Cập nhật nhãn badge hiển thị lựa chọn hiện tại ở thanh accordion
             const badgeEl = container.querySelector(`.group-current-badge-${groupId}`);

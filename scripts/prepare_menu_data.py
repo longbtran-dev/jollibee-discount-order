@@ -66,35 +66,26 @@ def main():
                     "image": sel.get("local_image_path") or ""
                 })
 
-            # Đảm bảo chỉ có DUY NHẤT 1 lựa chọn mặc định là option tiêu chuẩn có extra_price == 0
-            # Tuyệt đối không để mặc định vào option tăng giá (upsize/phụ thu)
-            has_valid_default = False
-            for opt in options:
-                if opt.get("is_default") and opt.get("extra_price", 0) == 0:
-                    has_valid_default = True
-                    break
-
-            if not has_valid_default:
-                # Xóa toàn bộ flag is_default cũ (tránh trường hợp raw data set default vào option tăng tiền)
-                for opt in options:
-                    opt["is_default"] = False
-                # Đặt mặc định vào option 0đ đầu tiên
-                for opt in options:
-                    if opt.get("extra_price", 0) == 0:
-                        opt["is_default"] = True
-                        has_valid_default = True
-                        break
-                if not has_valid_default and options:
-                    options[0]["is_default"] = True
+            # Đảm bảo mỗi nhóm luôn có đúng 1 lựa chọn mặc định
+            if is_optional:
+                # Nhóm tùy chọn (Thêm sốt, thêm món): Luôn mặc định là option "Không thêm (None)" 0đ
+                for idx, opt in enumerate(options):
+                    opt["is_default"] = (idx == 0)
             else:
-                # Nếu đã có 1 option 0đ là default, tắt default ở tất cả các option tăng tiền khác
-                found_first_default = False
-                for opt in options:
-                    if opt.get("is_default"):
-                        if not found_first_default and opt.get("extra_price", 0) == 0:
-                            found_first_default = True
-                        else:
-                            opt["is_default"] = False
+                # Nhóm bắt buộc: Giữ nguyên cờ selected_by_default chính thức của Jollibee
+                # (Đối với combo có nước upsize thì default là Pepsi lớn +5k để khớp giá niêm yết combo,
+                # khi khách đổi về Pepsi vừa 0đ thì combo tự động giảm 5k đúng chuẩn web Jollibee).
+                has_default = any(opt.get("is_default") for opt in options)
+                if not has_default and options:
+                    options[0]["is_default"] = True
+                elif has_default:
+                    found = False
+                    for opt in options:
+                        if opt.get("is_default"):
+                            if not found:
+                                found = True
+                            else:
+                                opt["is_default"] = False
             
             option_groups.append({
                 "group_id": str(g.get("group_id")),
@@ -104,12 +95,16 @@ def main():
                 "options": options
             })
 
+        base_price = int(p.get("base_price_vnd") if (p.get("base_price_vnd") is not None and p.get("base_price_vnd") > 0) else (p.get("display_price_vnd") or 0))
+        display_price = int(p.get("display_price_vnd") or base_price)
+
         prod_obj = {
             "id": pid,
             "sku": str(p.get("sku") or ""),
             "name": p.get("name", "").strip(),
             "description": p.get("description", "").strip(),
-            "price": int(p.get("display_price_vnd") or p.get("base_price_vnd") or 0),
+            "price": display_price,
+            "base_price": base_price,
             "image": p.get("local_image_path") or "",
             "is_combo": is_combo,
             "option_groups": option_groups

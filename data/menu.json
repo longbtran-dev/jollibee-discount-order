@@ -12,6 +12,7 @@
           "name": "MỘT MÌNH HÍT HÀ",
           "description": "1 Mì ý sốt cay vừa + 1 Gà Sốt cay + 1 Nước ngọt",
           "price": 80000,
+          "base_price": 80000,
           "image": "images/products/70144_mot-minh-hit-ha.jpg",
           "is_combo": true,
           "option_groups": [
@@ -191,6 +192,7 @@
           "name": "CÀNG CAY CÀNG MÊ",
           "description": "2 Mì ý sốt cay vừa + 1 Gà Sốt cay + 1 Gà Giòn Vui Vẻ + 2 Nước ngọt + 1 Khoai tây chiên vừa",
           "price": 157000,
+          "base_price": 157000,
           "image": "images/products/70145_cang-cay-cang-me.jpg",
           "is_combo": true,
           "option_groups": [
@@ -554,6 +556,7 @@
           "name": "Một Mình Ăn Ngon",
           "description": "1 Gà Giòn Vui Vẻ + 1 Mì Ý Jolly + 1 Nước ngọt + 1 Tương Chua Ngọt",
           "price": 73000,
+          "base_price": 73000,
           "image": "images/products/2840004_mot-minh-an-ngon.jpg",
           "is_combo": true,
           "option_groups": [
@@ -869,6 +872,7 @@
           "name": "Cặp Đôi Ăn Ý",
           "description": "2 Gà Giòn Vui Vẻ + 2 Mì Ý Jolly vừa + 1 Khoai tây chiên vừa + 2 Nước ngọt vừa + 2 Tương Chua Ngọt + 1 Tương Cà",
           "price": 145000,
+          "base_price": 145000,
           "image": "images/products/4000742_cap-oi-an-y.jpg",
           "is_combo": true,
           "option_groups": [
@@ -1272,6 +1276,7 @@
           "name": "Cả Nhà No Nê",
           "description": "3 Gà giòn vui vẻ + 2 Mì Ý Jolly vừa + 1 Khoai tây chiên vừa + 3 Nước ngọt vừa + 3 Tương Chua Ngọt + 1 Tương Cà",
           "price": 185000,
+          "base_price": 185000,
           "image": "images/products/4000935_ca-nha-no-ne.jpg",
           "is_combo": true,
           "option_groups": [
@@ -1802,6 +1807,7 @@
           "name": "2 miếng Gà Giòn Vui Vẻ",
           "description": "2 miếng Gà Giòn Vui Vẻ + 2 Tương Chua Ngọt",
           "price": 66000,
+          "base_price": 66000,
           "image": "images/products/1810003_2-mieng-ga-gion-vui-ve.png",
           "is_combo": false,
           "option_groups": []
@@ -1812,6 +1818,7 @@
           "name": "4 miếng Gà Giòn Vui Vẻ",
           "description": "4 miếng Gà Giòn Vui Vẻ + 4 Tương Chua Ngọt",
           "price": 126000,
+          "base_price": 126000,
           "image": "images/products/1810020_4-mieng-ga-gion-vui-ve.png",
           "is_combo": false,
           "option_groups": []
@@ -1822,6 +1829,7 @@
           "name": "6 miếng Gà Giòn Vui Vẻ",
           "description": "6 miếng Gà Giòn Vui Vẻ + 6 Tương Chua Ngọt",
           "price": 188000,
+          "base_price": 188000,
           "image": "images/products/1810021_6-mieng-ga-gion-vui-ve.png",
           "is_combo": false,
           "option_groups": []
@@ -1832,6 +1840,7 @@
           "name": "2 Gà Giòn Vui Vẻ + 1 Khoai tây chiên vừa + 1 Nước ngọt",
           "description": "2 Gà Giòn Vui Vẻ + 1 Khoai tây chiên vừa + 1 Nước ngọt + 2 Tương Chua Ngọt + 1 Tương Cà",
           "price": 91000,
+          "base_price": 86000,
           "image": "images/products/2810016_2-ga-gion-vui-ve-1-khoai-tay-chien-vua-1-nuoc-ngot.png",
           "is_combo": true,
           "option_groups": [
@@ -1934,7 +1943,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -1958,7 +1967,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -2171,6 +2180,7 @@
           "name": "1 Gà Giòn Vui Vẻ + 1 Khoai tây chiên vừa + 1 Nước ngọt",
           "description": "1 Gà Giòn Vui Vẻ + 1 Khoai tây chiên vừa + 1 Nước ngọt + 1 Tương Chua Ngọt + 1 Tương Cà",
           "price": 58000,
+          "base_price": 53000,
           "image": "images/products/2810004_1-ga-gion-vui-ve-1-khoai-tay-chien-vua-1-nuoc-ngot.png",
           "is_combo": true,
           "option_groups": [
@@ -2249,7 +2259,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -2273,7 +2283,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -2486,6 +2496,7 @@
           "name": "1 Cơm Gà Giòn Vui Vẻ + 1 Súp bí đỏ + 1 Nước ngọt",
           "description": "1 Cơm Gà Giòn Vui Vẻ + 1 Súp bí đỏ + 1 Nước ngọt + 1 Tương Chua Ngọt",
           "price": 63000,
+          "base_price": 58000,
           "image": "images/products/2810017_1-com-ga-gion-vui-ve-1-sup-bi-o-1-nuoc-ngot.png",
           "is_combo": true,
           "option_groups": [
@@ -2532,7 +2543,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -2556,7 +2567,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -2769,6 +2780,7 @@
           "name": "1 Cơm Gà Giòn Vui Vẻ + 1 Nước ngọt + 1 Tương Chua Ngọt",
           "description": "1 Cơm Gà Giòn Vui Vẻ + 1 Nước ngọt + 1 Tương Chua Ngọt",
           "price": 58000,
+          "base_price": 53000,
           "image": "images/products/2810014_1-com-ga-gion-vui-ve-1-nuoc-ngot-1-tuong-chua-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -2799,7 +2811,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -2823,7 +2835,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -3036,6 +3048,7 @@
           "name": "1 Cơm Gà Giòn Vui Vẻ",
           "description": "1 Cơm Gà Giòn Vui Vẻ + 1 Tương Chua Ngọt",
           "price": 48000,
+          "base_price": 48000,
           "image": "images/products/1810019-1_1-com-ga-gion-vui-ve.jpg",
           "is_combo": false,
           "option_groups": []
@@ -3046,6 +3059,7 @@
           "name": "1 miếng Gà Giòn Vui Vẻ",
           "description": "1 miếng Gà Giòn Vui Vẻ + 1 Tương Chua Ngọt",
           "price": 33000,
+          "base_price": 33000,
           "image": "images/products/1810001-1_1-mieng-ga-gion-vui-ve.png",
           "is_combo": false,
           "option_groups": []
@@ -3063,6 +3077,7 @@
           "name": "Mì Ý Sốt Cay vừa",
           "description": "Mì Ý Sốt Cay vừa",
           "price": 40000,
+          "base_price": 40000,
           "image": "images/products/1840014-1_mi-y-sot-cay-vua.jpg",
           "is_combo": true,
           "option_groups": [
@@ -3130,6 +3145,7 @@
           "name": "1 Mì Ý Sốt Cay Vừa + 1 Nước ngọt",
           "description": "1 Mì Ý Sốt Cay vừa + 1 Nước ngọt",
           "price": 50000,
+          "base_price": 45000,
           "image": "images/products/2840048_1-mi-y-sot-cay-vua-1-nuoc-ngot.png",
           "is_combo": true,
           "option_groups": [
@@ -3168,7 +3184,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -3192,7 +3208,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -3293,6 +3309,7 @@
           "name": "Một Mình Cay Cay",
           "description": "Mì Ý Sốt Cay vừa + 1 Gà Giòn Vui Vẻ + 1 Nước ngọt + 1 Tương Chua Ngọt",
           "price": 78000,
+          "base_price": 78000,
           "image": "images/products/2840050_mot-minh-cay-cay.png",
           "is_combo": true,
           "option_groups": [
@@ -3512,6 +3529,7 @@
           "name": "1 Mì Ý Jolly vừa + 1 Gà Giòn Vui Vẻ + 1 Khoai tây chiên vừa + 1 Nước ngọt",
           "description": "1 Mì Ý Jolly vừa + 1 Gà Giòn Vui Vẻ + 1 Khoai tây chiên vừa + 1 Nước ngọt + 1 Tương Chua Ngọt + 1 Tương Cà",
           "price": 93000,
+          "base_price": 88000,
           "image": "images/products/2840011_1-mi-y-jolly-vua-1-ga-gion-vui-ve-1-khoai-tay-chien-vua.jpg",
           "is_combo": true,
           "option_groups": [
@@ -3630,7 +3648,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -3654,7 +3672,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -3867,6 +3885,7 @@
           "name": "1 Mì Ý Jolly vừa + 1 Khoai tây chiên vừa + 1 Nước ngọt",
           "description": "1 Mì Ý Jolly vừa + 1 Khoai tây chiên vừa + 1 Nước ngọt + 1 Tương Cà",
           "price": 60000,
+          "base_price": 55000,
           "image": "images/products/2840009_1-mi-y-jolly-vua-1-khoai-tay-chien-vua-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -3961,7 +3980,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -3985,7 +4004,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -4198,6 +4217,7 @@
           "name": "1 Mì Ý Jolly vừa + 1 Nước ngọt",
           "description": "1 Mì Ý Jolly vừa + 1 Nước ngọt",
           "price": 45000,
+          "base_price": 40000,
           "image": "images/products/2840002_1-mi-y-jolly-vua-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -4252,7 +4272,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -4276,7 +4296,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -4489,6 +4509,7 @@
           "name": "Mì Ý Jolly lớn",
           "description": "Mì Ý Jolly lớn",
           "price": 45000,
+          "base_price": 45000,
           "image": "images/products/1840007-1_mi-y-jolly-lon.jpg",
           "is_combo": false,
           "option_groups": []
@@ -4499,6 +4520,7 @@
           "name": "Mì Ý Jolly vừa",
           "description": "Mì Ý Jolly vừa",
           "price": 35000,
+          "base_price": 35000,
           "image": "images/products/1840001-1_mi-y-jolly-vua.jpg",
           "is_combo": false,
           "option_groups": []
@@ -4516,6 +4538,7 @@
           "name": "2 miếng Gà Sốt Cay",
           "description": "2 miếng Gà Sốt Cay",
           "price": 70000,
+          "base_price": 70000,
           "image": "images/products/1810037_2-mieng-ga-sot-cay.png",
           "is_combo": false,
           "option_groups": []
@@ -4526,6 +4549,7 @@
           "name": "2 Gà Sốt Cay + 1 Khoai tây chiên vừa + 1 Nước ngọt",
           "description": "2 Gà Sốt Cay + 1 Khoai tây chiên vừa + 1 Nước ngọt + 1 Tương Cà",
           "price": 95000,
+          "base_price": 90000,
           "image": "images/products/2810053_2-ga-sot-cay-1-khoai-tay-chien-vua-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -4612,7 +4636,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -4636,7 +4660,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -4849,6 +4873,7 @@
           "name": "1 Gà Sốt Cay + 1 Khoai tây chiên vừa + 1 Nước ngọt",
           "description": "1 Gà Sốt Cay + 1 Khoai tây chiên vừa + 1 Nước ngọt + 1 Tương Cà",
           "price": 60000,
+          "base_price": 55000,
           "image": "images/products/2810052_1-ga-sot-cay-1-khoai-tay-chien-vua-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -4919,7 +4944,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -4943,7 +4968,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -5156,6 +5181,7 @@
           "name": "1 Cơm Gà Sốt Cay + 1 Súp bí đỏ + 1 Nước ngọt",
           "description": "1 Cơm Gà Sốt Cay + 1 Súp bí đỏ + 1 Nước ngọt",
           "price": 65000,
+          "base_price": 60000,
           "image": "images/products/2810051_1-com-ga-sot-cay-1-sup-bi-o-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -5202,7 +5228,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -5226,7 +5252,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -5439,6 +5465,7 @@
           "name": "1 Cơm Gà Sốt Cay + 1 Nước ngọt",
           "description": "1 Cơm Gà Sốt Cay + 1 Nước ngọt",
           "price": 60000,
+          "base_price": 55000,
           "image": "images/products/2810050_1-com-ga-sot-cay-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -5469,7 +5496,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -5493,7 +5520,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -5706,6 +5733,7 @@
           "name": "1 Cơm Gà Sốt Cay",
           "description": "1 Cơm Gà Sốt Cay",
           "price": 50000,
+          "base_price": 50000,
           "image": "images/products/1810038-1_1-com-ga-sot-cay.jpg",
           "is_combo": false,
           "option_groups": []
@@ -5716,6 +5744,7 @@
           "name": "1 miếng Gà Sốt Cay",
           "description": "1 miếng Gà Sốt Cay",
           "price": 35000,
+          "base_price": 35000,
           "image": "images/products/1810036-1_1-mieng-ga-sot-cay.png",
           "is_combo": false,
           "option_groups": []
@@ -5733,6 +5762,7 @@
           "name": "Burger Gà Giòn",
           "description": "1 Burger Gà Giòn",
           "price": 35000,
+          "base_price": 35000,
           "image": "images/products/12008-1_burger-ga-gion.jpg",
           "is_combo": false,
           "option_groups": []
@@ -5743,6 +5773,7 @@
           "name": "Combo Burger Gà Giòn 2",
           "description": "1 Burger Gà Giòn + 1 Pepsi vừa + 1 Khoai Tây Chiên vừa + 1 tương cà",
           "price": 55000,
+          "base_price": 55000,
           "image": "images/products/52013_combo-burger-ga-gion-2.jpg",
           "is_combo": true,
           "option_groups": [
@@ -5938,6 +5969,7 @@
           "name": "Combo Burger Gà Giòn 1",
           "description": "1 Burger Gà Giòn + 1 Pepsi vừa",
           "price": 40000,
+          "base_price": 40000,
           "image": "images/products/52012_combo-burger-ga-gion-1.jpg",
           "is_combo": true,
           "option_groups": [
@@ -6093,6 +6125,7 @@
           "name": "1 Cơm gà mắm tỏi + 1 Nước ngọt",
           "description": "1 Cơm gà mắm tỏi + 1 Nước ngọt",
           "price": 45000,
+          "base_price": 40000,
           "image": "images/products/2811107_1-com-ga-mam-toi-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -6123,7 +6156,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -6147,7 +6180,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -6248,6 +6281,7 @@
           "name": "Cơm Gà Mắm Tỏi",
           "description": "Cơm Gà Mắm Tỏi",
           "price": 35000,
+          "base_price": 35000,
           "image": "images/products/1810060-1_com-ga-mam-toi.png",
           "is_combo": false,
           "option_groups": []
@@ -6258,6 +6292,7 @@
           "name": "Burger Tôm",
           "description": "Burger Tôm",
           "price": 40000,
+          "base_price": 40000,
           "image": "images/products/1820006-1_burger-tom.jpg",
           "is_combo": false,
           "option_groups": []
@@ -6268,6 +6303,7 @@
           "name": "1 Burger Tôm + 1 Khoai tây chiên vừa + 1 Nước ngọt",
           "description": "1 Burger Tôm + 1 Khoai tây chiên vừa + 1 Nước ngọt + 1 Tương Cà",
           "price": 65000,
+          "base_price": 60000,
           "image": "images/products/2820011_1-burger-tom-1-khoai-tay-chien-vua-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -6338,7 +6374,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -6362,7 +6398,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -6575,6 +6611,7 @@
           "name": "1 Burger Tôm + 1 Nước ngọt",
           "description": "1 Burger Tôm + 1 Nước ngọt",
           "price": 50000,
+          "base_price": 45000,
           "image": "images/products/2820010_1-burger-tom-1-nuoc-ngot.jpg",
           "is_combo": true,
           "option_groups": [
@@ -6605,7 +6642,7 @@
                   "name": "Pepsi lớn (up)",
                   "extra_price": 5000,
                   "quantity": 1,
-                  "is_default": false,
+                  "is_default": true,
                   "image": "images/options/95_pepsi-lon-up.png"
                 },
                 {
@@ -6629,7 +6666,7 @@
                   "name": "Pepsi vừa",
                   "extra_price": 0,
                   "quantity": 1,
-                  "is_default": true,
+                  "is_default": false,
                   "image": "images/options/9_pepsi-vua.png"
                 },
                 {
@@ -6849,6 +6886,7 @@
           "name": "Thêm 2 Gói Tương Chua Ngọt",
           "description": "Thêm 2 Gói Tương Chua Ngọt",
           "price": 1000,
+          "base_price": 1000,
           "image": "images/products/1930006_them-2-goi-tuong-chua-ngot.png",
           "is_combo": false,
           "option_groups": []
@@ -6859,6 +6897,7 @@
           "name": "Thêm 2 Gói Tương Cà",
           "description": "Thêm 2 Gói Tương Cà",
           "price": 1000,
+          "base_price": 1000,
           "image": "images/products/1930007_them-2-goi-tuong-ca.png",
           "is_combo": false,
           "option_groups": []
@@ -6869,6 +6908,7 @@
           "name": "Khoai tây lắc vị BBQ lớn",
           "description": "Khoai tây lắc vị BBQ lớn",
           "price": 35000,
+          "base_price": 35000,
           "image": "images/products/1860071_khoai-tay-lac-vi-bbq-lon.jpg",
           "is_combo": false,
           "option_groups": []
@@ -6879,6 +6919,7 @@
           "name": "Khoai tây lắc vị BBQ vừa",
           "description": "Khoai tây lắc vị BBQ vừa",
           "price": 25000,
+          "base_price": 25000,
           "image": "images/products/1860070-1_khoai-tay-lac-vi-bbq-vua.jpg",
           "is_combo": false,
           "option_groups": []
@@ -6889,6 +6930,7 @@
           "name": "Khoai tây chiên lớn",
           "description": "Khoai tây chiên lớn + 2 Tương Cà",
           "price": 25000,
+          "base_price": 25000,
           "image": "images/products/1860002-1_khoai-tay-chien-lon.jpg",
           "is_combo": false,
           "option_groups": []
@@ -6899,6 +6941,7 @@
           "name": "Khoai tây chiên vừa",
           "description": "Khoai tây chiên vừa + 1 Tương Cà",
           "price": 20000,
+          "base_price": 20000,
           "image": "images/products/1860001-1_khoai-tay-chien-vua.jpg",
           "is_combo": false,
           "option_groups": []
@@ -6909,6 +6952,7 @@
           "name": "Súp bí đỏ",
           "description": "Súp bí đỏ",
           "price": 15000,
+          "base_price": 15000,
           "image": "images/products/1860086-2_sup-bi-o.jpg",
           "is_combo": false,
           "option_groups": []
@@ -6919,6 +6963,7 @@
           "name": "Cơm Trắng",
           "description": "Cơm Trắng",
           "price": 10000,
+          "base_price": 10000,
           "image": "images/products/1870005_com-trang.png",
           "is_combo": false,
           "option_groups": []
@@ -6936,6 +6981,7 @@
           "name": "Bánh Xoài Đào",
           "description": "Bánh xoài đào",
           "price": 15000,
+          "base_price": 15000,
           "image": "images/products/1880051_banh-xoai-ao.png",
           "is_combo": false,
           "option_groups": []
@@ -6946,6 +6992,7 @@
           "name": "Tropical Sundae",
           "description": "Tropical Sundae",
           "price": 20000,
+          "base_price": 20000,
           "image": "images/products/1880059_tropical-sundae.png",
           "is_combo": false,
           "option_groups": []
@@ -6956,6 +7003,7 @@
           "name": "Kem Sundae Dâu",
           "description": "Kem Sundae Dâu",
           "price": 15000,
+          "base_price": 15000,
           "image": "images/products/1880025_kem-sundae-dau.png",
           "is_combo": false,
           "option_groups": []
@@ -6966,6 +7014,7 @@
           "name": "Kem Sundae Socola",
           "description": "Kem Sundae Socola",
           "price": 15000,
+          "base_price": 15000,
           "image": "images/products/1880026_kem-sundae-socola.png",
           "is_combo": false,
           "option_groups": []
@@ -6976,6 +7025,7 @@
           "name": "Kem Sôcôla (Cúp)",
           "description": "Kem Sôcôla (Cúp)",
           "price": 7000,
+          "base_price": 7000,
           "image": "images/products/1880004_kem-socola-cup.png",
           "is_combo": false,
           "option_groups": []
@@ -6986,6 +7036,7 @@
           "name": "Kem Sữa Tươi (Cúp)",
           "description": "Kem Sữa Tươi (Cúp)",
           "price": 5000,
+          "base_price": 5000,
           "image": "images/products/1880002_kem-sua-tuoi-cup.png",
           "is_combo": false,
           "option_groups": []
@@ -7003,6 +7054,7 @@
           "name": "Trà Chanh Hạt Chia",
           "description": "Trà Chanh Hạt Chia",
           "price": 20000,
+          "base_price": 20000,
           "image": "images/products/1890132_tra-chanh-hat-chia.jpg",
           "is_combo": false,
           "option_groups": []
@@ -7013,6 +7065,7 @@
           "name": "Nước ép xoài đào",
           "description": "Nước ép xoài đào",
           "price": 20000,
+          "base_price": 20000,
           "image": "images/products/1890118_nuoc-ep-xoai-ao.jpg",
           "is_combo": false,
           "option_groups": []
@@ -7023,6 +7076,7 @@
           "name": "Pepsi lớn",
           "description": "Pepsi lớn",
           "price": 17000,
+          "base_price": 17000,
           "image": "images/products/1890005_pepsi-lon.png",
           "is_combo": false,
           "option_groups": []
@@ -7033,6 +7087,7 @@
           "name": "Pepsi vừa",
           "description": "Pepsi vừa",
           "price": 12000,
+          "base_price": 12000,
           "image": "images/products/1890001_pepsi-vua.png",
           "is_combo": false,
           "option_groups": []
@@ -7043,6 +7098,7 @@
           "name": "Mirinda lớn",
           "description": "Mirinda lớn",
           "price": 17000,
+          "base_price": 17000,
           "image": "images/products/1890007_mirinda-lon.png",
           "is_combo": false,
           "option_groups": []
@@ -7053,6 +7109,7 @@
           "name": "Mirinda vừa",
           "description": "Mirinda vừa",
           "price": 12000,
+          "base_price": 12000,
           "image": "images/products/1890003_mirinda-vua.png",
           "is_combo": false,
           "option_groups": []
@@ -7063,6 +7120,7 @@
           "name": "7Up lớn",
           "description": "7Up lớn",
           "price": 17000,
+          "base_price": 17000,
           "image": "images/products/1890006_7up-lon.png",
           "is_combo": false,
           "option_groups": []
@@ -7073,6 +7131,7 @@
           "name": "7UP vừa",
           "description": "7UP vừa",
           "price": 12000,
+          "base_price": 12000,
           "image": "images/products/1890002_7up-vua.png",
           "is_combo": false,
           "option_groups": []
@@ -7083,6 +7142,7 @@
           "name": "Cacao sữa đá lớn",
           "description": "Cacao sữa đá lớn",
           "price": 25000,
+          "base_price": 25000,
           "image": "images/products/1890056_cacao-sua-a-lon.png",
           "is_combo": false,
           "option_groups": []
@@ -7093,6 +7153,7 @@
           "name": "Cacao sữa đá vừa",
           "description": "Cacao sữa đá vừa",
           "price": 20000,
+          "base_price": 20000,
           "image": "images/products/1890055_cacao-sua-a-vua.png",
           "is_combo": false,
           "option_groups": []
@@ -7103,6 +7164,7 @@
           "name": "Nước suối",
           "description": "Nước suối",
           "price": 8000,
+          "base_price": 8000,
           "image": "images/products/1890013_nuoc-suoi.png",
           "is_combo": false,
           "option_groups": []

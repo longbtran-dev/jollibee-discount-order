@@ -35,7 +35,8 @@ export class Cart {
     const cartItemId = this._generateCartItemId(product.id, selectedOptions);
 
     const extraTotal = selectedOptions.reduce((sum, opt) => sum + (Number(opt.extra_price) || 0), 0);
-    const unitPrice = (Number(product.price) || 0) + extraTotal;
+    const basePrice = Number(product.base_price !== undefined ? product.base_price : product.price) || 0;
+    const unitPrice = basePrice + extraTotal;
 
     const optionsText = selectedOptions
       .map(opt => {
@@ -55,7 +56,7 @@ export class Cart {
       productId: product.id,
       name: product.name,
       image: product.image || '',
-      basePrice: Number(product.price) || 0,
+      basePrice,
       unitPrice,
       quantity: qty,
       selectedOptions: [...selectedOptions],
