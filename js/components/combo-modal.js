@@ -2,9 +2,9 @@
  * Logic trạng thái và thành phần giao diện Modal tùy chỉnh Combo
  */
 
-import { formatCurrency } from '../order-message.js';
-import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '../icons.js';
-import { formatDescriptionHtml } from '../utils.js?v=1.1';
+import { formatCurrency } from '../order-message.js?v=1.2';
+import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '../icons.js?v=1.2';
+import { formatDescriptionHtml } from '../utils.js?v=1.2';
 
 /**
  * Khởi tạo bộ quản lý trạng thái chọn option cho Combo
@@ -61,8 +61,9 @@ export function createComboState(product) {
  * Hiển thị Modal tùy chỉnh Combo trên giao diện
  */
 export class ComboModal {
-  constructor(containerId = 'combo-modal-container') {
+  constructor(containerId = 'combo-modal-container', imageModal = null) {
     this.containerId = containerId;
+    this.imageModal = imageModal;
     this.currentProduct = null;
     this.state = null;
     this.onConfirmCallback = null;
@@ -175,7 +176,11 @@ export class ComboModal {
 
           <!-- Product Summary -->
           <div class="p-3 sm:p-4 bg-amber-50/40 border-b border-amber-100 flex items-start gap-3">
-            ${product.image ? `<img src="${product.image}" alt="${product.name}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-xs flex-shrink-0" onerror="this.style.display='none'">` : ''}
+            ${product.image ? `
+              <button type="button" id="combo-modal-image-preview-btn" class="cursor-zoom-in relative group flex-shrink-0 focus:outline-hidden" title="Nhấn để xem ảnh phóng to">
+                <img src="${product.image}" alt="${product.name}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-xs transform group-hover:scale-105 transition" onerror="this.style.display='none'">
+              </button>
+            ` : ''}
             <div class="flex-1 min-w-0">
               <div class="text-xs text-red-600 font-semibold mb-0.5">Giá combo: <span id="combo-modal-top-price" class="font-bold">${formatCurrency(currentPrice)}</span></div>
               ${formatDescriptionHtml(product.description)}
@@ -275,6 +280,19 @@ export class ComboModal {
           }
         }
       });
+    });
+
+    // Sự kiện xem ảnh phóng to trong modal
+    document.getElementById('combo-modal-image-preview-btn')?.addEventListener('click', () => {
+      if (this.imageModal && product.image) {
+        this.imageModal.open({
+          title: product.name,
+          image: product.image,
+          price: state.getTotalPrice(),
+          originalPrice: product.price,
+          isCombo: true
+        });
+      }
     });
 
     // Sự kiện đóng modal

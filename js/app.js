@@ -2,11 +2,12 @@
  * Khởi tạo và điều phối giao diện ứng dụng chính
  */
 import { Cart } from './cart.js';
-import { ComboModal } from './components/combo-modal.js';
-import { CartDrawer } from './components/cart-drawer.js';
+import { ComboModal } from './components/combo-modal.js?v=1.2';
+import { CartDrawer } from './components/cart-drawer.js?v=1.2';
+import { ImageModal } from './components/image-modal.js?v=1.2';
 import { formatCurrency } from './order-message.js';
-import { escapeHtml, formatDescriptionHtml } from './utils.js?v=1.1';
-import { IconSliders, IconClock, IconPlus, IconSearch } from './icons.js';
+import { escapeHtml, formatDescriptionHtml } from './utils.js?v=1.2';
+import { IconSliders, IconClock, IconPlus, IconSearch, IconZoomIn } from './icons.js?v=1.2';
 import { flyToCart, bounceCartBadge, fireFreeshipMilestone } from './effects.js';
 
 class JollibeeApp {
@@ -16,12 +17,14 @@ class JollibeeApp {
     this.cart = new Cart();
     this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
     this.lastOriginalTotal = 0;
-    this.comboModal = new ComboModal('combo-modal-container');
+    this.imageModal = new ImageModal();
+    this.comboModal = new ComboModal('combo-modal-container', this.imageModal);
     this.cartDrawer = new CartDrawer(
       this.cart, 
       this.config, 
       () => this.updateFloatingCart(),
-      (newType) => this.setOrderType(newType, false)
+      (newType) => this.setOrderType(newType, false),
+      this.imageModal
     );
     this.activeCategorySlug = null;
   }
@@ -203,19 +206,25 @@ class JollibeeApp {
         cardsHtml += `
           <div class="product-card bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3 sm:p-4">
             <div class="flex gap-2.5 sm:gap-3.5 items-start">
-              <!-- Food Image with Fallback -->
-              <div class="relative w-20 h-20 sm:w-28 sm:h-28 rounded-xl bg-amber-50/50 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start">
+              <!-- Food Image with Fallback & Click to Zoom -->
+              <button type="button" 
+                class="btn-preview-image text-left focus:outline-hidden relative w-20 h-20 sm:w-28 sm:h-28 rounded-xl bg-amber-50/50 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start cursor-zoom-in group active:scale-95 transition"
+                data-id="${product.id}"
+                title="Nhấn để xem ảnh to">
                 <img src="${product.image || 'images/placeholder.png'}" 
                   alt="${product.name}" 
                   loading="lazy"
-                  class="w-full h-full object-contain transform hover:scale-105 transition duration-200"
+                  class="w-full h-full object-contain transform group-hover:scale-105 transition duration-200"
                   onerror="this.onerror=null; this.src='https://placehold.co/150x150/fffaf0/d71920?text=Jollibee'">
                 ${isCombo ? `
                   <span class="absolute top-1 left-1 bg-[#d71920] text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-xs uppercase tracking-wide">
                     Combo
                   </span>
                 ` : ''}
-              </div>
+                <span class="absolute bottom-1 right-1 w-5 h-5 rounded-md bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xs">
+                  ${IconZoomIn('w-3 h-3')}
+                </span>
+              </button>
 
               <!-- Product Info -->
               <div class="flex-1 min-w-0">
@@ -294,6 +303,40 @@ class JollibeeApp {
     }
 
     container.innerHTML = html;
+
+    // Gắn sự kiện xem ảnh phóng to
+    container.querySelectorAll('.btn-preview-image').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const pid = e.currentTarget.dataset.id;
+        let product = null;
+        for (const cat of this.menuData.categories) {
+          product = cat.products.find(p => p.id === pid);
+          if (product) break;
+        }
+        if (!product) return;
+
+        const isCombo = Boolean(product.is_combo);
+        const originalPrice = product.price;
+        let discountedPrice;
+        if (originalPrice >= 100000) {
+          const discount = Math.floor(originalPrice / 100000) * 15000;
+          discountedPrice = originalPrice - discount;
+        } else {
+          discountedPrice = Math.round((originalPrice * 0.85) / 1000) * 1000;
+        }
+
+        this.imageModal.open({
+          title: product.name,
+          image: product.image || 'images/placeholder.png',
+          price: discountedPrice,
+          originalPrice: originalPrice,
+          isCombo: isCombo,
+          onAction: () => {
+            this.handleProductClick(product.id, isCombo);
+          }
+        });
+      });
+    });
 
     // Gắn sự kiện thêm món / mở modal combo
     container.querySelectorAll('.btn-select-product').forEach(btn => {

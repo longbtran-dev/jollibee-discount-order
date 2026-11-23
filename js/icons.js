@@ -102,3 +102,7 @@ export function IconZalo(cls = 'w-5 h-5') {
 export function IconMessenger(cls = 'w-5 h-5') {
   return `<svg class="${cls}" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.145 2 11.258c0 2.91 1.455 5.517 3.735 7.208V22l3.418-1.874c.915.253 1.883.39 2.847.39 5.523 0 10-4.146 10-9.258C22 6.145 17.523 2 12 2zm1.066 12.438-2.614-2.79-5.1 2.79 5.608-5.952 2.68 2.79 5.034-2.79-5.608 5.952z"/></svg>`;
 }
+
+export function IconZoomIn(cls = 'w-4 h-4') {
+  return `<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/><line x1="11" x2="11" y1="8" y2="14"/><line x1="8" x2="14" y1="11" y2="11"/></svg>`;
+}

@@ -1,9 +1,9 @@
 /**
  * Thành phần Drawer / Modal Giỏ Hàng & Chốt Đơn
  */
-import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js';
-import { copyToClipboard } from '../utils.js?v=1.1';
-import { fireOrderCelebration } from '../effects.js';
+import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js?v=1.2';
+import { copyToClipboard } from '../utils.js?v=1.2';
+import { fireOrderCelebration } from '../effects.js?v=1.2';
 import {
   IconShoppingBag,
   IconX,
@@ -22,14 +22,15 @@ import {
   IconCopy,
   IconZalo,
   IconMessenger
-} from '../icons.js';
+} from '../icons.js?v=1.2';
 
 export class CartDrawer {
-  constructor(cart, config = {}, onCartChanged = null, onOrderTypeChanged = null) {
+  constructor(cart, config = {}, onCartChanged = null, onOrderTypeChanged = null, imageModal = null) {
     this.cart = cart;
     this.config = config;
     this.onCartChanged = onCartChanged;
     this.onOrderTypeChanged = onOrderTypeChanged;
+    this.imageModal = imageModal;
     this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
     this.containerId = 'cart-drawer-container';
     this.customerInfo = {
@@ -226,9 +227,13 @@ export class CartDrawer {
           <div class="py-3 border-b border-gray-100 last:border-b-0 flex gap-2.5 sm:gap-3 items-start">
             <!-- Thumbnail món ăn -->
             ${item.image ? `
-              <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-50/60 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start mt-0.5">
-                <img src="${item.image}" alt="${item.name}" class="w-full h-full object-contain" onerror="this.style.display='none'">
-              </div>
+              <button type="button" class="btn-cart-img-preview cursor-zoom-in relative group w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-50/60 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start mt-0.5 focus:outline-hidden active:scale-95 transition" 
+                data-img="${item.image}" 
+                data-name="${item.name}" 
+                data-price="${item.unitPrice}" 
+                title="Nhấn để xem ảnh phóng to">
+                <img src="${item.image}" alt="${item.name}" class="w-full h-full object-contain transform group-hover:scale-105 transition" onerror="this.style.display='none'">
+              </button>
             ` : ''}
 
             <!-- Nội dung chính -->
@@ -513,6 +518,22 @@ export class CartDrawer {
       this.orderType = 'dinein';
       if (this.onOrderTypeChanged) this.onOrderTypeChanged('dinein');
       this.render();
+    });
+
+    // Sự kiện xem ảnh phóng to trong giỏ hàng
+    container.querySelectorAll('.btn-cart-img-preview').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const img = e.currentTarget.dataset.img;
+        const name = e.currentTarget.dataset.name;
+        const price = Number(e.currentTarget.dataset.price) || 0;
+        if (this.imageModal && img) {
+          this.imageModal.open({
+            title: name,
+            image: img,
+            price: price
+          });
+        }
+      });
     });
 
     // Thao tác tăng giảm / xóa món
