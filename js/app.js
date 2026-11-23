@@ -1,0 +1,327 @@
+/**
+ * Khởi tạo và điều phối giao diện ứng dụng chính
+ */
+import { Cart } from './cart.js';
+import { ComboModal } from './components/combo-modal.js';
+import { CartDrawer } from './components/cart-drawer.js';
+import { formatCurrency } from './order-message.js';
+
+class JollibeeApp {
+  constructor() {
+    this.config = window.JOLLIBEE_CONFIG || {};
+    this.menuData = null;
+    this.cart = new Cart();
+    this.comboModal = new ComboModal('combo-modal-container');
+    this.cartDrawer = new CartDrawer(this.cart, this.config, () => this.updateFloatingCart());
+    this.activeCategorySlug = null;
+  }
+
+  async init() {
+    this.applyConfig();
+    await this.loadMenu();
+    this.renderCategoryTabs();
+    this.renderMenuSections();
+    this.bindGlobalEvents();
+    this.updateFloatingCart();
+  }
+
+  applyConfig() {
+    if (this.config.shopName) {
+      document.getElementById('shop-title').querySelector('span').innerText = this.config.shopName;
+    }
+    if (this.config.shopSubtitle) {
+      document.getElementById('shop-subtitle').innerText = this.config.shopSubtitle;
+    }
+    if (this.config.bannerNotice) {
+      document.getElementById('banner-text').innerText = this.config.bannerNotice;
+    }
+    if (this.config.hotline) {
+      const hotlineBtn = document.getElementById('header-hotline-btn');
+      const hotlineNumber = this.config.hotline.replace(/\D/g, '');
+      if (hotlineBtn) {
+        hotlineBtn.href = `tel:${hotlineNumber}`;
+        document.getElementById('header-hotline-text').innerText = this.config.hotline;
+      }
+    }
+  }
+
+  async loadMenu() {
+    try {
+      const response = await fetch('data/menu.json');
+      if (!response.ok) throw new Error('Không thể tải file data/menu.json');
+      this.menuData = await response.json();
+    } catch (err) {
+      console.error('Lỗi nạp thực đơn:', err);
+      document.getElementById('menu-sections-container').innerHTML = `
+        <div class="p-6 bg-red-50 text-red-600 rounded-2xl border border-red-200 text-center">
+          <p class="font-bold">Đã có lỗi xảy ra khi tải dữ liệu thực đơn.</p>
+          <p class="text-xs mt-1 text-gray-500">Vui lòng kiểm tra lại đường dẫn data/menu.json hoặc làm mới trang.</p>
+        </div>
+      `;
+    }
+  }
+
+  renderCategoryTabs() {
+    const tabsContainer = document.getElementById('category-tabs');
+    if (!tabsContainer || !this.menuData) return;
+
+    let html = '';
+    this.menuData.categories.forEach((cat, index) => {
+      const isFirst = index === 0;
+      if (isFirst) this.activeCategorySlug = cat.slug;
+
+      html += `
+        <button type="button" 
+          class="category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 ${isFirst ? 'bg-[#d71920] text-white border-[#d71920] shadow-xs active-tab' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'}"
+          data-slug="${cat.slug}">
+          <span>${cat.name}</span>
+          <span class="text-[10px] opacity-80">(${cat.products.length})</span>
+        </button>
+      `;
+    });
+
+    tabsContainer.innerHTML = html;
+
+    tabsContainer.querySelectorAll('.category-tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const slug = e.currentTarget.dataset.slug;
+        this.scrollToCategory(slug);
+      });
+    });
+  }
+
+  scrollToCategory(slug) {
+    this.activeCategorySlug = slug;
+    
+    // Đổi active tab style
+    document.querySelectorAll('.category-tab-btn').forEach(btn => {
+      if (btn.dataset.slug === slug) {
+        btn.className = 'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 bg-[#d71920] text-white border-[#d71920] shadow-xs active-tab';
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      } else {
+        btn.className = 'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
+      }
+    });
+
+    // Cuộn đến section
+    const targetSection = document.getElementById(`section-${slug}`);
+    if (targetSection) {
+      const headerOffset = 140;
+      const elementPosition = targetSection.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  }
+
+  renderMenuSections(filterKeyword = '') {
+    const container = document.getElementById('menu-sections-container');
+    if (!container || !this.menuData) return;
+
+    const keyword = filterKeyword.toLowerCase().trim();
+    let totalMatchedProducts = 0;
+    let html = '';
+
+    this.menuData.categories.forEach(cat => {
+      const matchedProducts = cat.products.filter(p => {
+        if (!keyword) return true;
+        return (
+          p.name.toLowerCase().includes(keyword) ||
+          p.description.toLowerCase().includes(keyword)
+        );
+      });
+
+      if (matchedProducts.length === 0) return;
+      totalMatchedProducts += matchedProducts.length;
+
+      let cardsHtml = '';
+      matchedProducts.forEach(product => {
+        const isCombo = product.is_combo;
+        const buttonText = isCombo ? 'Tùy Chọn Món' : '+ Thêm Món';
+        const buttonClass = isCombo
+          ? 'bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 border border-amber-300'
+          : 'bg-[#d71920] hover:bg-[#b81218] text-white shadow-xs';
+
+        cardsHtml += `
+          <div class="product-card bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3.5 sm:p-4">
+            <div class="flex gap-3">
+              <!-- Food Image with Fallback -->
+              <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-amber-50/50 p-1.5 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                <img src="${product.image || 'images/placeholder.png'}" 
+                  alt="${product.name}" 
+                  loading="lazy"
+                  class="w-full h-full object-contain transform hover:scale-105 transition duration-200"
+                  onerror="this.onerror=null; this.src='https://placehold.co/150x150/fffaf0/d71920?text=Jollibee'">
+                ${isCombo ? `
+                  <span class="absolute top-1 left-1 bg-[#d71920] text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-xs uppercase tracking-wide">
+                    Combo
+                  </span>
+                ` : ''}
+              </div>
+
+              <!-- Product Info -->
+              <div class="flex-1 min-w-0">
+                <h4 class="font-extrabold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2">${product.name}</h4>
+                <p class="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">${product.description || 'Hương vị giòn rụm thơm ngon đặc trưng của Jollibee'}</p>
+                <div class="mt-2 flex items-baseline gap-2">
+                  <span class="text-base sm:text-lg font-black text-red-600">${formatCurrency(product.price)}</span>
+                  <span class="text-[10px] text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
+                    Áp chiết khấu
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between">
+              <span class="text-[11px] text-gray-400 font-medium">
+                ${isCombo ? '⚡ Đổi vị, upsize theo ý' : '✓ Giao nhanh'}
+              </span>
+              <button type="button" 
+                class="btn-select-product ${buttonClass} font-extrabold text-xs sm:text-sm py-2 px-4 rounded-xl active:scale-95 transition flex items-center gap-1.5"
+                data-id="${product.id}"
+                data-is-combo="${isCombo}">
+                <span>${buttonText}</span>
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      html += `
+        <section id="section-${cat.slug}" class="space-y-3 scroll-mt-36">
+          <div class="flex items-center justify-between pb-1.5 border-b-2 border-amber-200">
+            <h3 class="font-black text-base sm:text-lg text-gray-900 uppercase tracking-tight flex items-center gap-2">
+              <span class="w-3 h-3 rounded-full bg-[#d71920]"></span>
+              <span>${cat.name}</span>
+            </h3>
+            <span class="text-xs font-bold text-gray-500">${matchedProducts.length} món</span>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            ${cardsHtml}
+          </div>
+        </section>
+      `;
+    });
+
+    if (totalMatchedProducts === 0) {
+      container.innerHTML = `
+        <div class="text-center py-16 bg-white rounded-3xl border border-gray-200 shadow-xs">
+          <div class="text-5xl mb-3">🔍</div>
+          <p class="font-bold text-gray-700 text-base">Không tìm thấy món ăn nào phù hợp với từ khóa "${filterKeyword}"</p>
+          <p class="text-xs text-gray-400 mt-1">Vui lòng thử tìm với từ khóa khác (ví dụ: gà, mì ý, burger, nước)</p>
+          <button type="button" id="btn-reset-search" class="mt-4 bg-[#ffc72c] font-bold text-xs px-4 py-2 rounded-xl text-gray-900 shadow-xs">
+            Xem Tất Cả Món Ăn
+          </button>
+        </div>
+      `;
+      document.getElementById('btn-reset-search')?.addEventListener('click', () => {
+        document.getElementById('menu-search-input').value = '';
+        this.renderMenuSections();
+      });
+      return;
+    }
+
+    container.innerHTML = html;
+
+    // Gắn sự kiện thêm món / mở modal combo
+    container.querySelectorAll('.btn-select-product').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const pid = e.currentTarget.dataset.id;
+        const isCombo = e.currentTarget.dataset.isCombo === 'true';
+        this.handleProductClick(pid, isCombo);
+      });
+    });
+  }
+
+  handleProductClick(productId, isCombo) {
+    if (!this.menuData) return;
+    
+    // Tìm sản phẩm trong tất cả danh mục
+    let product = null;
+    for (const cat of this.menuData.categories) {
+      product = cat.products.find(p => p.id === productId);
+      if (product) break;
+    }
+    if (!product) return;
+
+    if (isCombo) {
+      // Mở modal cấu hình combo
+      this.comboModal.open(product, (configuredProduct, selectedOptions) => {
+        this.cart.addItem(configuredProduct, selectedOptions, 1);
+        this.updateFloatingCart();
+        this.cartDrawer.showToast(`Đã thêm "${product.name}" vào giỏ hàng!`);
+      });
+    } else {
+      // Thêm ngay món đơn
+      this.cart.addItem(product, [], 1);
+      this.updateFloatingCart();
+      this.cartDrawer.showToast(`Đã thêm "${product.name}" vào giỏ!`);
+    }
+  }
+
+  updateFloatingCart() {
+    const totalItems = this.cart.getTotalItemCount();
+    const totals = this.cart.getTotals('delivery', this.config);
+
+    const badgeEl = document.getElementById('floating-cart-badge');
+    const priceEl = document.getElementById('floating-cart-final-price');
+    const hintEl = document.getElementById('floating-cart-discount-hint');
+
+    if (badgeEl) badgeEl.innerText = totalItems;
+    if (priceEl) priceEl.innerText = formatCurrency(totals.finalTotal);
+
+    if (hintEl) {
+      if (totalItems === 0) {
+        hintEl.innerText = '(Chưa chọn món)';
+        hintEl.className = 'text-[11px] text-gray-400 font-medium';
+      } else if (totals.discountAmount > 0) {
+        hintEl.innerText = `Đã giảm -${formatCurrency(totals.discountAmount)}!`;
+        hintEl.className = 'text-[11px] text-green-600 font-extrabold';
+      } else {
+        const nextStepThreshold = this.config.discountStep || 100000;
+        const needed = nextStepThreshold - totals.originalTotal;
+        hintEl.innerText = `Thêm ${formatCurrency(needed)} để được giảm 15k`;
+        hintEl.className = 'text-[11px] text-amber-700 font-semibold';
+      }
+    }
+  }
+
+  bindGlobalEvents() {
+    // Mở drawer giỏ hàng khi bấm vào nút nổi ở footer
+    document.getElementById('btn-open-cart-drawer')?.addEventListener('click', () => {
+      this.cartDrawer.open();
+    });
+    document.getElementById('btn-open-cart-info')?.addEventListener('click', () => {
+      this.cartDrawer.open();
+    });
+
+    // Tìm kiếm món ăn
+    const searchInput = document.getElementById('menu-search-input');
+    const clearBtn = document.getElementById('clear-search-btn');
+
+    searchInput?.addEventListener('input', (e) => {
+      const val = e.target.value;
+      if (val) {
+        clearBtn?.classList.remove('hidden');
+      } else {
+        clearBtn?.classList.add('hidden');
+      }
+      this.renderMenuSections(val);
+    });
+
+    clearBtn?.addEventListener('click', () => {
+      searchInput.value = '';
+      clearBtn.classList.add('hidden');
+      this.renderMenuSections('');
+    });
+  }
+}
+
+// Khởi chạy ứng dụng khi DOM sẵn sàng
+document.addEventListener('DOMContentLoaded', () => {
+  const app = new JollibeeApp();
+  app.init();
+});
