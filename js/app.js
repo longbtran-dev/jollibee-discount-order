@@ -2,18 +2,19 @@
  * Khởi tạo và điều phối giao diện ứng dụng chính
  */
 import { Cart } from './cart.js';
-import { ComboModal } from './components/combo-modal.js?v=1.2';
-import { CartDrawer } from './components/cart-drawer.js?v=1.2';
-import { ImageModal } from './components/image-modal.js?v=1.2';
+import { ComboModal } from './components/combo-modal.js';
+import { CartDrawer } from './components/cart-drawer.js';
+import { ImageModal } from './components/image-modal.js';
 import { formatCurrency } from './order-message.js';
-import { escapeHtml, formatDescriptionHtml } from './utils.js?v=1.2';
-import { IconSliders, IconClock, IconPlus, IconSearch, IconZoomIn } from './icons.js?v=1.2';
+import { escapeHtml, formatDescriptionHtml, debounce } from './utils.js';
+import { IconSliders, IconClock, IconPlus, IconSearch, IconZoomIn, IconCheck, IconRotateCcw } from './icons.js';
 import { flyToCart, bounceCartBadge, fireFreeshipMilestone } from './effects.js';
 
 class JollibeeApp {
   constructor() {
     this.config = window.JOLLIBEE_CONFIG || {};
     this.menuData = null;
+    this.productMap = new Map();
     this.cart = new Cart();
     this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
     this.lastOriginalTotal = 0;
@@ -97,6 +98,14 @@ class JollibeeApp {
       const response = await fetch('data/menu.json');
       if (!response.ok) throw new Error('Không thể tải file data/menu.json');
       this.menuData = await response.json();
+      
+      // Lập chỉ mục Map<string, Product> cho tra cứu tức thời O(1)
+      this.productMap = new Map();
+      this.menuData.categories.forEach(cat => {
+        cat.products.forEach(p => {
+          this.productMap.set(p.id, p);
+        });
+      });
     } catch (err) {
       console.error('Lỗi nạp thực đơn:', err);
       document.getElementById('menu-sections-container').innerHTML = `
@@ -119,7 +128,7 @@ class JollibeeApp {
 
       html += `
         <button type="button" 
-          class="category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 ${isFirst ? 'bg-[#d71920] text-white border-[#d71920] shadow-xs active-tab' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'}"
+          class="category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 ${isFirst ? 'bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'}"
           data-slug="${cat.slug}">
           <span>${cat.name}</span>
           <span class="text-[10px] opacity-80">(${cat.products.length})</span>
@@ -141,7 +150,7 @@ class JollibeeApp {
     this.activeCategorySlug = slug;
     document.querySelectorAll('.category-tab-btn').forEach(btn => {
       if (btn.dataset.slug === slug) {
-        btn.className = 'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 bg-[#d71920] text-white border-[#d71920] shadow-xs active-tab';
+        btn.className = 'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab';
         btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       } else {
         btn.className = 'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
@@ -150,7 +159,6 @@ class JollibeeApp {
   }
 
   scrollToCategory(slug) {
-    // Khóa scroll spy trong suốt quá trình cuộn mượt để chống lỗi nhảy tab trung gian
     this.isProgrammaticScrolling = true;
     this.updateActiveTab(slug);
 
@@ -174,7 +182,6 @@ class JollibeeApp {
     }
     this.scrollLockTimer = setTimeout(unlock, 900);
 
-    // Cuộn đến section chính xác dưới header cố định
     const targetSection = document.getElementById(`section-${slug}`);
     if (targetSection) {
       const headerEl = document.querySelector('header');
@@ -195,7 +202,6 @@ class JollibeeApp {
       this._scrollObserver.disconnect();
     }
 
-    // Khi người dùng tự cuộn bằng tay (vuốt màn hình hoặc lăn chuột), lập tức nhả khóa
     if (!this._userScrollListenerBound) {
       this._userScrollListenerBound = true;
       const handleUserScroll = () => {
@@ -215,7 +221,6 @@ class JollibeeApp {
     const headerHeight = headerEl ? headerEl.offsetHeight : 180;
 
     this._scrollObserver = new IntersectionObserver((entries) => {
-      // Nếu đang trong quá trình cuộn mượt do bấm tab, bỏ qua các vị trí trung gian
       if (this.isProgrammaticScrolling) return;
 
       const visible = entries.filter(e => e.isIntersecting);
@@ -262,65 +267,75 @@ class JollibeeApp {
           : `${IconPlus('w-3.5 h-3.5')}<span>Thêm Món</span>`;
         const buttonClass = isCombo
           ? 'bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 border border-amber-300'
-          : 'bg-[#d71920] hover:bg-[#b81218] text-white shadow-xs';
+          : 'bg-[#d71920] hover:bg-[#b81218] text-white shadow-sm';
 
         const originalPrice = product.price;
-        let discountedPrice;
-        let savingsBadge = '';
+        let priceDisplayHtml = '';
 
         if (originalPrice >= 100000) {
           const discount = Math.floor(originalPrice / 100000) * 15000;
-          discountedPrice = originalPrice - discount;
-          savingsBadge = `Tiết kiệm -${Math.round(discount / 1000)}k`;
+          const discountedPrice = originalPrice - discount;
+          priceDisplayHtml = `
+            <div class="mt-2 space-y-1">
+              <div class="flex items-center gap-1.5 text-xs text-gray-400">
+                <span class="text-[11px] font-medium text-gray-500 whitespace-nowrap">Giá gốc:</span>
+                <span class="line-through font-bold text-gray-500 whitespace-nowrap">${formatCurrency(originalPrice)}</span>
+              </div>
+              <div class="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+                <div class="flex items-baseline gap-1">
+                  <span class="text-xs font-extrabold text-[#d71920] whitespace-nowrap">Giá sau giảm:</span>
+                  <span class="text-base sm:text-lg font-black text-red-600 whitespace-nowrap">${formatCurrency(discountedPrice)}</span>
+                </div>
+                <span class="text-[10px] font-black text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md border border-green-200 whitespace-nowrap">
+                  Tiết kiệm -${Math.round(discount / 1000)}k
+                </span>
+              </div>
+            </div>
+          `;
         } else {
-          discountedPrice = Math.round((originalPrice * 0.85) / 1000) * 1000;
-          savingsBadge = `Gộp đơn -15%`;
+          priceDisplayHtml = `
+            <div class="mt-2 space-y-1">
+              <div class="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+                <div class="flex items-baseline gap-1">
+                  <span class="text-xs font-bold text-gray-700 whitespace-nowrap">Đơn giá:</span>
+                  <span class="text-base sm:text-lg font-black text-gray-900 whitespace-nowrap">${formatCurrency(originalPrice)}</span>
+                </div>
+                <span class="text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200 whitespace-nowrap">
+                  Gộp đơn ≥100k giảm 15%
+                </span>
+              </div>
+            </div>
+          `;
         }
 
         cardsHtml += `
-          <div class="product-card bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3 sm:p-4">
+          <div class="product-card bg-white rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3 sm:p-4">
             <div class="flex gap-2.5 sm:gap-3.5 items-start">
               <!-- Food Image with Fallback & Click to Zoom -->
               <button type="button" 
-                class="btn-preview-image text-left focus:outline-hidden relative w-20 h-20 sm:w-28 sm:h-28 rounded-xl bg-amber-50/50 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start cursor-zoom-in group active:scale-95 transition"
+                class="btn-preview-image text-left focus:outline-none relative w-20 h-20 sm:w-28 sm:h-28 rounded-xl bg-amber-50/50 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start cursor-zoom-in group active:scale-95 transition"
                 data-id="${product.id}"
                 title="Nhấn để xem ảnh to">
                 <img src="${product.image || 'images/placeholder.png'}" 
-                  alt="${product.name}" 
+                  alt="${escapeHtml(product.name)}" 
                   loading="lazy"
                   class="w-full h-full object-contain transform group-hover:scale-105 transition duration-200"
                   onerror="this.onerror=null; this.src='https://placehold.co/150x150/fffaf0/d71920?text=Jollibee'">
                 ${isCombo ? `
-                  <span class="absolute top-1 left-1 bg-[#d71920] text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-xs uppercase tracking-wide">
+                  <span class="absolute top-1 left-1 bg-[#d71920] text-white text-[9px] font-black px-1.5 py-0.5 rounded-md shadow-sm uppercase tracking-wide">
                     Combo
                   </span>
                 ` : ''}
-                <span class="absolute bottom-1 right-1 w-5 h-5 rounded-md bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-xs">
+                <span class="absolute bottom-1 right-1 w-5 h-5 rounded-md bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-sm">
                   ${IconZoomIn('w-3 h-3')}
                 </span>
               </button>
 
               <!-- Product Info -->
               <div class="flex-1 min-w-0">
-                <h4 class="font-extrabold text-sm sm:text-base text-gray-900 leading-snug break-words">${product.name}</h4>
+                <h4 class="font-extrabold text-sm sm:text-base text-gray-900 leading-snug break-words">${escapeHtml(product.name)}</h4>
                 ${formatDescriptionHtml(product.description)}
-                <div class="mt-2 space-y-1">
-                  <!-- Dòng Giá Gốc Jollibee để tiện so sánh -->
-                  <div class="flex items-center gap-1.5 text-xs text-gray-400">
-                    <span class="text-[11px] font-medium text-gray-500 whitespace-nowrap">Giá gốc Jollibee:</span>
-                    <span class="line-through font-bold text-gray-500 whitespace-nowrap">${formatCurrency(originalPrice)}</span>
-                  </div>
-                  <!-- Dòng Giá Đặt Hộ qua dịch vụ -->
-                  <div class="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
-                    <div class="flex items-baseline gap-1">
-                      <span class="text-xs font-extrabold text-[#d71920] whitespace-nowrap">Giá đặt hộ:</span>
-                      <span class="text-base sm:text-lg font-black text-red-600 whitespace-nowrap">${formatCurrency(discountedPrice)}</span>
-                    </div>
-                    <span class="text-[10px] font-black text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md border border-green-200 whitespace-nowrap">
-                      ${savingsBadge}
-                    </span>
-                  </div>
-                </div>
+                ${priceDisplayHtml}
               </div>
             </div>
 
@@ -345,7 +360,7 @@ class JollibeeApp {
           <div class="flex items-center justify-between pb-1.5 border-b-2 border-amber-200">
             <h3 class="font-black text-base sm:text-lg text-gray-900 uppercase tracking-tight flex items-center gap-2">
               <span class="w-3 h-3 rounded-full bg-[#d71920]"></span>
-              <span>${cat.name}</span>
+              <span>${escapeHtml(cat.name)}</span>
             </h3>
             <span class="text-xs font-bold text-gray-500">${matchedProducts.length} món</span>
           </div>
@@ -358,13 +373,13 @@ class JollibeeApp {
 
     if (totalMatchedProducts === 0) {
       container.innerHTML = `
-        <div class="text-center py-16 bg-white rounded-3xl border border-gray-200 shadow-xs">
+        <div class="text-center py-16 bg-white rounded-3xl border border-gray-200 shadow-sm">
           <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
             ${IconSearch('w-7 h-7')}
           </div>
           <p class="font-bold text-gray-700 text-base">Không tìm thấy món ăn nào phù hợp với từ khóa "${escapeHtml(filterKeyword)}"</p>
           <p class="text-xs text-gray-400 mt-1">Vui lòng thử tìm với từ khóa khác (ví dụ: gà, mì ý, burger, nước)</p>
-          <button type="button" id="btn-reset-search" class="mt-4 bg-[#ffc72c] font-bold text-xs px-4 py-2 rounded-xl text-gray-900 shadow-xs">
+          <button type="button" id="btn-reset-search" class="mt-4 bg-[#ffc72c] font-bold text-xs px-4 py-2 rounded-xl text-gray-900 shadow-sm">
             Xem Tất Cả Món Ăn
           </button>
         </div>
@@ -382,27 +397,16 @@ class JollibeeApp {
     container.querySelectorAll('.btn-preview-image').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const pid = e.currentTarget.dataset.id;
-        let product = null;
-        for (const cat of this.menuData.categories) {
-          product = cat.products.find(p => p.id === pid);
-          if (product) break;
-        }
+        const product = this.productMap.get(pid);
         if (!product) return;
 
         const isCombo = Boolean(product.is_combo);
         const originalPrice = product.price;
-        let discountedPrice;
-        if (originalPrice >= 100000) {
-          const discount = Math.floor(originalPrice / 100000) * 15000;
-          discountedPrice = originalPrice - discount;
-        } else {
-          discountedPrice = Math.round((originalPrice * 0.85) / 1000) * 1000;
-        }
 
         this.imageModal.open({
           title: product.name,
           image: product.image || 'images/placeholder.png',
-          price: discountedPrice,
+          price: originalPrice,
           originalPrice: originalPrice,
           isCombo: isCombo,
           onAction: () => {
@@ -425,15 +429,46 @@ class JollibeeApp {
     this.setupScrollSpy();
   }
 
+  showUndoToast(message, onUndo) {
+    if (typeof document === 'undefined') return;
+
+    const existing = document.getElementById('global-undo-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'global-undo-toast';
+    toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[100] bg-gray-950 text-white font-medium text-xs sm:text-sm px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl shadow-2xl flex items-center gap-3 border border-white/10 animate-in fade-in slide-in-from-top-4 duration-200';
+    toast.innerHTML = `
+      <span class="text-green-400 flex items-center flex-shrink-0">${IconCheck('w-4 h-4')}</span>
+      <span class="truncate max-w-[170px] sm:max-w-[260px]">${escapeHtml(message)}</span>
+      <button type="button" id="btn-toast-undo" class="ml-1 bg-amber-400 hover:bg-amber-300 text-gray-950 font-black text-xs px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl flex items-center gap-1 active:scale-95 transition shadow-sm flex-shrink-0">
+        ${IconRotateCcw('w-3.5 h-3.5')}
+        <span>Hoàn tác</span>
+      </button>
+    `;
+    document.body.appendChild(toast);
+
+    let isDismissed = false;
+    const dismiss = () => {
+      if (isDismissed) return;
+      isDismissed = true;
+      toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+      setTimeout(() => toast.remove(), 300);
+    };
+
+    const timer = setTimeout(dismiss, 4000);
+
+    toast.querySelector('#btn-toast-undo')?.addEventListener('click', () => {
+      clearTimeout(timer);
+      dismiss();
+      if (typeof onUndo === 'function') {
+        onUndo();
+      }
+    });
+  }
+
   handleProductClick(productId, isCombo, triggerEl = null) {
-    if (!this.menuData) return;
-    
-    // Tìm sản phẩm trong tất cả danh mục
-    let product = null;
-    for (const cat of this.menuData.categories) {
-      product = cat.products.find(p => p.id === productId);
-      if (product) break;
-    }
+    const product = this.productMap ? this.productMap.get(productId) : null;
     if (!product) return;
 
     if (isCombo) {
@@ -442,7 +477,16 @@ class JollibeeApp {
         this.cart.addItem(configuredProduct, selectedOptions, 1);
         this.updateFloatingCart();
         bounceCartBadge(document.getElementById('floating-cart-badge'));
-        this.cartDrawer.showToast(`Đã thêm "${product.name}" vào giỏ hàng!`);
+
+        // Nâng cấp UX #2: Toast kèm nút Hoàn tác
+        this.showUndoToast(`Đã thêm "${product.name}" vào giỏ!`, () => {
+          const undone = this.cart.undoLastAdd();
+          if (undone) {
+            this.updateFloatingCart();
+            bounceCartBadge(document.getElementById('floating-cart-badge'));
+            this.cartDrawer.showToast(`Đã hoàn tác: Bỏ "${undone.name}" khỏi giỏ`);
+          }
+        });
       });
     } else {
       // Thêm ngay món đơn
@@ -454,7 +498,16 @@ class JollibeeApp {
       } else {
         bounceCartBadge(badgeEl);
       }
-      this.cartDrawer.showToast(`Đã thêm "${product.name}" vào giỏ!`);
+
+      // Nâng cấp UX #2: Toast kèm nút Hoàn tác
+      this.showUndoToast(`Đã thêm "${product.name}" vào giỏ!`, () => {
+        const undone = this.cart.undoLastAdd();
+        if (undone) {
+          this.updateFloatingCart();
+          bounceCartBadge(document.getElementById('floating-cart-badge'));
+          this.cartDrawer.showToast(`Đã hoàn tác: Bỏ "${undone.name}" khỏi giỏ`);
+        }
+      });
     }
   }
 
@@ -529,9 +582,13 @@ class JollibeeApp {
       this.cartDrawer.open();
     });
 
-    // Tìm kiếm món ăn
+    // Tìm kiếm món ăn có Debounce 200ms
     const searchInput = document.getElementById('menu-search-input');
     const clearBtn = document.getElementById('clear-search-btn');
+
+    const debouncedSearch = debounce((val) => {
+      this.renderMenuSections(val);
+    }, 200);
 
     searchInput?.addEventListener('input', (e) => {
       const val = e.target.value;
@@ -540,7 +597,7 @@ class JollibeeApp {
       } else {
         clearBtn?.classList.add('hidden');
       }
-      this.renderMenuSections(val);
+      debouncedSearch(val);
     });
 
     clearBtn?.addEventListener('click', () => {
@@ -552,7 +609,9 @@ class JollibeeApp {
 }
 
 // Khởi chạy ứng dụng khi DOM sẵn sàng
-document.addEventListener('DOMContentLoaded', () => {
-  const app = new JollibeeApp();
-  app.init();
-});
+if (typeof document !== 'undefined') {
+  document.addEventListener('DOMContentLoaded', () => {
+    const app = new JollibeeApp();
+    app.init();
+  });
+}
