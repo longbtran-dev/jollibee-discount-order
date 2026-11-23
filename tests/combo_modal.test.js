@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { createComboState } from '../js/components/combo-modal.js';
+import { createComboState, ComboModal } from '../js/components/combo-modal.js';
+import { resetActiveModalCount } from '../js/utils.js';
 
 describe('Combo State Logic', () => {
   const mockProduct = {
@@ -114,5 +115,46 @@ describe('Combo State Logic', () => {
     // Khi khách chọn lại Pepsi lớn (up)
     state.selectOption('g_drinks', mockComboUpsell.option_groups[0].options[2]);
     assert.equal(state.getTotalPrice(), 50000);
+  });
+});
+
+describe('ComboModal Component', () => {
+  it('open() nạp HTML modal và đóng an toàn khi gọi close()', () => {
+    resetActiveModalCount();
+    const mockClassList = new Set();
+    const mockContainer = {
+      id: 'combo-modal-container',
+      innerHTML: '',
+      querySelectorAll: () => []
+    };
+
+    global.document = {
+      body: {
+        classList: {
+          add: (cls) => mockClassList.add(cls),
+          remove: (cls) => mockClassList.delete(cls),
+          contains: (cls) => mockClassList.has(cls)
+        }
+      },
+      getElementById: (id) => (id === 'combo-modal-container' ? mockContainer : null),
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+
+    const modal = new ComboModal();
+    modal.open({
+      id: 'c1',
+      name: 'Combo Gà',
+      price: 90000,
+      option_groups: []
+    });
+
+    assert.ok(mockContainer.innerHTML.includes('Combo Gà'));
+    assert.ok(mockContainer.innerHTML.includes('combo-modal-backdrop'));
+    assert.ok(mockClassList.has('overflow-hidden'));
+
+    modal.close();
+    assert.equal(mockContainer.innerHTML, '');
+    assert.equal(mockClassList.has('overflow-hidden'), false);
   });
 });

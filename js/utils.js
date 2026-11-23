@@ -79,6 +79,13 @@ export function getActiveModalCount() {
 }
 
 /**
+ * Reset bộ đếm modal (hỗ trợ kiểm thử cô lập)
+ */
+export function resetActiveModalCount() {
+  activeModalCount = 0;
+}
+
+/**
  * Sao chép văn bản vào bộ nhớ tạm với cơ chế Fallback tương thích unsecure HTTP
  * @param {string} text
  * @returns {Promise<boolean>}

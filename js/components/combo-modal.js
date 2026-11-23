@@ -2,9 +2,9 @@
  * Logic trạng thái và thành phần giao diện Modal tùy chỉnh Combo
  */
 
-import { formatCurrency } from '../order-message.js?v=1.2';
-import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '../icons.js?v=1.2';
-import { formatDescriptionHtml } from '../utils.js?v=1.2';
+import { formatCurrency } from '../order-message.js';
+import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '../icons.js';
+import { formatDescriptionHtml, escapeHtml, lockBodyScroll, unlockBodyScroll } from '../utils.js';
 
 /**
  * Khởi tạo bộ quản lý trạng thái chọn option cho Combo
@@ -67,6 +67,8 @@ export class ComboModal {
     this.currentProduct = null;
     this.state = null;
     this.onConfirmCallback = null;
+    this._escHandler = null;
+    this._isOpen = false;
   }
 
   getContainer() {
@@ -80,29 +82,35 @@ export class ComboModal {
   }
 
   open(product, onConfirm) {
+    if (this._isOpen) {
+      this.close();
+    }
     this.currentProduct = product;
     this.state = createComboState(product);
     this.onConfirmCallback = onConfirm;
+    this._isOpen = true;
+    lockBodyScroll();
     this.render();
   }
 
   close() {
+    if (!this._isOpen) return;
+    this._isOpen = false;
     const container = this.getContainer();
     container.innerHTML = '';
-    document.body.classList.remove('overflow-hidden');
+    unlockBodyScroll();
+    if (this._escHandler && typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this._escHandler);
+      this._escHandler = null;
+    }
   }
 
   render() {
     const container = this.getContainer();
-    document.body.classList.add('overflow-hidden');
 
     const product = this.currentProduct;
     const state = this.state;
     const currentPrice = state.getTotalPrice();
-    const discount = currentPrice >= 100000
-      ? Math.floor(currentPrice / 100000) * 15000
-      : Math.round((currentPrice * 0.15) / 1000) * 1000;
-    const discountedPrice = Math.max(0, currentPrice - discount);
 
     let groupsHtml = '';
     (product.option_groups || []).forEach((group, groupIdx) => {
@@ -121,7 +129,7 @@ export class ComboModal {
         const iconHtml = isNone
           ? `<div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 font-bold border border-gray-200 flex-shrink-0">${IconMinus('w-5 h-5')}</div>`
           : (opt.image
-              ? `<img src="${opt.image}" alt="${opt.name}" class="w-12 h-12 object-contain rounded bg-white p-1 border border-amber-100 flex-shrink-0" onerror="this.style.display='none'">`
+              ? `<img src="${escapeHtml(opt.image)}" alt="${escapeHtml(opt.name)}" class="w-12 h-12 object-contain rounded bg-white p-1 border border-amber-100 flex-shrink-0" onerror="this.style.display='none'">`
               : `<div class="w-12 h-12 rounded bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100 flex-shrink-0">${IconShoppingBag('w-6 h-6')}</div>`);
 
         optionsListHtml += `
@@ -129,17 +137,17 @@ export class ComboModal {
             <div class="flex items-center gap-3">
               ${iconHtml}
               <div class="flex flex-col">
-                <span class="text-sm sm:text-base text-gray-800 ${isNone ? 'font-semibold text-gray-700' : ''}">${opt.name}</span>
+                <span class="text-sm sm:text-base text-gray-800 ${isNone ? 'font-semibold text-gray-700' : ''}">${escapeHtml(opt.name)}</span>
                 ${isNone ? `<span class="text-[11px] text-gray-400">Không chọn thêm món phụ cho phần này</span>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
               ${extraLabel}
-              <input type="radio" name="opt_group_${group.group_id}" value="${opt.option_id}" 
+              <input type="radio" name="opt_group_${group.group_id}" value="${escapeHtml(opt.option_id)}" 
                 class="w-5 h-5 text-red-600 focus:ring-red-500 border-gray-300"
                 ${isChecked ? 'checked' : ''}
-                data-group-id="${group.group_id}"
-                data-option-id="${opt.option_id}">
+                data-group-id="${escapeHtml(group.group_id)}"
+                data-option-id="${escapeHtml(opt.option_id)}">
             </div>
           </label>
         `;
@@ -150,9 +158,9 @@ export class ComboModal {
           <button type="button" class="w-full bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 font-extrabold px-4 py-3 flex items-center justify-between text-left text-sm uppercase tracking-wide group-accordion-btn transition select-none" data-target="group-body-${group.group_id}">
             <div class="flex items-center gap-2 min-w-0 pr-2">
               <span class="w-2 h-2 rounded-full bg-red-600 flex-shrink-0"></span>
-              <span class="truncate">${group.group_name}</span>
+              <span class="truncate">${escapeHtml(group.group_name)}</span>
               <span class="text-[11px] font-bold text-gray-800 bg-white/80 px-2 py-0.5 rounded-full border border-amber-300 truncate max-w-[130px] sm:max-w-[180px] group-current-badge-${group.group_id}">
-                ${currentSelected ? currentSelected.name : ''}
+                ${currentSelected ? escapeHtml(currentSelected.name) : ''}
               </span>
             </div>
             <span class="transform transition-transform group-arrow ${isFirst ? 'rotate-180' : ''} flex items-center">${IconChevronDown('w-4 h-4')}</span>
@@ -165,20 +173,20 @@ export class ComboModal {
     });
 
     container.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs transition-opacity" id="combo-modal-backdrop">
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity" id="combo-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="combo-modal-title">
         <div class="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
           
           <!-- Modal Header -->
           <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white">
-            <h3 class="font-extrabold text-sm sm:text-lg line-clamp-1 pr-2">${product.name}</h3>
-            <button type="button" id="combo-modal-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0">${IconX('w-4 h-4')}</button>
+            <h3 id="combo-modal-title" class="font-extrabold text-sm sm:text-lg line-clamp-1 pr-2">${escapeHtml(product.name)}</h3>
+            <button type="button" id="combo-modal-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0" aria-label="Đóng">${IconX('w-4 h-4')}</button>
           </div>
 
           <!-- Product Summary -->
           <div class="p-3 sm:p-4 bg-amber-50/40 border-b border-amber-100 flex items-start gap-3">
             ${product.image ? `
-              <button type="button" id="combo-modal-image-preview-btn" class="cursor-zoom-in relative group flex-shrink-0 focus:outline-hidden" title="Nhấn để xem ảnh phóng to">
-                <img src="${product.image}" alt="${product.name}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-xs transform group-hover:scale-105 transition" onerror="this.style.display='none'">
+              <button type="button" id="combo-modal-image-preview-btn" class="cursor-zoom-in relative group flex-shrink-0 focus:outline-none" title="Nhấn để xem ảnh phóng to">
+                <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-sm transform group-hover:scale-105 transition" onerror="this.style.display='none'">
               </button>
             ` : ''}
             <div class="flex-1 min-w-0">
@@ -195,15 +203,16 @@ export class ComboModal {
           <!-- Modal Footer Sticky -->
           <div class="p-3 sm:p-4 bg-white border-t border-gray-100 shadow-lg flex items-center justify-between gap-3">
             <div class="flex-shrink-0">
-              <div class="text-[10px] sm:text-[11px] text-gray-400">
-                <span>Giá gốc Jollibee: </span>
-                <span id="combo-modal-orig-price" class="line-through font-bold text-gray-500">${formatCurrency(currentPrice)}</span>
+              <div class="text-[10px] sm:text-[11px] text-gray-500">
+                <span>Đơn giá combo:</span>
               </div>
               <div class="flex items-baseline gap-1 mt-0.5">
-                <span class="text-[11px] sm:text-xs font-bold text-red-600">Đặt hộ:</span>
                 <span class="text-base sm:text-xl font-black text-red-600" id="combo-modal-price">
-                  ${formatCurrency(discountedPrice)}
+                  ${formatCurrency(currentPrice)}
                 </span>
+              </div>
+              <div class="text-[10px] text-amber-700 font-bold" id="combo-modal-discount-note">
+                (Gộp đơn ≥100k giảm 15k/100k)
               </div>
             </div>
             <button type="button" id="combo-modal-confirm-btn" class="flex-1 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold py-3 px-4 sm:px-6 rounded-xl shadow-md active:scale-98 transition flex items-center justify-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
@@ -250,15 +259,9 @@ export class ComboModal {
             state.selectOption(groupId, opt);
             // Cập nhật giá hiển thị tức thì
             const price = state.getTotalPrice();
-            const disc = price >= 100000
-              ? Math.floor(price / 100000) * 15000
-              : Math.round((price * 0.15) / 1000) * 1000;
-            const finalEst = Math.max(0, price - disc);
 
-            const origEl = document.getElementById('combo-modal-orig-price');
-            if (origEl) origEl.innerText = formatCurrency(price);
             const priceEl = document.getElementById('combo-modal-price');
-            if (priceEl) priceEl.innerText = formatCurrency(finalEst);
+            if (priceEl) priceEl.innerText = formatCurrency(price);
             const topPriceEl = document.getElementById('combo-modal-top-price');
             if (topPriceEl) topPriceEl.innerText = formatCurrency(price);
 
@@ -295,11 +298,20 @@ export class ComboModal {
       }
     });
 
-    // Sự kiện đóng modal
-    document.getElementById('combo-modal-close-btn')?.addEventListener('click', () => this.close());
+    // Đóng modal an toàn
+    const handleClose = () => this.close();
+    document.getElementById('combo-modal-close-btn')?.addEventListener('click', handleClose);
     document.getElementById('combo-modal-backdrop')?.addEventListener('click', (e) => {
-      if (e.target.id === 'combo-modal-backdrop') this.close();
+      if (e.target.id === 'combo-modal-backdrop') handleClose();
     });
+
+    // Bắt phím Escape để đóng modal
+    if (!this._escHandler && typeof document !== 'undefined') {
+      this._escHandler = (e) => {
+        if (e.key === 'Escape') handleClose();
+      };
+      document.addEventListener('keydown', this._escHandler);
+    }
 
     // Sự kiện xác nhận thêm giỏ
     document.getElementById('combo-modal-confirm-btn')?.addEventListener('click', () => {

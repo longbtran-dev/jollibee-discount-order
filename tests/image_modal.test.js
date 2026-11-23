@@ -1,6 +1,7 @@
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import { ImageModal } from '../js/components/image-modal.js';
+import { resetActiveModalCount } from '../js/utils.js';
 
 describe('Image Modal Lightbox Component', () => {
   let mockBody;
@@ -8,6 +9,7 @@ describe('Image Modal Lightbox Component', () => {
   let eventListeners;
 
   beforeEach(() => {
+    resetActiveModalCount();
     eventListeners = {};
     mockBody = {
       classList: {
