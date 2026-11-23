@@ -27,6 +27,8 @@ class JollibeeApp {
       this.imageModal
     );
     this.activeCategorySlug = null;
+    this.isProgrammaticScrolling = false;
+    this.scrollLockTimer = null;
   }
 
   setOrderType(type, updateDrawer = true) {
@@ -148,7 +150,29 @@ class JollibeeApp {
   }
 
   scrollToCategory(slug) {
+    // Khóa scroll spy trong suốt quá trình cuộn mượt để chống lỗi nhảy tab trung gian
+    this.isProgrammaticScrolling = true;
     this.updateActiveTab(slug);
+
+    if (this.scrollLockTimer) {
+      clearTimeout(this.scrollLockTimer);
+    }
+
+    const unlock = () => {
+      this.isProgrammaticScrolling = false;
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('scrollend', unlock);
+      }
+      if (this.scrollLockTimer) {
+        clearTimeout(this.scrollLockTimer);
+        this.scrollLockTimer = null;
+      }
+    };
+
+    if (typeof window !== 'undefined' && 'onscrollend' in window) {
+      window.addEventListener('scrollend', unlock, { once: true });
+    }
+    this.scrollLockTimer = setTimeout(unlock, 900);
 
     // Cuộn đến section chính xác dưới header cố định
     const targetSection = document.getElementById(`section-${slug}`);
@@ -171,10 +195,29 @@ class JollibeeApp {
       this._scrollObserver.disconnect();
     }
 
+    // Khi người dùng tự cuộn bằng tay (vuốt màn hình hoặc lăn chuột), lập tức nhả khóa
+    if (!this._userScrollListenerBound) {
+      this._userScrollListenerBound = true;
+      const handleUserScroll = () => {
+        if (this.isProgrammaticScrolling) {
+          this.isProgrammaticScrolling = false;
+          if (this.scrollLockTimer) {
+            clearTimeout(this.scrollLockTimer);
+            this.scrollLockTimer = null;
+          }
+        }
+      };
+      window.addEventListener('wheel', handleUserScroll, { passive: true });
+      window.addEventListener('touchstart', handleUserScroll, { passive: true });
+    }
+
     const headerEl = document.querySelector('header');
     const headerHeight = headerEl ? headerEl.offsetHeight : 180;
 
     this._scrollObserver = new IntersectionObserver((entries) => {
+      // Nếu đang trong quá trình cuộn mượt do bấm tab, bỏ qua các vị trí trung gian
+      if (this.isProgrammaticScrolling) return;
+
       const visible = entries.filter(e => e.isIntersecting);
       if (visible.length > 0) {
         visible.sort((a, b) => Math.abs(a.boundingClientRect.top - headerHeight) - Math.abs(b.boundingClientRect.top - headerHeight));
