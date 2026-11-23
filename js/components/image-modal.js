@@ -44,8 +44,8 @@ export class ImageModal {
     const hasPrice = price !== undefined && price !== null;
 
     container.innerHTML = `
-      <div id="image-modal-backdrop" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-in fade-in duration-200" role="dialog" aria-modal="true" aria-labelledby="image-modal-title">
-        <div class="relative max-w-sm sm:max-w-md w-full bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 border border-gray-100">
+      <div id="image-modal-backdrop" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 animate-backdrop" role="dialog" aria-modal="true" aria-labelledby="image-modal-title">
+        <div class="relative max-w-sm sm:max-w-md w-full bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-modal-panel transform-gpu will-change-transform border border-gray-100">
           
           <!-- Nút đóng góc phải -->
           <button type="button" id="image-modal-close-btn" class="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition shadow-md active:scale-90" aria-label="Đóng" title="Đóng">

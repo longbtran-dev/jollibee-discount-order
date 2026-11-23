@@ -173,8 +173,8 @@ export class ComboModal {
     });
 
     container.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity" id="combo-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="combo-modal-title">
-        <div class="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 animate-backdrop" id="combo-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="combo-modal-title">
+        <div class="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-modal-panel transform-gpu will-change-transform">
           
           <!-- Modal Header -->
           <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white">

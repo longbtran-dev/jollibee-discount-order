@@ -176,4 +176,11 @@ describe('Cart & Order Message Formatter', () => {
     assert.equal(cart.getItems().length, 1);
     assert.equal(cart.getItems()[0].name, 'Gà Giòn');
   });
+
+  it('CartDrawer khởi tạo với debounced save và container chuẩn', () => {
+    const cart = new Cart();
+    const drawer = new CartDrawer(cart, {});
+    assert.equal(typeof drawer._debouncedSaveStorage, 'function');
+    assert.equal(drawer.orderType, 'delivery');
+  });
 });

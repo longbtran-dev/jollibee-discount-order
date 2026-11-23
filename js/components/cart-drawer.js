@@ -2,7 +2,7 @@
  * Thành phần Drawer / Modal Giỏ Hàng & Chốt Đơn
  */
 import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js';
-import { copyToClipboard, escapeHtml, isValidVietnamesePhone, lockBodyScroll, unlockBodyScroll } from '../utils.js';
+import { copyToClipboard, escapeHtml, isValidVietnamesePhone, lockBodyScroll, unlockBodyScroll, debounce } from '../utils.js';
 import { fireOrderCelebration } from '../effects.js';
 import {
   IconShoppingBag,
@@ -42,6 +42,10 @@ export class CartDrawer {
       address: '',
       note: ''
     };
+
+    this._debouncedSaveStorage = debounce(() => {
+      this._saveCustomerInfoToStorage();
+    }, 250);
 
     this._loadCustomerInfoFromStorage();
   }
@@ -321,8 +325,8 @@ export class CartDrawer {
     }
 
     container.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-0 bg-black/60 backdrop-blur-sm transition-opacity" id="cart-drawer-backdrop" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
-        <div class="relative w-full sm:max-w-md h-[94vh] sm:h-full bg-white rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-right duration-200">
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-0 bg-black/60 animate-backdrop" id="cart-drawer-backdrop" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
+        <div class="relative w-full sm:max-w-md h-[94vh] sm:h-full bg-white rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl overflow-hidden animate-drawer-panel transform-gpu will-change-transform">
           
           <!-- Drawer Header -->
           <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white">
@@ -560,13 +564,13 @@ export class CartDrawer {
   _bindEvents() {
     const container = this.getContainer();
 
-    // Lắng nghe sự kiện input thời gian thực để không bao giờ mất thông tin khi đóng mở
+    // Lắng nghe sự kiện input thời gian thực (lưu debounce vào storage tránh nghẽn I/O)
     const bindLiveInput = (id, key) => {
       const el = document.getElementById(id);
       if (!el) return;
       el.addEventListener('input', (e) => {
         this.customerInfo[key] = e.target.value;
-        this._saveCustomerInfoToStorage();
+        this._debouncedSaveStorage();
       });
     };
     bindLiveInput('customer-name', 'name');
