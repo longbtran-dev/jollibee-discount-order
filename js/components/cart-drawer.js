@@ -2,7 +2,7 @@
  * Thành phần Drawer / Modal Giỏ Hàng & Chốt Đơn
  */
 import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js?v=1.2';
-import { copyToClipboard } from '../utils.js?v=1.2';
+import { copyToClipboard, escapeHtml, isValidVietnamesePhone, lockBodyScroll, unlockBodyScroll } from '../utils.js?v=1.2';
 import { fireOrderCelebration } from '../effects.js?v=1.2';
 import {
   IconShoppingBag,
@@ -24,6 +24,8 @@ import {
   IconMessenger
 } from '../icons.js?v=1.2';
 
+export const CUSTOMER_STORAGE_KEY = 'jb_customer_info';
+
 export class CartDrawer {
   constructor(cart, config = {}, onCartChanged = null, onOrderTypeChanged = null, imageModal = null) {
     this.cart = cart;
@@ -33,12 +35,39 @@ export class CartDrawer {
     this.imageModal = imageModal;
     this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
     this.containerId = 'cart-drawer-container';
+    this._escHandler = null;
     this.customerInfo = {
       name: '',
       phone: '',
       address: '',
       note: ''
     };
+
+    this._loadCustomerInfoFromStorage();
+  }
+
+  _loadCustomerInfoFromStorage() {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const data = localStorage.getItem(CUSTOMER_STORAGE_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed && typeof parsed === 'object') {
+          this.customerInfo = { ...this.customerInfo, ...parsed };
+        }
+      }
+    } catch (e) {
+      console.warn('Không thể đọc thông tin khách hàng từ localStorage:', e);
+    }
+  }
+
+  _saveCustomerInfoToStorage() {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(CUSTOMER_STORAGE_KEY, JSON.stringify(this.customerInfo));
+    } catch (e) {
+      console.warn('Không thể lưu thông tin khách hàng vào localStorage:', e);
+    }
   }
 
   setOrderType(type) {
@@ -60,19 +89,26 @@ export class CartDrawer {
   }
 
   open() {
+    lockBodyScroll();
     this.render();
   }
 
   close() {
+    this._saveFormInputs();
+    unlockBodyScroll();
+    if (this._escHandler && typeof document !== 'undefined') {
+      document.removeEventListener('keydown', this._escHandler);
+      this._escHandler = null;
+    }
     const container = this.getContainer();
     container.innerHTML = '';
-    document.body.classList.remove('overflow-hidden');
   }
 
   showToast(message) {
+    if (typeof document === 'undefined') return;
     const toast = document.createElement('div');
     toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[100] bg-gray-900 text-white font-medium text-sm px-5 py-3 rounded-xl shadow-xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-200';
-    toast.innerHTML = `<span class="text-green-400">${IconCheck('w-4 h-4')}</span><span>${message}</span>`;
+    toast.innerHTML = `<span class="text-green-400">${IconCheck('w-4 h-4')}</span><span>${escapeHtml(message)}</span>`;
     document.body.appendChild(toast);
     setTimeout(() => {
       toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
@@ -84,7 +120,9 @@ export class CartDrawer {
     const pricing = this.cart.getTotals(this.orderType, this.config);
     if (pricing.originalTotal < 100000) {
       const needed = 100000 - pricing.originalTotal;
-      alert(`Đơn hàng của bạn hiện tại là ${formatCurrency(pricing.originalTotal)}.\n\nShop chỉ nhận đặt hộ với đơn hàng từ 100.000đ trở lên (cứ mỗi 100k giảm 15k).\nVui lòng chọn thêm ${formatCurrency(needed)} để đủ điều kiện gửi đơn nhé!`);
+      const msg = `Đơn hàng của bạn hiện tại là ${formatCurrency(pricing.originalTotal)}.\n\nShop chỉ nhận đặt hộ với đơn hàng từ 100.000đ trở lên (cứ mỗi 100k giảm 15k).\nVui lòng chọn thêm ${formatCurrency(needed)} để đủ điều kiện gửi đơn nhé!`;
+      if (typeof alert === 'function') alert(msg);
+      this.showToast(`Đơn cần tối thiểu 100.000đ (cần thêm ${formatCurrency(needed)})`);
       return false;
     }
 
@@ -93,19 +131,25 @@ export class CartDrawer {
       return true;
     }
     if (!this.customerInfo.name || !this.customerInfo.name.trim()) {
-      alert('Vui lòng nhập Họ và Tên của bạn để shop dễ xưng hô!');
-      document.getElementById('customer-name')?.focus();
+      const msg = 'Vui lòng nhập Họ và Tên của bạn để shop dễ xưng hô!';
+      if (typeof alert === 'function') alert(msg);
+      this.showToast(msg);
+      if (typeof document !== 'undefined') document.getElementById('customer-name')?.focus();
       return false;
     }
-    if (!this.customerInfo.phone || !this.customerInfo.phone.trim()) {
-      alert('Vui lòng nhập Số điện thoại nhận hàng!');
-      document.getElementById('customer-phone')?.focus();
+    if (!this.customerInfo.phone || !isValidVietnamesePhone(this.customerInfo.phone)) {
+      const msg = 'Số điện thoại nhận hàng không hợp lệ (cần 10 chữ số, VD: 0912345678)!';
+      if (typeof alert === 'function') alert(msg);
+      this.showToast(msg);
+      if (typeof document !== 'undefined') document.getElementById('customer-phone')?.focus();
       return false;
     }
     if (this.orderType === 'delivery') {
       if (!this.customerInfo.address || !this.customerInfo.address.trim()) {
-        alert('Vui lòng nhập Địa chỉ giao hàng chi tiết!');
-        document.getElementById('customer-address')?.focus();
+        const msg = 'Vui lòng nhập Địa chỉ giao hàng chi tiết!';
+        if (typeof alert === 'function') alert(msg);
+        this.showToast(msg);
+        if (typeof document !== 'undefined') document.getElementById('customer-address')?.focus();
         return false;
       }
     }
@@ -114,7 +158,9 @@ export class CartDrawer {
 
   render() {
     const container = this.getContainer();
-    document.body.classList.add('overflow-hidden');
+    // Ghi nhớ vị trí cuộn hiện tại của danh sách món
+    const existingScrollEl = container.querySelector('.drawer-scroll-body');
+    const prevScrollTop = existingScrollEl ? existingScrollEl.scrollTop : 0;
 
     const items = this.cart.getItems();
     const pricing = this.cart.getTotals(this.orderType, this.config);
@@ -156,22 +202,24 @@ export class CartDrawer {
     } else {
       items.forEach(item => {
         const itemTotal = item.unitPrice * item.quantity;
+        const escapedItemName = escapeHtml(item.name);
+        const escapedCartItemId = escapeHtml(item.cartItemId);
 
-        // Xây dựng danh sách chi tiết các món/tùy chọn xuống hàng rõ ràng
+        // Xây dựng danh sách chi tiết các món/tùy chọn xuống hàng an toàn XSS
         let optionsDetailsHtml = '';
         if (item.selectedOptions && item.selectedOptions.length > 0) {
           const listItems = item.selectedOptions.map(opt => `
             <li class="flex items-center gap-1.5 text-xs text-gray-700 font-medium leading-snug">
               <span class="text-[#d71920] font-bold text-[10px] flex-shrink-0">•</span>
               <div class="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
-                <span class="break-words">${opt.option_name || opt.name}</span>
+                <span class="break-words">${escapeHtml(opt.option_name || opt.name)}</span>
                 ${opt.extra_price > 0 ? `<span class="inline-flex items-center text-red-600 font-extrabold text-[10px] bg-red-100/90 px-1.5 py-0.5 rounded-md leading-none flex-shrink-0">(+${formatCurrency(opt.extra_price)})</span>` : ''}
               </div>
             </li>
           `).join('');
 
           optionsDetailsHtml = `
-            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-2xs">
+            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-sm">
               <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
                 <span>Chi tiết món đã chọn:</span>
@@ -186,12 +234,12 @@ export class CartDrawer {
           const listItems = parts.map(part => `
             <li class="flex items-center gap-1.5 text-xs text-gray-700 font-medium leading-snug">
               <span class="text-[#d71920] font-bold text-[10px] flex-shrink-0">•</span>
-              <span class="break-words flex-1 min-w-0">${part}</span>
+              <span class="break-words flex-1 min-w-0">${escapeHtml(part)}</span>
             </li>
           `).join('');
 
           optionsDetailsHtml = `
-            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-2xs">
+            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-sm">
               <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
                 <span>Tùy chọn:</span>
@@ -206,12 +254,12 @@ export class CartDrawer {
           const listItems = parts.map(part => `
             <li class="flex items-center gap-1.5 text-xs text-gray-700 font-medium leading-snug">
               <span class="text-[#d71920] font-bold text-[10px] flex-shrink-0">•</span>
-              <span class="break-words flex-1 min-w-0">${part}</span>
+              <span class="break-words flex-1 min-w-0">${escapeHtml(part)}</span>
             </li>
           `).join('');
 
           optionsDetailsHtml = `
-            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-2xs">
+            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-sm">
               <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
                 <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
                 <span>Combo bao gồm:</span>
@@ -227,20 +275,20 @@ export class CartDrawer {
           <div class="py-3 border-b border-gray-100 last:border-b-0 flex gap-2.5 sm:gap-3 items-start">
             <!-- Thumbnail món ăn -->
             ${item.image ? `
-              <button type="button" class="btn-cart-img-preview cursor-zoom-in relative group w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-50/60 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start mt-0.5 focus:outline-hidden active:scale-95 transition" 
-                data-img="${item.image}" 
-                data-name="${item.name}" 
+              <button type="button" class="btn-cart-img-preview cursor-zoom-in relative group w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-50/60 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start mt-0.5 focus:outline-none active:scale-95 transition" 
+                data-img="${escapeHtml(item.image)}" 
+                data-name="${escapedItemName}" 
                 data-price="${item.unitPrice}" 
                 title="Nhấn để xem ảnh phóng to">
-                <img src="${item.image}" alt="${item.name}" class="w-full h-full object-contain transform group-hover:scale-105 transition" onerror="this.style.display='none'">
+                <img src="${escapeHtml(item.image)}" alt="${escapedItemName}" class="w-full h-full object-contain transform group-hover:scale-105 transition" onerror="this.style.display='none'">
               </button>
             ` : ''}
 
             <!-- Nội dung chính -->
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between gap-2">
-                <h4 class="font-extrabold text-sm text-gray-900 leading-snug break-words">${item.name}</h4>
-                <button type="button" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 btn-cart-remove flex-shrink-0 transition" data-id="${item.cartItemId}" title="Xóa món">
+                <h4 class="font-extrabold text-sm text-gray-900 leading-snug break-words">${escapedItemName}</h4>
+                <button type="button" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 btn-cart-remove flex-shrink-0 transition" data-id="${escapedCartItemId}" title="Xóa món">
                   ${IconTrash('w-3.5 h-3.5')}
                 </button>
               </div>
@@ -256,12 +304,12 @@ export class CartDrawer {
                   ${item.quantity > 1 ? `<span class="text-xs text-gray-500 font-medium whitespace-nowrap">x ${item.quantity} = <b class="text-red-700">${formatCurrency(itemTotal)}</b></span>` : ''}
                 </div>
 
-                <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 shadow-2xs flex-shrink-0">
-                  <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-minus" data-id="${item.cartItemId}">
+                <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 shadow-sm flex-shrink-0">
+                  <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-minus" data-id="${escapedCartItemId}" aria-label="Giảm số lượng">
                     ${IconMinus('w-3 h-3')}
                   </button>
                   <span class="w-7 text-center text-xs font-bold text-gray-800">${item.quantity}</span>
-                  <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-plus" data-id="${item.cartItemId}">
+                  <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-plus" data-id="${escapedCartItemId}" aria-label="Tăng số lượng">
                     ${IconPlus('w-3 h-3')}
                   </button>
                 </div>
@@ -273,35 +321,35 @@ export class CartDrawer {
     }
 
     container.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-0 bg-black/60 backdrop-blur-xs transition-opacity" id="cart-drawer-backdrop">
+      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-0 bg-black/60 backdrop-blur-sm transition-opacity" id="cart-drawer-backdrop" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
         <div class="relative w-full sm:max-w-md h-[94vh] sm:h-full bg-white rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-right duration-200">
           
           <!-- Drawer Header -->
           <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white">
             <div class="flex items-center gap-2 min-w-0 pr-2">
               <span class="flex-shrink-0">${IconShoppingBag('w-5 h-5')}</span>
-              <h3 class="font-extrabold text-base sm:text-lg truncate">Giỏ Hàng & Báo Giá</h3>
+              <h3 id="cart-drawer-title" class="font-extrabold text-base sm:text-lg truncate">Giỏ Hàng & Báo Giá</h3>
             </div>
-            <button type="button" id="cart-drawer-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0">${IconX('w-4 h-4')}</button>
+            <button type="button" id="cart-drawer-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0" aria-label="Đóng giỏ hàng">${IconX('w-4 h-4')}</button>
           </div>
 
           <!-- Drawer Body Scrollable -->
-          <div class="flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain">
+          <div class="drawer-scroll-body flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain">
             
             <!-- Type Selector: Delivery vs Dine-in -->
             <div class="bg-gray-100 p-1 rounded-xl flex items-center gap-1 border border-gray-200">
-              <button type="button" id="btn-type-delivery" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'delivery' ? 'bg-[#d71920] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">
+              <button type="button" id="btn-type-delivery" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'delivery' ? 'bg-[#d71920] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}">
                 ${IconBike('w-4 h-4')}
                 <span>Giao Tận Nơi</span>
               </button>
-              <button type="button" id="btn-type-dinein" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'dinein' ? 'bg-[#ffc72c] text-gray-900 shadow-xs' : 'text-gray-600 hover:text-gray-900'}">
+              <button type="button" id="btn-type-dinein" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'dinein' ? 'bg-[#ffc72c] text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}">
                 ${IconUtensils('w-4 h-4')}
                 <span>Ăn Tại Quán / Tới Lấy</span>
               </button>
             </div>
 
             <!-- Items List -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-xs">
+            <div class="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-sm">
               <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-1">
                 <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Món đã chọn (${this.cart.getTotalItemCount()})</span>
                 ${items.length > 0 ? `<button type="button" id="btn-clear-cart" class="text-xs text-red-500 hover:underline">Xóa tất cả</button>` : ''}
@@ -312,30 +360,34 @@ export class CartDrawer {
             ${items.length > 0 ? `
               <!-- Customer Info Form / Dine-in Notice -->
               ${this.orderType === 'delivery' ? `
-                <div class="bg-amber-50/40 rounded-2xl border border-amber-200/80 p-3.5 shadow-xs space-y-3">
+                <div class="bg-amber-50/40 rounded-2xl border border-amber-200/80 p-3.5 shadow-sm space-y-3">
                   <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                     <span class="text-amber-700">${IconFileText('w-4 h-4')}</span>
                     <span>Thông Tin Giao Hàng</span>
                   </div>
                   <div>
-                    <input type="text" id="customer-name" value="${this.customerInfo.name}" placeholder="Họ và tên của bạn *" 
-                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
+                    <label for="customer-name" class="block text-[11px] font-bold text-gray-700 mb-1">Họ và tên của bạn *</label>
+                    <input type="text" id="customer-name" value="${escapeHtml(this.customerInfo.name)}" placeholder="VD: Nguyễn Văn A *" autocomplete="name"
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
                   </div>
                   <div>
-                    <input type="tel" id="customer-phone" value="${this.customerInfo.phone}" placeholder="Số điện thoại nhận hàng *" 
-                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
+                    <label for="customer-phone" class="block text-[11px] font-bold text-gray-700 mb-1">Số điện thoại nhận hàng *</label>
+                    <input type="tel" id="customer-phone" value="${escapeHtml(this.customerInfo.phone)}" placeholder="VD: 0912345678 *" autocomplete="tel"
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
                   </div>
                   <div>
-                    <input type="text" id="customer-address" value="${this.customerInfo.address}" placeholder="Địa chỉ giao hàng (Số nhà, đường, phường, quận/huyện) *" 
-                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
+                    <label for="customer-address" class="block text-[11px] font-bold text-gray-700 mb-1">Địa chỉ giao hàng chi tiết *</label>
+                    <input type="text" id="customer-address" value="${escapeHtml(this.customerInfo.address)}" placeholder="Số nhà, ngõ/đường, phường, quận/huyện *" autocomplete="street-address"
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
                   </div>
                   <div>
-                    <input type="text" id="customer-note" value="${this.customerInfo.note}" placeholder="Ghi chú cho shipper (nếu có)..." 
-                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
+                    <label for="customer-note" class="block text-[11px] font-bold text-gray-700 mb-1">Ghi chú cho shipper (nếu có)</label>
+                    <input type="text" id="customer-note" value="${escapeHtml(this.customerInfo.note)}" placeholder="Ví dụ: Gọi trước khi giao, gửi bảo vệ..." 
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
                   </div>
                 </div>
               ` : `
-                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 shadow-xs flex items-center gap-3">
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 shadow-sm flex items-center gap-3">
                   <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
                     ${IconUtensils('w-5 h-5')}
                   </div>
@@ -347,7 +399,7 @@ export class CartDrawer {
               `}
 
               <!-- Price Breakdown Card -->
-              <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-2.5">
+              <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-2.5">
                 <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-gray-100">
                   <span class="flex items-center gap-1.5">
                     <span class="text-gray-600">${IconReceipt('w-4 h-4')}</span>
@@ -378,7 +430,7 @@ export class CartDrawer {
                 ${this.orderType === 'delivery' ? `
                   <div class="pt-1">
                     ${remainingToFreeship > 0 ? `
-                      <div class="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 shadow-2xs">
+                      <div class="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 shadow-sm">
                         <div class="flex items-center justify-between">
                           <span class="flex items-center gap-1.5 font-medium">
                             <span class="text-amber-600 flex items-center">${IconBike('w-3.5 h-3.5')}</span>
@@ -392,7 +444,7 @@ export class CartDrawer {
                         </div>
                       </div>
                     ` : `
-                      <div class="p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 shadow-2xs">
+                      <div class="p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 shadow-sm">
                         <div class="flex items-center gap-1.5 font-bold">
                           <span class="text-green-600 flex items-center">${IconCheckCircle('w-3.5 h-3.5')}</span>
                           <span>Đã đủ điều kiện <b>Miễn Phí Giao Hàng</b> (Đơn từ 200k tiền gốc)!</span>
@@ -420,7 +472,7 @@ export class CartDrawer {
 
               <!-- Min Order Notice for < 100k (Báo lỗi trực tiếp) vs Qualified Notice -->
               ${pricing.originalTotal < 100000 ? `
-                <div class="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-950 flex items-start gap-3 shadow-xs">
+                <div class="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-950 flex items-start gap-3 shadow-sm">
                   <div class="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 mt-0.5">
                     ${IconAlertTriangle('w-4 h-4')}
                   </div>
@@ -439,7 +491,7 @@ export class CartDrawer {
                   </div>
                 </div>
               ` : `
-                <div class="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center justify-between shadow-xs">
+                <div class="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center justify-between shadow-sm">
                   <span class="flex items-center gap-1.5 font-bold">
                     <span class="text-green-600">${IconCheckCircle('w-4 h-4')}</span>
                     <span>Đơn hàng đã đủ điều kiện đặt hộ và áp dụng giảm giá (-${formatCurrency(pricing.discountAmount)})!</span>
@@ -454,7 +506,7 @@ export class CartDrawer {
           ${items.length > 0 ? `
             <div class="p-4 bg-white border-t border-gray-200 shadow-xl space-y-2">
               ${pricing.originalTotal < 100000 ? `
-                <div class="p-2.5 bg-red-50 border border-red-200 rounded-xl text-center text-xs text-red-700 font-extrabold flex items-center justify-center gap-1.5 shadow-2xs">
+                <div class="p-2.5 bg-red-50 border border-red-200 rounded-xl text-center text-xs text-red-700 font-extrabold flex items-center justify-center gap-1.5 shadow-sm">
                   ${IconAlertTriangle('w-4 h-4 text-red-600')}
                   <span>Đơn chưa đạt tối thiểu 100.000đ để đặt hộ</span>
                 </div>
@@ -480,6 +532,12 @@ export class CartDrawer {
       </div>
     `;
 
+    // Khôi phục lại đúng vị trí cuộn trước khi re-render
+    const newScrollEl = container.querySelector('.drawer-scroll-body');
+    if (newScrollEl && prevScrollTop > 0) {
+      newScrollEl.scrollTop = prevScrollTop;
+    }
+
     this._bindEvents();
   }
 
@@ -495,16 +553,44 @@ export class CartDrawer {
 
     const noteEl = document.getElementById('customer-note');
     if (noteEl) this.customerInfo.note = noteEl.value;
+
+    this._saveCustomerInfoToStorage();
   }
 
   _bindEvents() {
     const container = this.getContainer();
 
-    // Đóng drawer
-    document.getElementById('cart-drawer-close-btn')?.addEventListener('click', () => this.close());
+    // Lắng nghe sự kiện input thời gian thực để không bao giờ mất thông tin khi đóng mở
+    const bindLiveInput = (id, key) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', (e) => {
+        this.customerInfo[key] = e.target.value;
+        this._saveCustomerInfoToStorage();
+      });
+    };
+    bindLiveInput('customer-name', 'name');
+    bindLiveInput('customer-phone', 'phone');
+    bindLiveInput('customer-address', 'address');
+    bindLiveInput('customer-note', 'note');
+
+    // Đóng drawer an toàn
+    const handleClose = () => {
+      this._saveFormInputs();
+      this.close();
+    };
+    document.getElementById('cart-drawer-close-btn')?.addEventListener('click', handleClose);
     document.getElementById('cart-drawer-backdrop')?.addEventListener('click', (e) => {
-      if (e.target.id === 'cart-drawer-backdrop') this.close();
+      if (e.target.id === 'cart-drawer-backdrop') handleClose();
     });
+
+    // Bắt phím Escape để đóng giỏ hàng
+    if (!this._escHandler && typeof document !== 'undefined') {
+      this._escHandler = (e) => {
+        if (e.key === 'Escape') handleClose();
+      };
+      document.addEventListener('keydown', this._escHandler);
+    }
 
     // Chuyển hình thức giao hàng vs ăn tại quán
     document.getElementById('btn-type-delivery')?.addEventListener('click', () => {
@@ -565,15 +651,16 @@ export class CartDrawer {
     });
 
     document.getElementById('btn-clear-cart')?.addEventListener('click', () => {
-      if (confirm('Bạn có chắc muốn xóa toàn bộ món trong giỏ hàng?')) {
+      const confirmed = typeof confirm === 'function' ? confirm('Bạn có chắc muốn xóa toàn bộ món trong giỏ hàng?') : true;
+      if (confirmed) {
         this.cart.clear();
         if (this.onCartChanged) this.onCartChanged();
         this.render();
       }
     });
 
-    // Xử lý gửi đơn qua Zalo
-    document.getElementById('btn-send-zalo')?.addEventListener('click', async () => {
+    // Xử lý gửi đơn qua Zalo (khắc phục hoàn toàn lỗi Popup Blocker trên iOS Safari)
+    document.getElementById('btn-send-zalo')?.addEventListener('click', () => {
       this._saveFormInputs();
       if (!this.validateForm()) return;
 
@@ -581,18 +668,23 @@ export class CartDrawer {
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
-      
-      // Tự động sao chép trước (có fallback HTTP)
-      await copyToClipboard(orderText);
-
       const zaloTarget = this.config.zaloLink || this.config.zaloPhone || '';
       const url = generateZaloUrl(zaloTarget, orderText);
-      window.open(url, '_blank');
-      this.showToast('Đang mở Zalo & đã sao chép đơn vào bộ nhớ tạm!');
+
+      // 1. Sao chép vào bộ nhớ tạm không chặn luồng
+      copyToClipboard(orderText).catch(err => console.warn('Clipboard copy warning:', err));
+      this.showToast('Đang chuyển hướng sang Zalo & đã sao chép đơn!');
+
+      // 2. Điều hướng trực tiếp tương thích 100% mobile WebKit / Safari
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.location.href = url;
+        }
+      }, 100);
     });
 
-    // Xử lý gửi qua Messenger
-    document.getElementById('btn-send-messenger')?.addEventListener('click', async () => {
+    // Xử lý gửi qua Messenger (khắc phục lỗi Safari Popup Blocker)
+    document.getElementById('btn-send-messenger')?.addEventListener('click', () => {
       this._saveFormInputs();
       if (!this.validateForm()) return;
 
@@ -600,13 +692,17 @@ export class CartDrawer {
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
-
-      await copyToClipboard(orderText);
-
       const messengerTarget = this.config.facebookMessengerUrl || 'https://m.me/';
       const url = generateMessengerUrl(messengerTarget, orderText);
-      window.open(url, '_blank');
-      this.showToast('Đang mở Messenger & đã sao chép đơn vào bộ nhớ tạm!');
+
+      copyToClipboard(orderText).catch(err => console.warn('Clipboard copy warning:', err));
+      this.showToast('Đang chuyển hướng sang Messenger & đã sao chép đơn!');
+
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          window.location.href = url;
+        }
+      }, 100);
     });
 
     // Sao chép nội dung đơn hàng
@@ -622,7 +718,7 @@ export class CartDrawer {
       const success = await copyToClipboard(orderText);
       if (success) {
         this.showToast('Đã sao chép nội dung đơn hàng! Bạn có thể dán vào khung chat Zalo/FB.');
-      } else {
+      } else if (typeof prompt === 'function') {
         prompt('Vui lòng sao chép toàn bộ nội dung đơn dưới đây:', orderText);
       }
     });

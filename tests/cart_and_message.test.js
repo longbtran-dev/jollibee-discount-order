@@ -117,6 +117,32 @@ describe('Cart & Order Message Formatter', () => {
     assert.equal(alertMsg, '');
   });
 
+  it('validateForm từ chối khi số điện thoại giao hàng không đúng định dạng', () => {
+    let toastOrAlertMsg = '';
+    global.alert = (msg) => { toastOrAlertMsg = msg; };
+    const cart = new Cart();
+    cart.addItem({ id: 'c1', name: 'Combo 105k', price: 105000 });
+    const drawer = new CartDrawer(cart, {});
+    drawer.showToast = (msg) => { toastOrAlertMsg = msg; };
+    drawer.customerInfo = { name: 'Nguyễn Văn A', phone: '12345', address: '123 Cầu Giấy' };
+    const isValid = drawer.validateForm();
+    assert.equal(isValid, false);
+    assert.ok(toastOrAlertMsg.includes('Số điện thoại'));
+  });
+
+  it('validateForm chấp nhận khi số điện thoại và địa chỉ giao hàng hợp lệ', () => {
+    let toastOrAlertMsg = '';
+    global.alert = (msg) => { toastOrAlertMsg = msg; };
+    const cart = new Cart();
+    cart.addItem({ id: 'c1', name: 'Combo 105k', price: 105000 });
+    const drawer = new CartDrawer(cart, {});
+    drawer.showToast = (msg) => { toastOrAlertMsg = msg; };
+    drawer.customerInfo = { name: 'Nguyễn Văn A', phone: '0987654321', address: '123 Cầu Giấy' };
+    const isValid = drawer.validateForm();
+    assert.equal(isValid, true);
+    assert.equal(toastOrAlertMsg, '');
+  });
+
   it('tự động lưu giỏ hàng vào localStorage và khôi phục khi khởi tạo', () => {
     const storageMap = new Map();
     global.localStorage = {
