@@ -4,6 +4,7 @@
 
 import { formatCurrency } from '../order-message.js';
 import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '../icons.js';
+import { formatDescriptionHtml } from '../utils.js';
 
 /**
  * Khởi tạo bộ quản lý trạng thái chọn option cho Combo
@@ -167,40 +168,40 @@ export class ComboModal {
         <div class="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200">
           
           <!-- Modal Header -->
-          <div class="flex items-center justify-between p-4 bg-[#d71920] text-white">
-            <h3 class="font-extrabold text-base sm:text-lg line-clamp-1">${product.name}</h3>
-            <button type="button" id="combo-modal-close-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition">${IconX('w-4 h-4')}</button>
+          <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white">
+            <h3 class="font-extrabold text-sm sm:text-lg line-clamp-1 pr-2">${product.name}</h3>
+            <button type="button" id="combo-modal-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0">${IconX('w-4 h-4')}</button>
           </div>
 
           <!-- Product Summary -->
-          <div class="p-4 bg-amber-50/40 border-b border-amber-100 flex items-center gap-3">
-            ${product.image ? `<img src="${product.image}" alt="${product.name}" class="w-16 h-16 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-xs flex-shrink-0" onerror="this.style.display='none'">` : ''}
-            <div>
-              <p class="text-xs text-gray-500 line-clamp-2">${product.description || 'Tùy chọn từng món ăn và nước ngọt theo sở thích của bạn'}</p>
-              <p class="text-xs text-red-600 font-semibold mt-1">Giá combo: <span id="combo-modal-top-price">${formatCurrency(currentPrice)}</span></p>
+          <div class="p-3 sm:p-4 bg-amber-50/40 border-b border-amber-100 flex items-start gap-3">
+            ${product.image ? `<img src="${product.image}" alt="${product.name}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-xs flex-shrink-0" onerror="this.style.display='none'">` : ''}
+            <div class="flex-1 min-w-0">
+              <div class="text-xs text-red-600 font-semibold mb-0.5">Giá combo: <span id="combo-modal-top-price" class="font-bold">${formatCurrency(currentPrice)}</span></div>
+              ${formatDescriptionHtml(product.description)}
             </div>
           </div>
 
           <!-- Options Scroll Area -->
-          <div class="p-4 overflow-y-auto flex-1 overscroll-contain">
+          <div class="p-3 sm:p-4 overflow-y-auto flex-1 overscroll-contain">
             ${groupsHtml}
           </div>
 
           <!-- Modal Footer Sticky -->
-          <div class="p-4 bg-white border-t border-gray-100 shadow-lg flex items-center justify-between gap-4">
-            <div>
-              <div class="text-[11px] text-gray-400">
+          <div class="p-3 sm:p-4 bg-white border-t border-gray-100 shadow-lg flex items-center justify-between gap-3">
+            <div class="flex-shrink-0">
+              <div class="text-[10px] sm:text-[11px] text-gray-400">
                 <span>Giá gốc Jollibee: </span>
                 <span id="combo-modal-orig-price" class="line-through font-bold text-gray-500">${formatCurrency(currentPrice)}</span>
               </div>
               <div class="flex items-baseline gap-1 mt-0.5">
-                <span class="text-xs font-bold text-red-600">Đặt hộ:</span>
-                <span class="text-lg sm:text-xl font-black text-red-600" id="combo-modal-price">
+                <span class="text-[11px] sm:text-xs font-bold text-red-600">Đặt hộ:</span>
+                <span class="text-base sm:text-xl font-black text-red-600" id="combo-modal-price">
                   ${formatCurrency(discountedPrice)}
                 </span>
               </div>
             </div>
-            <button type="button" id="combo-modal-confirm-btn" class="flex-1 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold py-3.5 px-6 rounded-xl shadow-md active:scale-98 transition flex items-center justify-center gap-2">
+            <button type="button" id="combo-modal-confirm-btn" class="flex-1 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold py-3 px-4 sm:px-6 rounded-xl shadow-md active:scale-98 transition flex items-center justify-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
               ${IconPlus('w-4 h-4')}
               <span>Thêm Vào Giỏ</span>
             </button>

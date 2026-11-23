@@ -5,7 +5,7 @@ import { Cart } from './cart.js';
 import { ComboModal } from './components/combo-modal.js';
 import { CartDrawer } from './components/cart-drawer.js';
 import { formatCurrency } from './order-message.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, formatDescriptionHtml } from './utils.js';
 import { IconSliders, IconClock, IconPlus, IconSearch } from './icons.js';
 import { flyToCart, bounceCartBadge, fireFreeshipMilestone } from './effects.js';
 
@@ -199,10 +199,10 @@ class JollibeeApp {
         }
 
         cardsHtml += `
-          <div class="product-card bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3.5 sm:p-4">
-            <div class="flex gap-3">
+          <div class="product-card bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3 sm:p-4">
+            <div class="flex gap-2.5 sm:gap-3.5 items-start">
               <!-- Food Image with Fallback -->
-              <div class="relative w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-amber-50/50 p-1.5 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center">
+              <div class="relative w-20 h-20 sm:w-28 sm:h-28 rounded-xl bg-amber-50/50 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start">
                 <img src="${product.image || 'images/placeholder.png'}" 
                   alt="${product.name}" 
                   loading="lazy"
@@ -217,21 +217,21 @@ class JollibeeApp {
 
               <!-- Product Info -->
               <div class="flex-1 min-w-0">
-                <h4 class="font-extrabold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2">${product.name}</h4>
-                <p class="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">${product.description || 'Hương vị giòn rụm thơm ngon đặc trưng của Jollibee'}</p>
+                <h4 class="font-extrabold text-sm sm:text-base text-gray-900 leading-snug break-words">${product.name}</h4>
+                ${formatDescriptionHtml(product.description)}
                 <div class="mt-2 space-y-1">
                   <!-- Dòng Giá Gốc Jollibee để tiện so sánh -->
                   <div class="flex items-center gap-1.5 text-xs text-gray-400">
-                    <span class="text-[11px] font-medium text-gray-500">Giá gốc Jollibee:</span>
-                    <span class="line-through font-bold text-gray-500">${formatCurrency(originalPrice)}</span>
+                    <span class="text-[11px] font-medium text-gray-500 whitespace-nowrap">Giá gốc Jollibee:</span>
+                    <span class="line-through font-bold text-gray-500 whitespace-nowrap">${formatCurrency(originalPrice)}</span>
                   </div>
                   <!-- Dòng Giá Đặt Hộ qua dịch vụ -->
-                  <div class="flex items-baseline gap-2 flex-wrap">
+                  <div class="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
                     <div class="flex items-baseline gap-1">
-                      <span class="text-xs font-extrabold text-[#d71920]">Giá đặt hộ:</span>
-                      <span class="text-base sm:text-lg font-black text-red-600">${formatCurrency(discountedPrice)}</span>
+                      <span class="text-xs font-extrabold text-[#d71920] whitespace-nowrap">Giá đặt hộ:</span>
+                      <span class="text-base sm:text-lg font-black text-red-600 whitespace-nowrap">${formatCurrency(discountedPrice)}</span>
                     </div>
-                    <span class="text-[10px] font-black text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md border border-green-200">
+                    <span class="text-[10px] font-black text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md border border-green-200 whitespace-nowrap">
                       ${savingsBadge}
                     </span>
                   </div>
@@ -240,12 +240,12 @@ class JollibeeApp {
             </div>
 
             <!-- Action Button -->
-            <div class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between">
-              <span class="text-[11px] text-gray-500 font-medium flex items-center gap-1.5">
-                ${isCombo ? `${IconSliders('w-3.5 h-3.5 text-amber-500')} Đổi vị, upsize theo ý` : `${IconClock('w-3.5 h-3.5 text-green-600')} Chuẩn bị nhanh`}
+            <div class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2">
+              <span class="text-[11px] text-gray-500 font-medium flex items-center gap-1 truncate min-w-0">
+                ${isCombo ? `${IconSliders('w-3.5 h-3.5 text-amber-500 flex-shrink-0')} <span class="truncate">Đổi vị, upsize</span>` : `${IconClock('w-3.5 h-3.5 text-green-600 flex-shrink-0')} <span class="truncate">Chuẩn bị nhanh</span>`}
               </span>
               <button type="button" 
-                class="btn-select-product ${buttonClass} font-extrabold text-xs sm:text-sm py-2 px-3.5 rounded-xl active:scale-95 transition flex items-center gap-1.5"
+                class="btn-select-product ${buttonClass} font-extrabold text-xs sm:text-sm py-2 px-3 sm:px-3.5 rounded-xl active:scale-95 transition flex items-center gap-1.5 whitespace-nowrap flex-shrink-0 ml-auto"
                 data-id="${product.id}"
                 data-is-combo="${isCombo}">
                 ${buttonContent}

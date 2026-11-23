@@ -55,3 +55,40 @@ export async function copyToClipboard(text) {
     return false;
   }
 }
+
+/**
+ * Định dạng mô tả món ăn / combo: nếu có chứa dấu "+" thì tự động tách thành danh sách từng món xuống dòng rõ ràng
+ * @param {string} description
+ * @returns {string} Chuỗi HTML hiển thị
+ */
+export function formatDescriptionHtml(description) {
+  if (!description) {
+    return `<p class="text-xs text-gray-500 mt-1 leading-relaxed">Hương vị giòn rụm thơm ngon đặc trưng của Jollibee</p>`;
+  }
+
+  if (description.includes('+')) {
+    const parts = description.split('+').map(s => s.trim()).filter(Boolean);
+    if (parts.length > 1) {
+      const itemsHtml = parts.map(part => `
+        <li class="flex items-start gap-1.5 text-xs text-gray-800 font-semibold leading-snug">
+          <span class="text-[#d71920] font-black text-xs leading-none mt-0.5">•</span>
+          <span class="break-words">${escapeHtml(part)}</span>
+        </li>
+      `).join('');
+
+      return `
+        <div class="mt-1.5 p-2 sm:p-2.5 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-2xs">
+          <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
+            <span>Combo bao gồm:</span>
+          </div>
+          <ul class="space-y-1">
+            ${itemsHtml}
+          </ul>
+        </div>
+      `;
+    }
+  }
+
+  return `<p class="text-xs text-gray-500 mt-1 leading-relaxed">${escapeHtml(description)}</p>`;
+}

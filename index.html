@@ -35,9 +35,20 @@
   </script>
 
   <style>
+    /* Chống tràn ngang trên mọi thiết bị di động */
+    html, body {
+      overflow-x: hidden;
+      width: 100%;
+      max-width: 100vw;
+      box-sizing: border-box;
+    }
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+
     /* Ẩn thanh cuộn nhưng vẫn cuộn được cho tabs */
     .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
     body { font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
 
     /* Hiệu ứng nảy giỏ hàng mượt mà 60fps */
@@ -153,23 +164,23 @@
     </div>
 
     <!-- Top Order Type Switcher (Khách chọn trước khi vào giỏ hàng) -->
-    <div class="max-w-4xl mx-auto px-4 pb-3">
+    <div class="max-w-4xl mx-auto px-2.5 sm:px-4 pb-3">
       <div class="bg-black/25 p-1 rounded-xl flex items-center gap-1 backdrop-blur-xs border border-white/10 shadow-inner">
         <button type="button" id="top-btn-delivery" 
-          class="flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition bg-white text-gray-900 shadow-sm active:scale-98">
-          <span id="top-icon-delivery" class="text-[#d71920] flex items-center">
+          class="flex-1 py-2 px-2 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-2 transition bg-white text-gray-900 shadow-sm active:scale-98">
+          <span id="top-icon-delivery" class="text-[#d71920] flex items-center flex-shrink-0">
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M5 14h5l3-6h4l1 3"/><path d="M14 17.5h-5.5"/><path d="M18 10h3"/><path d="M2 9h4"/></svg>
           </span>
-          <span>Giao Tận Nơi</span>
-          <span class="text-[10px] bg-red-100 text-[#d71920] px-1.5 py-0.5 rounded-full font-extrabold hidden xs:inline sm:inline">Freeship ≥200k</span>
+          <span class="whitespace-nowrap">Giao Tận Nơi</span>
+          <span class="text-[9px] sm:text-[10px] bg-red-100 text-[#d71920] px-1.5 py-0.5 rounded-full font-extrabold whitespace-nowrap">≥200k Freeship</span>
         </button>
         <button type="button" id="top-btn-dinein" 
-          class="flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition text-white hover:bg-white/10 active:scale-98">
-          <span id="top-icon-dinein" class="text-amber-200 flex items-center">
+          class="flex-1 py-2 px-2 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1 sm:gap-2 transition text-white hover:bg-white/10 active:scale-98">
+          <span id="top-icon-dinein" class="text-amber-200 flex items-center flex-shrink-0">
             <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/><path d="M15 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V2"/><path d="M15 11v9"/><path d="M6 2v18"/></svg>
           </span>
-          <span>Ăn Tại Quán</span>
-          <span class="text-[10px] bg-amber-400/30 text-amber-100 px-1.5 py-0.5 rounded-full font-extrabold hidden xs:inline sm:inline">Không cần địa chỉ</span>
+          <span class="whitespace-nowrap">Ăn Tại Quán</span>
+          <span class="text-[9px] sm:text-[10px] bg-amber-400/30 text-amber-100 px-1.5 py-0.5 rounded-full font-extrabold whitespace-nowrap">0đ ship</span>
         </button>
       </div>
     </div>
@@ -218,38 +229,39 @@
   </main>
 
   <!-- Floating Bottom Cart Bar (Sticky Footer) -->
-  <div id="floating-cart-bar" class="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.12)] p-3">
-    <div class="max-w-4xl mx-auto flex items-center justify-between gap-3">
+  <div id="floating-cart-bar" class="fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.12)] p-2.5 sm:p-3">
+    <div class="max-w-4xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
       
       <!-- Cart Info Preview -->
-      <button type="button" id="btn-open-cart-info" class="flex items-center gap-3 text-left focus:outline-hidden">
-        <div class="relative flex items-center justify-center w-12 h-12 rounded-2xl bg-[#ffc72c] text-gray-900 font-extrabold shadow-sm active:scale-95 transition">
-          <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
-          <span id="floating-cart-badge" class="absolute -top-1.5 -right-1.5 bg-[#d71920] text-white text-[11px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+      <button type="button" id="btn-open-cart-info" class="flex items-center gap-2 sm:gap-3 text-left focus:outline-hidden min-w-0 flex-1">
+        <div class="relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#ffc72c] text-gray-900 font-extrabold shadow-sm active:scale-95 transition flex-shrink-0">
+          <svg class="w-5 h-5 sm:w-6 sm:h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <span id="floating-cart-badge" class="absolute -top-1.5 -right-1.5 bg-[#d71920] text-white text-[10px] sm:text-[11px] font-black w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
             0
           </span>
         </div>
-        <div>
-          <div class="flex items-baseline gap-2 flex-wrap">
-            <div id="floating-cart-original-wrapper" class="hidden text-xs text-gray-400">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-baseline gap-1.5 flex-wrap leading-tight">
+            <div id="floating-cart-original-wrapper" class="hidden text-[10px] sm:text-xs text-gray-400 whitespace-nowrap">
               <span>Gốc:</span>
               <span id="floating-cart-original-price" class="line-through font-bold text-gray-500">0 đ</span>
             </div>
-            <div class="flex items-baseline gap-1">
-              <span class="text-xs text-gray-600 font-bold">Thực trả:</span>
-              <span id="floating-cart-final-price" class="text-base sm:text-lg font-black text-red-600">0 đ</span>
+            <div class="flex items-baseline gap-1 whitespace-nowrap">
+              <span class="text-[10px] sm:text-xs text-gray-600 font-bold">Thực trả:</span>
+              <span id="floating-cart-final-price" class="text-sm sm:text-lg font-black text-red-600">0 đ</span>
             </div>
           </div>
-          <div id="floating-cart-discount-hint" class="text-[11px] text-green-600 font-bold">
+          <div id="floating-cart-discount-hint" class="text-[10px] sm:text-[11px] text-green-600 font-bold truncate">
             (Chưa chọn món)
           </div>
         </div>
       </button>
 
       <!-- View Cart Button -->
-      <button type="button" id="btn-open-cart-drawer" class="bg-[#d71920] hover:bg-[#b81218] active:scale-98 text-white font-extrabold text-xs sm:text-sm py-3 px-5 sm:px-6 rounded-xl shadow-md flex items-center gap-2 transition flex-shrink-0">
-        <span>Xem Giỏ & Báo Giá</span>
-        <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+      <button type="button" id="btn-open-cart-drawer" class="bg-[#d71920] hover:bg-[#b81218] active:scale-98 text-white font-extrabold text-xs sm:text-sm py-2.5 sm:py-3 px-3.5 sm:px-6 rounded-xl shadow-md flex items-center gap-1.5 sm:gap-2 transition flex-shrink-0 whitespace-nowrap">
+        <span>Xem Giỏ</span>
+        <span class="hidden xs:inline sm:inline">& Báo Giá</span>
+        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </button>
 
     </div>

@@ -183,12 +183,12 @@ export class CartDrawer {
         <div class="relative w-full sm:max-w-md h-[94vh] sm:h-full bg-white rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-right duration-200">
           
           <!-- Drawer Header -->
-          <div class="flex items-center justify-between p-4 bg-[#d71920] text-white">
-            <div class="flex items-center gap-2">
-              ${IconShoppingBag('w-5 h-5')}
-              <h3 class="font-extrabold text-lg">Giỏ Hàng & Báo Giá</h3>
+          <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white">
+            <div class="flex items-center gap-2 min-w-0 pr-2">
+              <span class="flex-shrink-0">${IconShoppingBag('w-5 h-5')}</span>
+              <h3 class="font-extrabold text-base sm:text-lg truncate">Giỏ Hàng & Báo Giá</h3>
             </div>
-            <button type="button" id="cart-drawer-close-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition">${IconX('w-4 h-4')}</button>
+            <button type="button" id="cart-drawer-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0">${IconX('w-4 h-4')}</button>
           </div>
 
           <!-- Drawer Body Scrollable -->
@@ -366,18 +366,18 @@ export class CartDrawer {
                 </div>
               ` : ''}
               <div class="grid grid-cols-2 gap-2">
-                <button type="button" id="btn-send-zalo" class="w-full ${pricing.originalTotal < 100000 ? 'bg-blue-400 opacity-80' : 'bg-[#0068ff] hover:bg-[#0058d8]'} text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-98 transition text-xs sm:text-sm">
-                  ${IconZalo('w-5 h-5')}
-                  <span>Gửi Qua Zalo</span>
+                <button type="button" id="btn-send-zalo" class="w-full ${pricing.originalTotal < 100000 ? 'bg-blue-400 opacity-80' : 'bg-[#0068ff] hover:bg-[#0058d8]'} text-white font-extrabold py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 active:scale-98 transition text-xs sm:text-sm whitespace-nowrap truncate">
+                  ${IconZalo('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
+                  <span class="truncate">Gửi Qua Zalo</span>
                 </button>
-                <button type="button" id="btn-send-messenger" class="w-full ${pricing.originalTotal < 100000 ? 'bg-sky-400 opacity-80' : 'bg-[#0084ff] hover:bg-[#0074e0]'} text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-98 transition text-xs sm:text-sm">
-                  ${IconMessenger('w-5 h-5')}
-                  <span>Gửi Messenger</span>
+                <button type="button" id="btn-send-messenger" class="w-full ${pricing.originalTotal < 100000 ? 'bg-sky-400 opacity-80' : 'bg-[#0084ff] hover:bg-[#0074e0]'} text-white font-extrabold py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 active:scale-98 transition text-xs sm:text-sm whitespace-nowrap truncate">
+                  ${IconMessenger('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
+                  <span class="truncate">Gửi Messenger</span>
                 </button>
               </div>
-              <button type="button" id="btn-copy-order" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition text-xs">
-                ${IconCopy('w-4 h-4')}
-                <span>Sao Chép Nội Dung Đơn Hàng</span>
+              <button type="button" id="btn-copy-order" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition text-xs whitespace-nowrap truncate">
+                ${IconCopy('w-4 h-4 flex-shrink-0')}
+                <span class="truncate">Sao Chép Nội Dung Đơn Hàng</span>
               </button>
             </div>
           ` : ''}
