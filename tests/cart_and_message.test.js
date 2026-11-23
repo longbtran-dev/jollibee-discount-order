@@ -183,4 +183,79 @@ describe('Cart & Order Message Formatter', () => {
     assert.equal(typeof drawer._debouncedSaveStorage, 'function');
     assert.equal(drawer.orderType, 'delivery');
   });
+
+  it('CartDrawer render lần đầu tạo modal shell và re-render giữ nguyên panel tránh chớp trắng', () => {
+    let innerHtml = '';
+    const mockInner = {
+      innerHTML: '',
+      querySelectorAll: () => []
+    };
+    const mockPanel = {
+      id: 'cart-drawer-panel',
+      classList: {
+        remove: () => {}
+      },
+      addEventListener: () => {},
+      querySelector: (selector) => {
+        if (selector === '#cart-drawer-inner') return mockInner;
+        return null;
+      }
+    };
+    let currentPanelInDOM = null;
+    const mockContainer = {
+      id: 'cart-drawer-container',
+      get innerHTML() { return innerHtml; },
+      set innerHTML(val) {
+        innerHtml = val;
+        if (val.includes('cart-drawer-panel')) {
+          currentPanelInDOM = mockPanel;
+        } else {
+          currentPanelInDOM = null;
+        }
+      },
+      querySelector: (selector) => {
+        if (selector === '#cart-drawer-panel') return currentPanelInDOM;
+        if (selector === '.drawer-scroll-body') return null;
+        return null;
+      },
+      querySelectorAll: () => []
+    };
+
+    global.document = {
+      body: {
+        classList: { add: () => {}, remove: () => {} },
+        appendChild: () => {}
+      },
+      getElementById: (id) => (id === 'cart-drawer-container' ? mockContainer : null),
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+
+    if (global.localStorage && typeof global.localStorage.clear === 'function') {
+      global.localStorage.clear();
+    }
+    const cart = new Cart();
+    cart.addItem({ id: 'p1', name: 'Gà Giòn', price: 35000 });
+    const drawer = new CartDrawer(cart, {});
+
+    // Lần 1: Render lần đầu khi mở giỏ -> Container tạo shell modal
+    drawer.render();
+    assert.ok(mockContainer.innerHTML.includes('cart-drawer-backdrop'));
+    assert.ok(mockContainer.innerHTML.includes('cart-drawer-panel'));
+    assert.equal(currentPanelInDOM, mockPanel);
+
+    // Lần 2: Giả lập tăng số lượng -> render() lần 2
+    // mockContainer.innerHTML không bị gán lại (giữ nguyên modal shell)
+    const initialHtml = mockContainer.innerHTML;
+    cart.updateQuantity(cart.getItems()[0].cartItemId, 1);
+    drawer.render();
+
+    // mockContainer.innerHTML không bị ghi đè, mà mockInner.innerHTML được cập nhật
+    assert.equal(mockContainer.innerHTML, initialHtml);
+    assert.ok(mockInner.innerHTML.includes('x 2'));
+
+    // Đóng drawer dọn dẹp sạch sẽ
+    drawer.close();
+    assert.equal(mockContainer.innerHTML, '');
+  });
 });

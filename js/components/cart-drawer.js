@@ -324,217 +324,244 @@ export class CartDrawer {
       });
     }
 
-    container.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-0 bg-black/60 animate-backdrop" id="cart-drawer-backdrop" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
-        <div class="relative w-full sm:max-w-md h-[94vh] sm:h-full bg-white rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl overflow-hidden animate-drawer-panel transform-gpu will-change-transform">
-          
-          <!-- Drawer Header -->
-          <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white">
-            <div class="flex items-center gap-2 min-w-0 pr-2">
-              <span class="flex-shrink-0">${IconShoppingBag('w-5 h-5')}</span>
-              <h3 id="cart-drawer-title" class="font-extrabold text-base sm:text-lg truncate">Giỏ Hàng & Báo Giá</h3>
-            </div>
-            <button type="button" id="cart-drawer-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0" aria-label="Đóng giỏ hàng">${IconX('w-4 h-4')}</button>
+    const innerContentHtml = `
+      <!-- Drawer Body Scrollable -->
+      <div class="drawer-scroll-body flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain">
+        
+        <!-- Type Selector: Delivery vs Dine-in -->
+        <div class="bg-gray-100 p-1 rounded-xl flex items-center gap-1 border border-gray-200">
+          <button type="button" id="btn-type-delivery" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'delivery' ? 'bg-[#d71920] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}">
+            ${IconBike('w-4 h-4')}
+            <span>Giao Tận Nơi</span>
+          </button>
+          <button type="button" id="btn-type-dinein" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'dinein' ? 'bg-[#ffc72c] text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}">
+            ${IconUtensils('w-4 h-4')}
+            <span>Ăn Tại Quán / Tới Lấy</span>
+          </button>
+        </div>
+
+        <!-- Items List -->
+        <div class="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-sm">
+          <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-1">
+            <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Món đã chọn (${this.cart.getTotalItemCount()})</span>
+            ${items.length > 0 ? `<button type="button" id="btn-clear-cart" class="text-xs text-red-500 hover:underline">Xóa tất cả</button>` : ''}
           </div>
+          <div>${itemsListHtml}</div>
+        </div>
 
-          <!-- Drawer Body Scrollable -->
-          <div class="drawer-scroll-body flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain">
-            
-            <!-- Type Selector: Delivery vs Dine-in -->
-            <div class="bg-gray-100 p-1 rounded-xl flex items-center gap-1 border border-gray-200">
-              <button type="button" id="btn-type-delivery" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'delivery' ? 'bg-[#d71920] text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'}">
-                ${IconBike('w-4 h-4')}
-                <span>Giao Tận Nơi</span>
-              </button>
-              <button type="button" id="btn-type-dinein" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'dinein' ? 'bg-[#ffc72c] text-gray-900 shadow-sm' : 'text-gray-600 hover:text-gray-900'}">
-                ${IconUtensils('w-4 h-4')}
-                <span>Ăn Tại Quán / Tới Lấy</span>
-              </button>
-            </div>
-
-            <!-- Items List -->
-            <div class="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-sm">
-              <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-1">
-                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider">Món đã chọn (${this.cart.getTotalItemCount()})</span>
-                ${items.length > 0 ? `<button type="button" id="btn-clear-cart" class="text-xs text-red-500 hover:underline">Xóa tất cả</button>` : ''}
+        ${items.length > 0 ? `
+          <!-- Customer Info Form / Dine-in Notice -->
+          ${this.orderType === 'delivery' ? `
+            <div class="bg-amber-50/40 rounded-2xl border border-amber-200/80 p-3.5 shadow-sm space-y-3">
+              <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                <span class="text-amber-700">${IconFileText('w-4 h-4')}</span>
+                <span>Thông Tin Giao Hàng</span>
               </div>
-              <div>${itemsListHtml}</div>
+              <div>
+                <label for="customer-name" class="block text-[11px] font-bold text-gray-700 mb-1">Họ và tên của bạn *</label>
+                <input type="text" id="customer-name" value="${escapeHtml(this.customerInfo.name)}" placeholder="VD: Nguyễn Văn A *" autocomplete="name"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+              </div>
+              <div>
+                <label for="customer-phone" class="block text-[11px] font-bold text-gray-700 mb-1">Số điện thoại nhận hàng *</label>
+                <input type="tel" id="customer-phone" value="${escapeHtml(this.customerInfo.phone)}" placeholder="VD: 0912345678 *" autocomplete="tel"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+              </div>
+              <div>
+                <label for="customer-address" class="block text-[11px] font-bold text-gray-700 mb-1">Địa chỉ giao hàng chi tiết *</label>
+                <input type="text" id="customer-address" value="${escapeHtml(this.customerInfo.address)}" placeholder="Số nhà, ngõ/đường, phường, quận/huyện *" autocomplete="street-address"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+              </div>
+              <div>
+                <label for="customer-note" class="block text-[11px] font-bold text-gray-700 mb-1">Ghi chú cho shipper (nếu có)</label>
+                <input type="text" id="customer-note" value="${escapeHtml(this.customerInfo.note)}" placeholder="Ví dụ: Gọi trước khi giao, gửi bảo vệ..." 
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
+              </div>
+            </div>
+          ` : `
+            <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 shadow-sm flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                ${IconUtensils('w-5 h-5')}
+              </div>
+              <div class="text-xs text-amber-950">
+                <span class="font-black block text-sm">Ăn Tại Quán: Không cần thông tin khách hàng</span>
+                <span class="text-gray-600 mt-0.5 block leading-relaxed">Bạn chỉ cần gửi danh sách món ăn đã chọn, shop sẽ hỗ trợ bạn đặt ngay tại quán!</span>
+              </div>
+            </div>
+          `}
+
+          <!-- Price Breakdown Card -->
+          <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-2.5">
+            <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-gray-100">
+              <span class="flex items-center gap-1.5">
+                <span class="text-gray-600">${IconReceipt('w-4 h-4')}</span>
+                <span>Bảng So Sánh Giá</span>
+              </span>
+              ${pricing.discountAmount > 0 ? `
+                <span class="text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-black text-[10px] border border-green-200">
+                  Tiết kiệm ${formatCurrency(pricing.discountAmount)}
+                </span>
+              ` : ''}
+            </div>
+            <div class="flex justify-between text-sm text-gray-600">
+              <span>Giá gốc tại quán Jollibee:</span>
+              <span class="font-bold text-gray-800 line-through">${formatCurrency(pricing.originalTotal)}</span>
+            </div>
+            <div class="flex justify-between text-sm text-green-600">
+              <span>Chiết khấu đặt hộ (-15k/100k):</span>
+              <span class="font-extrabold">-${formatCurrency(pricing.discountAmount)}</span>
+            </div>
+            <div class="flex justify-between text-sm text-gray-600">
+              <span>Phí giao hàng:</span>
+              <span class="font-bold ${pricing.shippingFee === 0 ? 'text-green-600' : 'text-gray-800'}">
+                ${pricing.shippingFee === 0 ? 'Miễn phí (0đ)' : formatCurrency(pricing.shippingFee)}
+              </span>
             </div>
 
-            ${items.length > 0 ? `
-              <!-- Customer Info Form / Dine-in Notice -->
-              ${this.orderType === 'delivery' ? `
-                <div class="bg-amber-50/40 rounded-2xl border border-amber-200/80 p-3.5 shadow-sm space-y-3">
-                  <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <span class="text-amber-700">${IconFileText('w-4 h-4')}</span>
-                    <span>Thông Tin Giao Hàng</span>
-                  </div>
-                  <div>
-                    <label for="customer-name" class="block text-[11px] font-bold text-gray-700 mb-1">Họ và tên của bạn *</label>
-                    <input type="text" id="customer-name" value="${escapeHtml(this.customerInfo.name)}" placeholder="VD: Nguyễn Văn A *" autocomplete="name"
-                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
-                  </div>
-                  <div>
-                    <label for="customer-phone" class="block text-[11px] font-bold text-gray-700 mb-1">Số điện thoại nhận hàng *</label>
-                    <input type="tel" id="customer-phone" value="${escapeHtml(this.customerInfo.phone)}" placeholder="VD: 0912345678 *" autocomplete="tel"
-                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
-                  </div>
-                  <div>
-                    <label for="customer-address" class="block text-[11px] font-bold text-gray-700 mb-1">Địa chỉ giao hàng chi tiết *</label>
-                    <input type="text" id="customer-address" value="${escapeHtml(this.customerInfo.address)}" placeholder="Số nhà, ngõ/đường, phường, quận/huyện *" autocomplete="street-address"
-                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
-                  </div>
-                  <div>
-                    <label for="customer-note" class="block text-[11px] font-bold text-gray-700 mb-1">Ghi chú cho shipper (nếu có)</label>
-                    <input type="text" id="customer-note" value="${escapeHtml(this.customerInfo.note)}" placeholder="Ví dụ: Gọi trước khi giao, gửi bảo vệ..." 
-                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white">
-                  </div>
-                </div>
-              ` : `
-                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 shadow-sm flex items-center gap-3">
-                  <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
-                    ${IconUtensils('w-5 h-5')}
-                  </div>
-                  <div class="text-xs text-amber-950">
-                    <span class="font-black block text-sm">Ăn Tại Quán: Không cần thông tin khách hàng</span>
-                    <span class="text-gray-600 mt-0.5 block leading-relaxed">Bạn chỉ cần gửi danh sách món ăn đã chọn, shop sẽ hỗ trợ bạn đặt ngay tại quán!</span>
-                  </div>
-                </div>
-              `}
-
-              <!-- Price Breakdown Card -->
-              <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-sm space-y-2.5">
-                <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-gray-100">
-                  <span class="flex items-center gap-1.5">
-                    <span class="text-gray-600">${IconReceipt('w-4 h-4')}</span>
-                    <span>Bảng So Sánh Giá</span>
-                  </span>
-                  ${pricing.discountAmount > 0 ? `
-                    <span class="text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-black text-[10px] border border-green-200">
-                      Tiết kiệm ${formatCurrency(pricing.discountAmount)}
-                    </span>
-                  ` : ''}
-                </div>
-                <div class="flex justify-between text-sm text-gray-600">
-                  <span>Giá gốc tại quán Jollibee:</span>
-                  <span class="font-bold text-gray-800 line-through">${formatCurrency(pricing.originalTotal)}</span>
-                </div>
-                <div class="flex justify-between text-sm text-green-600">
-                  <span>Chiết khấu đặt hộ (-15k/100k):</span>
-                  <span class="font-extrabold">-${formatCurrency(pricing.discountAmount)}</span>
-                </div>
-                <div class="flex justify-between text-sm text-gray-600">
-                  <span>Phí giao hàng:</span>
-                  <span class="font-bold ${pricing.shippingFee === 0 ? 'text-green-600' : 'text-gray-800'}">
-                    ${pricing.shippingFee === 0 ? 'Miễn phí (0đ)' : formatCurrency(pricing.shippingFee)}
-                  </span>
-                </div>
-
-                <!-- Mua thêm để được Freeship hiển thị ngay dưới Phí giao hàng -->
-                ${this.orderType === 'delivery' ? `
-                  <div class="pt-1">
-                    ${remainingToFreeship > 0 ? `
-                      <div class="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 shadow-sm">
-                        <div class="flex items-center justify-between">
-                          <span class="flex items-center gap-1.5 font-medium">
-                            <span class="text-amber-600 flex items-center">${IconBike('w-3.5 h-3.5')}</span>
-                            <span>Mua thêm <b>${formatCurrency(remainingToFreeship)}</b> để được <b>Freeship</b>!</span>
-                          </span>
-                          <span class="text-red-600 font-extrabold text-[10px] bg-red-100/70 border border-red-200 px-1.5 py-0.5 rounded-md">Phí ship 10k</span>
-                        </div>
-                        <div class="w-full bg-amber-200/60 rounded-full h-1.5 overflow-hidden mt-2">
-                          <div class="h-full bg-gradient-to-r from-amber-400 to-[#d71920] rounded-full transition-all duration-500 ease-out" 
-                            style="width: ${Math.min(100, Math.max(5, Math.round((pricing.originalTotal / (this.config.freeshipThreshold || 200000)) * 100)))}%"></div>
-                        </div>
-                      </div>
-                    ` : `
-                      <div class="p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 shadow-sm">
-                        <div class="flex items-center gap-1.5 font-bold">
-                          <span class="text-green-600 flex items-center">${IconCheckCircle('w-3.5 h-3.5')}</span>
-                          <span>Đã đủ điều kiện <b>Miễn Phí Giao Hàng</b> (Đơn từ 200k tiền gốc)!</span>
-                        </div>
-                        <div class="w-full bg-green-200 rounded-full h-1.5 overflow-hidden mt-2">
-                          <div class="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out" style="width: 100%"></div>
-                        </div>
-                      </div>
-                    `}
+            <!-- Mua thêm để được Freeship hiển thị ngay dưới Phí giao hàng -->
+            ${this.orderType === 'delivery' ? `
+              <div class="pt-1">
+                ${remainingToFreeship > 0 ? `
+                  <div class="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 shadow-sm">
+                    <div class="flex items-center justify-between">
+                      <span class="flex items-center gap-1.5 font-medium">
+                        <span class="text-amber-600 flex items-center">${IconBike('w-3.5 h-3.5')}</span>
+                        <span>Mua thêm <b>${formatCurrency(remainingToFreeship)}</b> để được <b>Freeship</b>!</span>
+                      </span>
+                      <span class="text-red-600 font-extrabold text-[10px] bg-red-100/70 border border-red-200 px-1.5 py-0.5 rounded-md">Phí ship 10k</span>
+                    </div>
+                    <div class="w-full bg-amber-200/60 rounded-full h-1.5 overflow-hidden mt-2">
+                      <div class="h-full bg-gradient-to-r from-amber-400 to-[#d71920] rounded-full transition-all duration-500 ease-out" 
+                        style="width: ${Math.min(100, Math.max(5, Math.round((pricing.originalTotal / (this.config.freeshipThreshold || 200000)) * 100)))}%"></div>
+                    </div>
                   </div>
                 ` : `
-                  <div class="text-[11px] text-gray-400 italic">
-                    * Ăn tại quán không tính phí giao hàng
+                  <div class="p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 shadow-sm">
+                    <div class="flex items-center gap-1.5 font-bold">
+                      <span class="text-green-600 flex items-center">${IconCheckCircle('w-3.5 h-3.5')}</span>
+                      <span>Đã đủ điều kiện <b>Miễn Phí Giao Hàng</b> (Đơn từ 200k tiền gốc)!</span>
+                    </div>
+                    <div class="w-full bg-green-200 rounded-full h-1.5 overflow-hidden mt-2">
+                      <div class="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out" style="width: 100%"></div>
+                    </div>
                   </div>
                 `}
-
-                <div class="pt-2 border-t border-gray-200 flex justify-between items-baseline">
-                  <div>
-                    <span class="font-extrabold text-sm sm:text-base text-gray-900 block">Khách thực thanh toán:</span>
-                    <span class="text-[11px] text-green-700 font-bold">Rẻ hơn mua tại quán Jollibee!</span>
-                  </div>
-                  <span class="font-black text-2xl text-red-600">${formatCurrency(pricing.finalTotal)}</span>
-                </div>
               </div>
+            ` : `
+              <div class="text-[11px] text-gray-400 italic">
+                * Ăn tại quán không tính phí giao hàng
+              </div>
+            `}
 
-              <!-- Min Order Notice for < 100k (Báo lỗi trực tiếp) vs Qualified Notice -->
-              ${pricing.originalTotal < 100000 ? `
-                <div class="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-950 flex items-start gap-3 shadow-sm">
-                  <div class="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    ${IconAlertTriangle('w-4 h-4')}
-                  </div>
-                  <div class="flex-1">
-                    <div class="font-black text-red-700 text-sm flex items-center justify-between">
-                      <span>Chưa đạt đơn tối thiểu 100.000đ</span>
-                      <span class="bg-red-200/80 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-extrabold">Báo lỗi</span>
-                    </div>
-                    <div class="mt-1 leading-relaxed text-gray-700">
-                      Shop chỉ nhận đặt hộ với đơn từ <b>100.000đ</b> trở lên (cứ mỗi 100k giảm 15k).
-                      <div class="mt-1.5 text-red-600 font-extrabold flex items-center gap-1.5">
-                        <span class="text-red-600 flex items-center">${IconArrowRight('w-3.5 h-3.5')}</span>
-                        <span>Vui lòng chọn thêm <b>${formatCurrency(100000 - pricing.originalTotal)}</b> nữa để gửi đơn nhé!</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ` : `
-                <div class="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center justify-between shadow-sm">
-                  <span class="flex items-center gap-1.5 font-bold">
-                    <span class="text-green-600">${IconCheckCircle('w-4 h-4')}</span>
-                    <span>Đơn hàng đã đủ điều kiện đặt hộ và áp dụng giảm giá (-${formatCurrency(pricing.discountAmount)})!</span>
-                  </span>
-                </div>
-              `}
-            ` : ''}
-
+            <div class="pt-2 border-t border-gray-200 flex justify-between items-baseline">
+              <div>
+                <span class="font-extrabold text-sm sm:text-base text-gray-900 block">Khách thực thanh toán:</span>
+                <span class="text-[11px] text-green-700 font-bold">Rẻ hơn mua tại quán Jollibee!</span>
+              </div>
+              <span class="font-black text-2xl text-red-600">${formatCurrency(pricing.finalTotal)}</span>
+            </div>
           </div>
 
-          <!-- Drawer Footer Action Buttons -->
-          ${items.length > 0 ? `
-            <div class="p-4 bg-white border-t border-gray-200 shadow-xl space-y-2">
-              ${pricing.originalTotal < 100000 ? `
-                <div class="p-2.5 bg-red-50 border border-red-200 rounded-xl text-center text-xs text-red-700 font-extrabold flex items-center justify-center gap-1.5 shadow-sm">
-                  ${IconAlertTriangle('w-4 h-4 text-red-600')}
-                  <span>Đơn chưa đạt tối thiểu 100.000đ để đặt hộ</span>
-                </div>
-              ` : ''}
-              <div class="grid grid-cols-2 gap-2">
-                <button type="button" id="btn-send-zalo" class="w-full ${pricing.originalTotal < 100000 ? 'bg-blue-400 opacity-80' : 'bg-[#0068ff] hover:bg-[#0058d8]'} text-white font-extrabold py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 active:scale-98 transition text-xs sm:text-sm whitespace-nowrap truncate">
-                  ${IconZalo('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
-                  <span class="truncate">Gửi Qua Zalo</span>
-                </button>
-                <button type="button" id="btn-send-messenger" class="w-full ${pricing.originalTotal < 100000 ? 'bg-sky-400 opacity-80' : 'bg-[#0084ff] hover:bg-[#0074e0]'} text-white font-extrabold py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 active:scale-98 transition text-xs sm:text-sm whitespace-nowrap truncate">
-                  ${IconMessenger('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
-                  <span class="truncate">Gửi Messenger</span>
-                </button>
+          <!-- Min Order Notice for < 100k vs Qualified Notice -->
+          ${pricing.originalTotal < 100000 ? `
+            <div class="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-950 flex items-start gap-3 shadow-sm">
+              <div class="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                ${IconAlertTriangle('w-4 h-4')}
               </div>
-              <button type="button" id="btn-copy-order" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition text-xs whitespace-nowrap truncate">
-                ${IconCopy('w-4 h-4 flex-shrink-0')}
-                <span class="truncate">Sao Chép Nội Dung Đơn Hàng</span>
-              </button>
+              <div class="flex-1">
+                <div class="font-black text-red-700 text-sm flex items-center justify-between">
+                  <span>Chưa đạt đơn tối thiểu 100.000đ</span>
+                  <span class="bg-red-200/80 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-extrabold">Báo lỗi</span>
+                </div>
+                <div class="mt-1 leading-relaxed text-gray-700">
+                  Shop chỉ nhận đặt hộ với đơn từ <b>100.000đ</b> trở lên (cứ mỗi 100k giảm 15k).
+                  <div class="mt-1.5 text-red-600 font-extrabold flex items-center gap-1.5">
+                    <span class="text-red-600 flex items-center">${IconArrowRight('w-3.5 h-3.5')}</span>
+                    <span>Vui lòng chọn thêm <b>${formatCurrency(100000 - pricing.originalTotal)}</b> nữa để gửi đơn nhé!</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ` : `
+            <div class="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center justify-between shadow-sm">
+              <span class="flex items-center gap-1.5 font-bold">
+                <span class="text-green-600">${IconCheckCircle('w-4 h-4')}</span>
+                <span>Đơn hàng đã đủ điều kiện đặt hộ và áp dụng giảm giá (-${formatCurrency(pricing.discountAmount)})!</span>
+              </span>
+            </div>
+          `}
+        ` : ''}
+
+      </div>
+
+      <!-- Drawer Footer Action Buttons -->
+      ${items.length > 0 ? `
+        <div class="p-4 bg-white border-t border-gray-200 shadow-xl space-y-2 flex-shrink-0">
+          ${pricing.originalTotal < 100000 ? `
+            <div class="p-2.5 bg-red-50 border border-red-200 rounded-xl text-center text-xs text-red-700 font-extrabold flex items-center justify-center gap-1.5 shadow-sm">
+              ${IconAlertTriangle('w-4 h-4 text-red-600')}
+              <span>Đơn chưa đạt tối thiểu 100.000đ để đặt hộ</span>
             </div>
           ` : ''}
-
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btn-send-zalo" class="w-full ${pricing.originalTotal < 100000 ? 'bg-blue-400 opacity-80' : 'bg-[#0068ff] hover:bg-[#0058d8]'} text-white font-extrabold py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 active:scale-98 transition text-xs sm:text-sm whitespace-nowrap truncate">
+              ${IconZalo('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
+              <span class="truncate">Gửi Qua Zalo</span>
+            </button>
+            <button type="button" id="btn-send-messenger" class="w-full ${pricing.originalTotal < 100000 ? 'bg-sky-400 opacity-80' : 'bg-[#0084ff] hover:bg-[#0074e0]'} text-white font-extrabold py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 active:scale-98 transition text-xs sm:text-sm whitespace-nowrap truncate">
+              ${IconMessenger('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
+              <span class="truncate">Gửi Messenger</span>
+            </button>
+          </div>
+          <button type="button" id="btn-copy-order" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition text-xs whitespace-nowrap truncate">
+            ${IconCopy('w-4 h-4 flex-shrink-0')}
+            <span class="truncate">Sao Chép Nội Dung Đơn Hàng</span>
+          </button>
         </div>
-      </div>
+      ` : ''}
     `;
+
+    let panel = container.querySelector('#cart-drawer-panel');
+
+    if (!panel) {
+      // Lần đầu mở: Mount toàn bộ shell modal và kích hoạt animation trượt 1 lần duy nhất
+      container.innerHTML = `
+        <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-0 bg-black/60 animate-backdrop" id="cart-drawer-backdrop" role="dialog" aria-modal="true" aria-labelledby="cart-drawer-title">
+          <div id="cart-drawer-panel" class="relative w-full sm:max-w-md h-[94vh] sm:h-full bg-white rounded-t-3xl sm:rounded-none flex flex-col shadow-2xl overflow-hidden animate-drawer-panel transform-gpu will-change-transform">
+            
+            <!-- Drawer Header (Cố định, không bao giờ bị re-render) -->
+            <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white flex-shrink-0">
+              <div class="flex items-center gap-2 min-w-0 pr-2">
+                <span class="flex-shrink-0">${IconShoppingBag('w-5 h-5')}</span>
+                <h3 id="cart-drawer-title" class="font-extrabold text-base sm:text-lg truncate">Giỏ Hàng & Báo Giá</h3>
+              </div>
+              <button type="button" id="cart-drawer-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0" aria-label="Đóng giỏ hàng">${IconX('w-4 h-4')}</button>
+            </div>
+
+            <!-- Vùng nội dung động (cập nhật in-place không reload shell) -->
+            <div id="cart-drawer-inner" class="flex-1 flex flex-col min-h-0 overflow-hidden">
+              ${innerContentHtml}
+            </div>
+
+          </div>
+        </div>
+      `;
+
+      panel = container.querySelector('#cart-drawer-panel');
+      if (panel) {
+        panel.addEventListener('animationend', () => {
+          panel.classList.remove('animate-drawer-panel');
+        }, { once: true });
+      }
+
+      this._bindGlobalDrawerEvents();
+    } else {
+      // Panel đã tồn tại: Cập nhật trực tiếp nội dung con, giữ nguyên khung modal -> 0% chớp trắng, 0% reload
+      const innerContainer = panel.querySelector('#cart-drawer-inner');
+      if (innerContainer) {
+        innerContainer.innerHTML = innerContentHtml;
+      }
+    }
 
     // Khôi phục lại đúng vị trí cuộn trước khi re-render
     const newScrollEl = container.querySelector('.drawer-scroll-body');
@@ -542,7 +569,7 @@ export class CartDrawer {
       newScrollEl.scrollTop = prevScrollTop;
     }
 
-    this._bindEvents();
+    this._bindContentEvents();
   }
 
   _saveFormInputs() {
@@ -561,24 +588,7 @@ export class CartDrawer {
     this._saveCustomerInfoToStorage();
   }
 
-  _bindEvents() {
-    const container = this.getContainer();
-
-    // Lắng nghe sự kiện input thời gian thực (lưu debounce vào storage tránh nghẽn I/O)
-    const bindLiveInput = (id, key) => {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener('input', (e) => {
-        this.customerInfo[key] = e.target.value;
-        this._debouncedSaveStorage();
-      });
-    };
-    bindLiveInput('customer-name', 'name');
-    bindLiveInput('customer-phone', 'phone');
-    bindLiveInput('customer-address', 'address');
-    bindLiveInput('customer-note', 'note');
-
-    // Đóng drawer an toàn
+  _bindGlobalDrawerEvents() {
     const handleClose = () => {
       this._saveFormInputs();
       this.close();
@@ -595,6 +605,30 @@ export class CartDrawer {
       };
       document.addEventListener('keydown', this._escHandler);
     }
+  }
+
+  _bindEvents() {
+    this._bindGlobalDrawerEvents();
+    this._bindContentEvents();
+  }
+
+  _bindContentEvents() {
+    const container = this.getContainer();
+    if (!container) return;
+
+    // Lắng nghe sự kiện input thời gian thực (lưu debounce vào storage tránh nghẽn I/O)
+    const bindLiveInput = (id, key) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', (e) => {
+        this.customerInfo[key] = e.target.value;
+        this._debouncedSaveStorage();
+      });
+    };
+    bindLiveInput('customer-name', 'name');
+    bindLiveInput('customer-phone', 'phone');
+    bindLiveInput('customer-address', 'address');
+    bindLiveInput('customer-note', 'note');
 
     // Chuyển hình thức giao hàng vs ăn tại quán
     document.getElementById('btn-type-delivery')?.addEventListener('click', () => {
