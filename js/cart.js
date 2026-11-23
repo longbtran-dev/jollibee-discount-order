@@ -3,11 +3,47 @@
  */
 import { calculateOrderPricing } from './pricing.js';
 
+export const CART_STORAGE_KEY = 'jb_cart_items';
+
 export class Cart {
   constructor(initialItems = []) {
     this.items = [];
-    if (Array.isArray(initialItems)) {
+    this.historyStack = []; // Lưu lại lịch sử thêm món để hỗ trợ tính năng Hoàn tác (Undo)
+
+    if (Array.isArray(initialItems) && initialItems.length > 0) {
       initialItems.forEach(item => this.items.push(item));
+    } else {
+      this.loadFromStorage();
+    }
+  }
+
+  /**
+   * Tự động lưu giỏ hàng vào localStorage
+   */
+  saveToStorage() {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(this.items));
+    } catch (e) {
+      console.warn('Không thể lưu giỏ hàng vào localStorage:', e);
+    }
+  }
+
+  /**
+   * Khôi phục giỏ hàng từ localStorage
+   */
+  loadFromStorage() {
+    if (typeof localStorage === 'undefined') return;
+    try {
+      const data = localStorage.getItem(CART_STORAGE_KEY);
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (Array.isArray(parsed)) {
+          this.items = parsed;
+        }
+      }
+    } catch (e) {
+      console.warn('Không thể đọc giỏ hàng từ localStorage:', e);
     }
   }
 
@@ -45,28 +81,51 @@ export class Cart {
       })
       .join(', ');
 
+    let resultItem = null;
     const existingIndex = this.items.findIndex(item => item.cartItemId === cartItemId);
     if (existingIndex >= 0) {
       this.items[existingIndex].quantity += qty;
-      return this.items[existingIndex];
+      resultItem = this.items[existingIndex];
+    } else {
+      const newItem = {
+        cartItemId,
+        productId: product.id,
+        name: product.name,
+        image: product.image || '',
+        description: product.description || '',
+        isCombo: Boolean(product.is_combo),
+        basePrice,
+        unitPrice,
+        quantity: qty,
+        selectedOptions: [...selectedOptions],
+        optionsText
+      };
+      this.items.push(newItem);
+      resultItem = newItem;
     }
 
-    const newItem = {
-      cartItemId,
-      productId: product.id,
-      name: product.name,
-      image: product.image || '',
-      description: product.description || '',
-      isCombo: Boolean(product.is_combo),
-      basePrice,
-      unitPrice,
-      quantity: qty,
-      selectedOptions: [...selectedOptions],
-      optionsText
-    };
+    this.historyStack.push({ cartItemId, addedQty: qty });
+    this.saveToStorage();
+    return resultItem;
+  }
 
-    this.items.push(newItem);
-    return newItem;
+  /**
+   * Hoàn tác món vừa thêm vào giỏ hàng gần nhất (Nâng cấp UX #2)
+   * @returns {object|null} Thông tin món đã hoàn tác
+   */
+  undoLastAdd() {
+    if (this.historyStack.length === 0) return null;
+    const lastAction = this.historyStack.pop();
+    const item = this.items.find(i => i.cartItemId === lastAction.cartItemId);
+    if (!item) return null;
+
+    const undoneItem = { ...item };
+    item.quantity -= lastAction.addedQty;
+    if (item.quantity <= 0) {
+      this.items = this.items.filter(i => i.cartItemId !== lastAction.cartItemId);
+    }
+    this.saveToStorage();
+    return undoneItem;
   }
 
   /**
@@ -74,6 +133,7 @@ export class Cart {
    */
   removeItem(cartItemId) {
     this.items = this.items.filter(item => item.cartItemId !== cartItemId);
+    this.saveToStorage();
   }
 
   /**
@@ -86,6 +146,8 @@ export class Cart {
     item.quantity += delta;
     if (item.quantity <= 0) {
       this.removeItem(cartItemId);
+    } else {
+      this.saveToStorage();
     }
   }
 
@@ -108,6 +170,8 @@ export class Cart {
    */
   clear() {
     this.items = [];
+    this.historyStack = [];
+    this.saveToStorage();
   }
 
   /**

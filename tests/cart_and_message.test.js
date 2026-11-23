@@ -116,4 +116,38 @@ describe('Cart & Order Message Formatter', () => {
     assert.equal(isValid, true);
     assert.equal(alertMsg, '');
   });
+
+  it('tự động lưu giỏ hàng vào localStorage và khôi phục khi khởi tạo', () => {
+    const storageMap = new Map();
+    global.localStorage = {
+      getItem: (key) => storageMap.get(key) || null,
+      setItem: (key, val) => storageMap.set(key, String(val)),
+      removeItem: (key) => storageMap.delete(key),
+      clear: () => storageMap.clear()
+    };
+
+    const cart1 = new Cart();
+    cart1.addItem({ id: 'p1', name: 'Gà Giòn', price: 35000 });
+    assert.ok(storageMap.has('jb_cart_items'));
+
+    // Giỏ hàng mới tự động nạp từ storage
+    const cart2 = new Cart();
+    cart2.loadFromStorage();
+    assert.equal(cart2.getItems().length, 1);
+    assert.equal(cart2.getItems()[0].name, 'Gà Giòn');
+    assert.equal(cart2.getItems()[0].unitPrice, 35000);
+  });
+
+  it('undoLastAdd hoàn tác món vừa được thêm vào giỏ hàng', () => {
+    const cart = new Cart();
+    cart.addItem({ id: 'p1', name: 'Gà Giòn', price: 35000 });
+    cart.addItem({ id: 'p2', name: 'Kem Vani', price: 10000 });
+    assert.equal(cart.getItems().length, 2);
+
+    const undone = cart.undoLastAdd();
+    assert.ok(undone);
+    assert.equal(undone.name, 'Kem Vani');
+    assert.equal(cart.getItems().length, 1);
+    assert.equal(cart.getItems()[0].name, 'Gà Giòn');
+  });
 });
