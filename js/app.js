@@ -6,6 +6,7 @@ import { ComboModal } from './components/combo-modal.js';
 import { CartDrawer } from './components/cart-drawer.js';
 import { formatCurrency } from './order-message.js';
 import { escapeHtml } from './utils.js';
+import { IconSliders, IconClock, IconPlus, IconSearch } from './icons.js';
 
 class JollibeeApp {
   constructor() {
@@ -35,14 +36,20 @@ class JollibeeApp {
   updateTopSwitcherUI() {
     const btnDel = document.getElementById('top-btn-delivery');
     const btnDin = document.getElementById('top-btn-dinein');
+    const iconDel = document.getElementById('top-icon-delivery');
+    const iconDin = document.getElementById('top-icon-dinein');
     if (!btnDel || !btnDin) return;
 
     if (this.orderType === 'delivery') {
-      btnDel.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-white text-gray-900 shadow-sm active:scale-98';
-      btnDin.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition text-white hover:bg-white/10 active:scale-98';
+      btnDel.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition bg-white text-gray-900 shadow-sm active:scale-98';
+      btnDin.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition text-white hover:bg-white/10 active:scale-98';
+      if (iconDel) iconDel.className = 'text-[#d71920] flex items-center';
+      if (iconDin) iconDin.className = 'text-white/70 flex items-center';
     } else {
-      btnDel.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition text-white hover:bg-white/10 active:scale-98';
-      btnDin.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-[#ffc72c] text-gray-950 shadow-sm active:scale-98';
+      btnDel.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition text-white hover:bg-white/10 active:scale-98';
+      btnDin.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition bg-[#ffc72c] text-gray-950 shadow-sm active:scale-98';
+      if (iconDel) iconDel.className = 'text-white/70 flex items-center';
+      if (iconDin) iconDin.className = 'text-gray-950 flex items-center';
     }
   }
 
@@ -169,7 +176,9 @@ class JollibeeApp {
       let cardsHtml = '';
       matchedProducts.forEach(product => {
         const isCombo = product.is_combo;
-        const buttonText = isCombo ? 'Tùy Chọn Món' : '+ Thêm Món';
+        const buttonContent = isCombo
+          ? `${IconSliders('w-3.5 h-3.5')}<span>Tùy Chọn Món</span>`
+          : `${IconPlus('w-3.5 h-3.5')}<span>Thêm Món</span>`;
         const buttonClass = isCombo
           ? 'bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 border border-amber-300'
           : 'bg-[#d71920] hover:bg-[#b81218] text-white shadow-xs';
@@ -230,14 +239,14 @@ class JollibeeApp {
 
             <!-- Action Button -->
             <div class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between">
-              <span class="text-[11px] text-gray-400 font-medium">
-                ${isCombo ? '⚡ Đổi vị, upsize theo ý' : '✓ Giao nhanh'}
+              <span class="text-[11px] text-gray-500 font-medium flex items-center gap-1.5">
+                ${isCombo ? `${IconSliders('w-3.5 h-3.5 text-amber-500')} Đổi vị, upsize theo ý` : `${IconClock('w-3.5 h-3.5 text-green-600')} Chuẩn bị nhanh`}
               </span>
               <button type="button" 
-                class="btn-select-product ${buttonClass} font-extrabold text-xs sm:text-sm py-2 px-4 rounded-xl active:scale-95 transition flex items-center gap-1.5"
+                class="btn-select-product ${buttonClass} font-extrabold text-xs sm:text-sm py-2 px-3.5 rounded-xl active:scale-95 transition flex items-center gap-1.5"
                 data-id="${product.id}"
                 data-is-combo="${isCombo}">
-                <span>${buttonText}</span>
+                ${buttonContent}
               </button>
             </div>
           </div>
@@ -263,7 +272,9 @@ class JollibeeApp {
     if (totalMatchedProducts === 0) {
       container.innerHTML = `
         <div class="text-center py-16 bg-white rounded-3xl border border-gray-200 shadow-xs">
-          <div class="text-5xl mb-3">🔍</div>
+          <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+            ${IconSearch('w-7 h-7')}
+          </div>
           <p class="font-bold text-gray-700 text-base">Không tìm thấy món ăn nào phù hợp với từ khóa "${escapeHtml(filterKeyword)}"</p>
           <p class="text-xs text-gray-400 mt-1">Vui lòng thử tìm với từ khóa khác (ví dụ: gà, mì ý, burger, nước)</p>
           <button type="button" id="btn-reset-search" class="mt-4 bg-[#ffc72c] font-bold text-xs px-4 py-2 rounded-xl text-gray-900 shadow-xs">

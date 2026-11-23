@@ -19,35 +19,35 @@ export function formatCurrency(amount) {
  * @returns {string} Chuỗi văn bản tin nhắn
  */
 export function formatOrderText(customer = {}, items = [], pricing = {}, orderType = 'delivery') {
-  const typeText = orderType === 'delivery' ? '🛵 GIAO TẬN NƠI' : '🍽️ ĂN TẠI QUÁN / TỚI LẤY';
+  const typeText = orderType === 'delivery' ? '[GIAO TẬN NƠI]' : '[ĂN TẠI QUÁN / TỚI LẤY]';
   
   const lines = [
-    `🍗 ============================ 🍗`,
-    `      ĐƠN ĐẶT HỘ JOLLIBEE GIÁ RẺ`,
-    `🍗 ============================ 🍗`,
+    `================================`,
+    `   ĐƠN ĐẶT HỘ JOLLIBEE GIÁ RẺ`,
+    `================================`,
     ``,
-    `📌 HÌNH THỨC: ${typeText}`
+    `HÌNH THỨC: ${typeText}`
   ];
 
   if (orderType === 'delivery') {
-    lines.push(`👤 Khách hàng: ${customer.name || '(Chưa nhập)'}`);
-    lines.push(`📞 Số điện thoại: ${customer.phone || '(Chưa nhập)'}`);
-    lines.push(`📍 Địa chỉ giao hàng: ${customer.address || '(Chưa nhập)'}`);
+    lines.push(`• Khách hàng: ${customer.name || '(Chưa nhập)'}`);
+    lines.push(`• Số điện thoại: ${customer.phone || '(Chưa nhập)'}`);
+    lines.push(`• Địa chỉ giao hàng: ${customer.address || '(Chưa nhập)'}`);
     if (customer.note && customer.note.trim()) {
-      lines.push(`📝 Ghi chú: ${customer.note.trim()}`);
+      lines.push(`• Ghi chú: ${customer.note.trim()}`);
     }
   } else {
     // Ăn tại quán: không yêu cầu thông tin khách hàng
     if (customer.name && customer.name.trim()) {
-      lines.push(`👤 Khách hàng: ${customer.name.trim()}`);
+      lines.push(`• Khách hàng: ${customer.name.trim()}`);
     }
     if (customer.note && customer.note.trim()) {
-      lines.push(`📝 Ghi chú: ${customer.note.trim()}`);
+      lines.push(`• Ghi chú: ${customer.note.trim()}`);
     }
   }
 
   lines.push(``);
-  lines.push(`📋 DANH SÁCH MÓN ĂN:`);
+  lines.push(`DANH SÁCH MÓN ĂN:`);
   lines.push(`--------------------------------`);
 
   items.forEach((item, index) => {
@@ -59,7 +59,7 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
   });
 
   lines.push(`--------------------------------`);
-  lines.push(`💰 BÁO GIÁ CHI TIẾT:`);
+  lines.push(`BÁO GIÁ CHI TIẾT:`);
   lines.push(`• Tổng tiền gốc Jollibee: ${formatCurrency(pricing.originalTotal)}`);
   lines.push(`• Chiết khấu dịch vụ: -${formatCurrency(pricing.discountAmount)}`);
 
@@ -70,9 +70,9 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
     lines.push(`• Phí giao hàng: 0đ (Ăn tại quán)`);
   }
 
-  lines.push(`👉 TỔNG THANH TOÁN THỰC TẾ: ${formatCurrency(pricing.finalTotal)}`);
+  lines.push(`=> TỔNG THANH TOÁN THỰC TẾ: ${formatCurrency(pricing.finalTotal)}`);
   if (pricing.originalTotal < 100000) {
-    lines.push(`⚠️ Lưu ý: Đơn hàng dưới 100k (Chưa áp dụng chính sách giảm giá)`);
+    lines.push(`(Lưu ý: Đơn hàng dưới 100k - Chưa áp dụng chính sách giảm giá)`);
   }
   lines.push(``);
   lines.push(`(Shop vui lòng kiểm tra và hỗ trợ đặt hộ giúp em nhé. Em cảm ơn!)`);

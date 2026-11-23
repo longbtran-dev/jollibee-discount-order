@@ -3,6 +3,25 @@
  */
 import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js';
 import { copyToClipboard } from '../utils.js';
+import {
+  IconShoppingBag,
+  IconX,
+  IconMinus,
+  IconPlus,
+  IconTrash,
+  IconBike,
+  IconUtensils,
+  IconFileText,
+  IconReceipt,
+  IconSparkles,
+  IconCheck,
+  IconCheckCircle,
+  IconAlertTriangle,
+  IconArrowRight,
+  IconCopy,
+  IconZalo,
+  IconMessenger
+} from '../icons.js';
 
 export class CartDrawer {
   constructor(cart, config = {}, onCartChanged = null, onOrderTypeChanged = null) {
@@ -50,8 +69,8 @@ export class CartDrawer {
 
   showToast(message) {
     const toast = document.createElement('div');
-    toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[100] bg-gray-900 text-white font-medium text-sm px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-4 duration-200';
-    toast.innerHTML = `<span>✓</span><span>${message}</span>`;
+    toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[100] bg-gray-900 text-white font-medium text-sm px-5 py-3 rounded-xl shadow-xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-200';
+    toast.innerHTML = `<span class="text-green-400">${IconCheck('w-4 h-4')}</span><span>${message}</span>`;
     document.body.appendChild(toast);
     setTimeout(() => {
       toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
@@ -99,7 +118,7 @@ export class CartDrawer {
       if (remainingToFreeship === 0) {
         freeshipNoticeHtml = `
           <div class="p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs font-semibold text-green-700 flex items-center gap-2 mb-3">
-            <span>🎉</span>
+            <span class="text-green-600">${IconSparkles('w-4 h-4')}</span>
             <span>Tuyệt vời! Đơn hàng của bạn đã đủ điều kiện <b>Miễn Phí Giao Hàng</b>!</span>
           </div>
         `;
@@ -118,8 +137,10 @@ export class CartDrawer {
     if (items.length === 0) {
       itemsListHtml = `
         <div class="text-center py-12 text-gray-400">
-          <div class="text-5xl mb-3">🍗</div>
-          <p class="font-medium">Giỏ hàng của bạn đang trống</p>
+          <div class="w-16 h-16 mx-auto mb-3 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+            ${IconShoppingBag('w-8 h-8')}
+          </div>
+          <p class="font-bold text-gray-600 text-sm">Giỏ hàng của bạn đang trống</p>
           <p class="text-xs text-gray-400 mt-1">Hãy chọn món ăn ngon để xem báo giá ưu đãi nhé!</p>
         </div>
       `;
@@ -138,11 +159,11 @@ export class CartDrawer {
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                <button type="button" class="w-7 h-7 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-minus" data-id="${item.cartItemId}">-</button>
+                <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-minus" data-id="${item.cartItemId}">${IconMinus('w-3 h-3')}</button>
                 <span class="w-8 text-center text-xs font-bold text-gray-800">${item.quantity}</span>
-                <button type="button" class="w-7 h-7 flex items-center justify-center font-bold text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-plus" data-id="${item.cartItemId}">+</button>
+                <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-plus" data-id="${item.cartItemId}">${IconPlus('w-3 h-3')}</button>
               </div>
-              <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 rounded hover:bg-red-50 btn-cart-remove" data-id="${item.cartItemId}" title="Xóa món">✕</button>
+              <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 rounded hover:bg-red-50 btn-cart-remove" data-id="${item.cartItemId}" title="Xóa món">${IconTrash('w-3.5 h-3.5')}</button>
             </div>
           </div>
         `;
@@ -156,10 +177,10 @@ export class CartDrawer {
           <!-- Drawer Header -->
           <div class="flex items-center justify-between p-4 bg-[#d71920] text-white">
             <div class="flex items-center gap-2">
-              <span class="text-xl">🛒</span>
+              ${IconShoppingBag('w-5 h-5')}
               <h3 class="font-extrabold text-lg">Giỏ Hàng & Báo Giá</h3>
             </div>
-            <button type="button" id="cart-drawer-close-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white font-bold transition">✕</button>
+            <button type="button" id="cart-drawer-close-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition">${IconX('w-4 h-4')}</button>
           </div>
 
           <!-- Drawer Body Scrollable -->
@@ -167,12 +188,12 @@ export class CartDrawer {
             
             <!-- Type Selector: Delivery vs Dine-in -->
             <div class="bg-gray-100 p-1 rounded-xl flex items-center gap-1 border border-gray-200">
-              <button type="button" id="btn-type-delivery" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition ${this.orderType === 'delivery' ? 'bg-[#d71920] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">
-                <span>🛵</span>
+              <button type="button" id="btn-type-delivery" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'delivery' ? 'bg-[#d71920] text-white shadow-xs' : 'text-gray-600 hover:text-gray-900'}">
+                ${IconBike('w-4 h-4')}
                 <span>Giao Tận Nơi</span>
               </button>
-              <button type="button" id="btn-type-dinein" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition ${this.orderType === 'dinein' ? 'bg-[#ffc72c] text-gray-900 shadow-xs' : 'text-gray-600 hover:text-gray-900'}">
-                <span>🍽️</span>
+              <button type="button" id="btn-type-dinein" class="flex-1 py-2 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${this.orderType === 'dinein' ? 'bg-[#ffc72c] text-gray-900 shadow-xs' : 'text-gray-600 hover:text-gray-900'}">
+                ${IconUtensils('w-4 h-4')}
                 <span>Ăn Tại Quán / Tới Lấy</span>
               </button>
             </div>
@@ -194,7 +215,7 @@ export class CartDrawer {
               ${this.orderType === 'delivery' ? `
                 <div class="bg-amber-50/40 rounded-2xl border border-amber-200/80 p-3.5 shadow-xs space-y-3">
                   <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <span>📝</span>
+                    <span class="text-amber-700">${IconFileText('w-4 h-4')}</span>
                     <span>Thông Tin Giao Hàng</span>
                   </div>
                   <div>
@@ -216,7 +237,9 @@ export class CartDrawer {
                 </div>
               ` : `
                 <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 shadow-xs flex items-center gap-3">
-                  <div class="text-3xl flex-shrink-0">🍽️</div>
+                  <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                    ${IconUtensils('w-5 h-5')}
+                  </div>
                   <div class="text-xs text-amber-950">
                     <span class="font-black block text-sm">Ăn Tại Quán: Không cần thông tin khách hàng</span>
                     <span class="text-gray-600 mt-0.5 block leading-relaxed">Bạn chỉ cần gửi danh sách món ăn đã chọn, shop sẽ hỗ trợ bạn đặt ngay tại quán!</span>
@@ -228,7 +251,7 @@ export class CartDrawer {
               <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-2.5">
                 <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-gray-100">
                   <span class="flex items-center gap-1.5">
-                    <span>💰</span>
+                    <span class="text-gray-600">${IconReceipt('w-4 h-4')}</span>
                     <span>Bảng So Sánh Giá</span>
                   </span>
                   ${pricing.discountAmount > 0 ? `
@@ -263,13 +286,15 @@ export class CartDrawer {
               <!-- Min Order Notice for < 100k vs Qualified Notice -->
               ${pricing.originalTotal < 100000 ? `
                 <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 flex items-start gap-3 shadow-xs">
-                  <span class="text-xl flex-shrink-0">⚠️</span>
+                  <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                    ${IconAlertTriangle('w-4 h-4')}
+                  </div>
                   <div>
                     <div class="font-black text-amber-950 text-sm">Lưu ý áp dụng giảm giá:</div>
                     <div class="mt-1 leading-relaxed text-gray-700">
                       Đơn hàng phải từ <b>100.000đ</b> trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!
-                      <div class="mt-1.5 text-red-600 font-extrabold flex items-center gap-1">
-                        <span>👉</span>
+                      <div class="mt-1.5 text-red-600 font-extrabold flex items-center gap-1.5">
+                        <span class="text-red-600 flex items-center">${IconArrowRight('w-3.5 h-3.5')}</span>
                         <span>Chọn thêm <b>${formatCurrency(100000 - pricing.originalTotal)}</b> nữa để được giảm ngay 15.000đ!</span>
                       </div>
                     </div>
@@ -278,7 +303,7 @@ export class CartDrawer {
               ` : `
                 <div class="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center justify-between shadow-xs">
                   <span class="flex items-center gap-1.5 font-bold">
-                    <span>🎉</span>
+                    <span class="text-green-600">${IconCheckCircle('w-4 h-4')}</span>
                     <span>Đơn hàng đã đủ điều kiện áp dụng giảm giá (-${formatCurrency(pricing.discountAmount)})!</span>
                   </span>
                 </div>
@@ -291,17 +316,17 @@ export class CartDrawer {
           ${items.length > 0 ? `
             <div class="p-4 bg-white border-t border-gray-200 shadow-xl space-y-2">
               <div class="grid grid-cols-2 gap-2">
-                <button type="button" id="btn-send-zalo" class="w-full bg-[#0068ff] hover:bg-[#0058d8] text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-98 transition text-xs sm:text-sm">
-                  <span>💬</span>
+                <button type="button" id="btn-send-zalo" class="w-full bg-[#0068ff] hover:bg-[#0058d8] text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-98 transition text-xs sm:text-sm">
+                  ${IconZalo('w-5 h-5')}
                   <span>Gửi Qua Zalo</span>
                 </button>
-                <button type="button" id="btn-send-messenger" class="w-full bg-[#0084ff] hover:bg-[#0074e0] text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 active:scale-98 transition text-xs sm:text-sm">
-                  <span>⚡</span>
+                <button type="button" id="btn-send-messenger" class="w-full bg-[#0084ff] hover:bg-[#0074e0] text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-98 transition text-xs sm:text-sm">
+                  ${IconMessenger('w-5 h-5')}
                   <span>Gửi Messenger</span>
                 </button>
               </div>
-              <button type="button" id="btn-copy-order" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-1.5 active:scale-98 transition text-xs">
-                <span>📋</span>
+              <button type="button" id="btn-copy-order" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 active:scale-98 transition text-xs">
+                ${IconCopy('w-4 h-4')}
                 <span>Sao Chép Nội Dung Đơn Hàng</span>
               </button>
             </div>

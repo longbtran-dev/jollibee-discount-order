@@ -3,6 +3,7 @@
  */
 
 import { formatCurrency } from '../order-message.js';
+import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '../icons.js';
 
 /**
  * Khởi tạo bộ quản lý trạng thái chọn option cho Combo
@@ -114,10 +115,10 @@ export class ComboModal {
           : (opt.extra_price > 0 ? `<span class="text-sm font-bold text-red-600">+${formatCurrency(opt.extra_price)}</span>` : '');
 
         const iconHtml = isNone
-          ? `<div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-lg text-gray-400 font-black border border-gray-200 flex-shrink-0">🚫</div>`
+          ? `<div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 font-bold border border-gray-200 flex-shrink-0">${IconMinus('w-5 h-5')}</div>`
           : (opt.image
               ? `<img src="${opt.image}" alt="${opt.name}" class="w-12 h-12 object-contain rounded bg-white p-1 border border-amber-100 flex-shrink-0" onerror="this.style.display='none'">`
-              : `<div class="w-12 h-12 rounded bg-amber-50 flex items-center justify-center text-xs font-bold text-amber-700 border border-amber-100 flex-shrink-0">🍗</div>`);
+              : `<div class="w-12 h-12 rounded bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100 flex-shrink-0">${IconShoppingBag('w-6 h-6')}</div>`);
 
         optionsListHtml += `
           <label class="flex items-center justify-between p-3.5 border-b border-amber-100/60 last:border-b-0 cursor-pointer hover:bg-amber-50/60 transition ${isChecked ? 'bg-amber-50/80 font-medium' : ''}">
@@ -150,7 +151,7 @@ export class ComboModal {
                 ${currentSelected ? currentSelected.name : ''}
               </span>
             </div>
-            <span class="text-sm font-bold transform transition-transform group-arrow ${isFirst ? 'rotate-180' : ''}">▼</span>
+            <span class="transform transition-transform group-arrow ${isFirst ? 'rotate-180' : ''} flex items-center">${IconChevronDown('w-4 h-4')}</span>
           </button>
           <div id="group-body-${group.group_id}" class="group-options-body ${isFirst ? 'block' : 'hidden'} bg-amber-50/20">
             ${optionsListHtml}
@@ -166,7 +167,7 @@ export class ComboModal {
           <!-- Modal Header -->
           <div class="flex items-center justify-between p-4 bg-[#d71920] text-white">
             <h3 class="font-extrabold text-base sm:text-lg line-clamp-1">${product.name}</h3>
-            <button type="button" id="combo-modal-close-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white font-bold transition">✕</button>
+            <button type="button" id="combo-modal-close-btn" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition">${IconX('w-4 h-4')}</button>
           </div>
 
           <!-- Product Summary -->
@@ -198,8 +199,8 @@ export class ComboModal {
               </div>
             </div>
             <button type="button" id="combo-modal-confirm-btn" class="flex-1 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold py-3.5 px-6 rounded-xl shadow-md active:scale-98 transition flex items-center justify-center gap-2">
+              ${IconPlus('w-4 h-4')}
               <span>Thêm Vào Giỏ</span>
-              <span>✓</span>
             </button>
           </div>
 
