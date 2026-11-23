@@ -65,6 +65,7 @@ class JollibeeApp {
     await this.loadMenu();
     this.renderCategoryTabs();
     this.renderMenuSections();
+    this.setupScrollSpy();
     this.bindGlobalEvents();
     this.updateFloatingCart();
   }
@@ -134,10 +135,8 @@ class JollibeeApp {
     });
   }
 
-  scrollToCategory(slug) {
+  updateActiveTab(slug) {
     this.activeCategorySlug = slug;
-    
-    // Đổi active tab style
     document.querySelectorAll('.category-tab-btn').forEach(btn => {
       if (btn.dataset.slug === slug) {
         btn.className = 'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 bg-[#d71920] text-white border-[#d71920] shadow-xs active-tab';
@@ -146,11 +145,16 @@ class JollibeeApp {
         btn.className = 'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
       }
     });
+  }
 
-    // Cuộn đến section
+  scrollToCategory(slug) {
+    this.updateActiveTab(slug);
+
+    // Cuộn đến section chính xác dưới header cố định
     const targetSection = document.getElementById(`section-${slug}`);
     if (targetSection) {
-      const headerOffset = 180;
+      const headerEl = document.querySelector('header');
+      const headerOffset = (headerEl ? headerEl.offsetHeight : 180) + 8;
       const elementPosition = targetSection.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
       window.scrollTo({
@@ -158,6 +162,33 @@ class JollibeeApp {
         behavior: 'smooth'
       });
     }
+  }
+
+  setupScrollSpy() {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    
+    if (this._scrollObserver) {
+      this._scrollObserver.disconnect();
+    }
+
+    const headerEl = document.querySelector('header');
+    const headerHeight = headerEl ? headerEl.offsetHeight : 180;
+
+    this._scrollObserver = new IntersectionObserver((entries) => {
+      const visible = entries.filter(e => e.isIntersecting);
+      if (visible.length > 0) {
+        visible.sort((a, b) => Math.abs(a.boundingClientRect.top - headerHeight) - Math.abs(b.boundingClientRect.top - headerHeight));
+        const activeId = visible[0].target.id.replace('section-', '');
+        this.updateActiveTab(activeId);
+      }
+    }, {
+      rootMargin: `-${headerHeight}px 0px -40% 0px`,
+      threshold: [0, 0.2, 0.5]
+    });
+
+    document.querySelectorAll('#menu-sections-container > section').forEach(section => {
+      this._scrollObserver.observe(section);
+    });
   }
 
   renderMenuSections(filterKeyword = '') {
@@ -347,6 +378,8 @@ class JollibeeApp {
         this.handleProductClick(pid, isCombo, triggerEl);
       });
     });
+
+    this.setupScrollSpy();
   }
 
   handleProductClick(productId, isCombo, triggerEl = null) {
