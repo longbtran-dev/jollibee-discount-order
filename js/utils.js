@@ -22,12 +22,69 @@ export function escapeHtml(str) {
 }
 
 /**
+ * Kiểm tra định dạng số điện thoại di động Việt Nam (10 chữ số, bắt đầu bằng 03, 05, 07, 08, 09)
+ * @param {string} phone
+ * @returns {boolean}
+ */
+export function isValidVietnamesePhone(phone) {
+  if (!phone) return false;
+  const cleanPhone = String(phone).replace(/\s+/g, '');
+  return /^(0)(3|5|7|8|9)[0-9]{8}$/.test(cleanPhone);
+}
+
+/**
+ * Hàm hạn chế tần suất gọi hàm (Debounce)
+ * @param {Function} fn
+ * @param {number} delay
+ * @returns {Function}
+ */
+export function debounce(fn, delay = 200) {
+  let timer = null;
+  return function (...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+      timer = null;
+    }, delay);
+  };
+}
+
+let activeModalCount = 0;
+
+/**
+ * Khóa cuộn trang Body an toàn theo bộ đếm modal mở (tránh gỡ nhầm khi lồng modal)
+ */
+export function lockBodyScroll() {
+  activeModalCount++;
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.classList.add('overflow-hidden');
+  }
+}
+
+/**
+ * Mở khóa cuộn trang Body chỉ khi không còn bất kỳ modal nào active
+ */
+export function unlockBodyScroll() {
+  activeModalCount = Math.max(0, activeModalCount - 1);
+  if (activeModalCount === 0 && typeof document !== 'undefined' && document.body) {
+    document.body.classList.remove('overflow-hidden');
+  }
+}
+
+/**
+ * Lấy số lượng modal đang mở hiện tại
+ */
+export function getActiveModalCount() {
+  return activeModalCount;
+}
+
+/**
  * Sao chép văn bản vào bộ nhớ tạm với cơ chế Fallback tương thích unsecure HTTP
  * @param {string} text
  * @returns {Promise<boolean>}
  */
 export async function copyToClipboard(text) {
-  if (navigator.clipboard && window.isSecureContext) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard && (typeof window === 'undefined' || window.isSecureContext)) {
     try {
       await navigator.clipboard.writeText(text);
       return true;
@@ -37,6 +94,7 @@ export async function copyToClipboard(text) {
   }
 
   // Fallback qua textarea và document.execCommand
+  if (typeof document === 'undefined') return false;
   try {
     const textArea = document.createElement('textarea');
     textArea.value = text;
@@ -77,7 +135,7 @@ export function formatDescriptionHtml(description) {
       `).join('');
 
       return `
-        <div class="mt-1.5 p-2 sm:p-2.5 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-2xs">
+        <div class="mt-1.5 p-2 sm:p-2.5 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-sm">
           <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
             <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
             <span>Combo bao gồm:</span>
