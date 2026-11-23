@@ -2,6 +2,8 @@
  * Logic trạng thái và thành phần giao diện Modal tùy chỉnh Combo
  */
 
+import { formatCurrency } from '../order-message.js';
+
 /**
  * Khởi tạo bộ quản lý trạng thái chọn option cho Combo
  */
@@ -119,14 +121,14 @@ export class ComboModal {
 
       groupsHtml += `
         <div class="mb-3 rounded-xl overflow-hidden border border-amber-200/80 bg-white shadow-sm">
-          <button type="button" class="w-full bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 font-extrabold px-4 py-3 flex items-center justify-between text-left text-sm uppercase tracking-wide group-accordion-btn" data-target="group-body-${group.group_id}">
+          <button type="button" class="w-full bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 font-extrabold px-4 py-3 flex items-center justify-between text-left text-sm uppercase tracking-wide group-accordion-btn transition select-none" data-target="group-body-${group.group_id}">
             <span class="flex items-center gap-2">
               <span class="w-2 h-2 rounded-full bg-red-600"></span>
               ${group.group_name}
             </span>
-            <span class="text-lg font-bold transform transition-transform group-arrow">▼</span>
+            <span class="text-sm font-bold transform transition-transform group-arrow ${isFirst ? 'rotate-180' : ''}">▼</span>
           </button>
-          <div id="group-body-${group.group_id}" class="group-options-body ${isFirst ? 'block' : 'block'} bg-amber-50/20">
+          <div id="group-body-${group.group_id}" class="group-options-body ${isFirst ? 'block' : 'hidden'} bg-amber-50/20">
             ${optionsListHtml}
           </div>
         </div>
@@ -175,6 +177,27 @@ export class ComboModal {
       </div>
     `;
 
+    // Gắn sự kiện đóng/mở Accordion
+    container.querySelectorAll('.group-accordion-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.target;
+        const bodyEl = document.getElementById(targetId);
+        const arrowEl = btn.querySelector('.group-arrow');
+        if (bodyEl) {
+          const isHidden = bodyEl.classList.contains('hidden');
+          if (isHidden) {
+            bodyEl.classList.remove('hidden');
+            bodyEl.classList.add('block');
+            arrowEl?.classList.add('rotate-180');
+          } else {
+            bodyEl.classList.remove('block');
+            bodyEl.classList.add('hidden');
+            arrowEl?.classList.remove('rotate-180');
+          }
+        }
+      });
+    });
+
     // Gắn sự kiện radio change
     const radioInputs = container.querySelectorAll('input[type="radio"]');
     radioInputs.forEach(input => {
@@ -189,7 +212,19 @@ export class ComboModal {
             // Cập nhật giá hiển thị tức thì
             const priceEl = document.getElementById('combo-modal-price');
             if (priceEl) {
-              priceEl.innerText = `${state.getTotalPrice().toLocaleString('vi-VN')} đ`;
+              priceEl.innerText = formatCurrency(state.getTotalPrice());
+            }
+
+            // Cập nhật highlight nền vàng cho label vừa chọn
+            const groupBody = input.closest('.group-options-body');
+            if (groupBody) {
+              groupBody.querySelectorAll('label').forEach(lbl => {
+                lbl.classList.remove('bg-amber-50/80', 'font-medium');
+              });
+              const currentLabel = input.closest('label');
+              if (currentLabel) {
+                currentLabel.classList.add('bg-amber-50/80', 'font-medium');
+              }
             }
           }
         }

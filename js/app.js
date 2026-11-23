@@ -5,6 +5,7 @@ import { Cart } from './cart.js';
 import { ComboModal } from './components/combo-modal.js';
 import { CartDrawer } from './components/cart-drawer.js';
 import { formatCurrency } from './order-message.js';
+import { escapeHtml } from './utils.js';
 
 class JollibeeApp {
   constructor() {
@@ -210,7 +211,7 @@ class JollibeeApp {
       container.innerHTML = `
         <div class="text-center py-16 bg-white rounded-3xl border border-gray-200 shadow-xs">
           <div class="text-5xl mb-3">🔍</div>
-          <p class="font-bold text-gray-700 text-base">Không tìm thấy món ăn nào phù hợp với từ khóa "${filterKeyword}"</p>
+          <p class="font-bold text-gray-700 text-base">Không tìm thấy món ăn nào phù hợp với từ khóa "${escapeHtml(filterKeyword)}"</p>
           <p class="text-xs text-gray-400 mt-1">Vui lòng thử tìm với từ khóa khác (ví dụ: gà, mì ý, burger, nước)</p>
           <button type="button" id="btn-reset-search" class="mt-4 bg-[#ffc72c] font-bold text-xs px-4 py-2 rounded-xl text-gray-900 shadow-xs">
             Xem Tất Cả Món Ăn

@@ -30,7 +30,7 @@ export function calculateDiscount(
 /**
  * Tính phí giao hàng dựa trên giá gốc ban đầu và hình thức nhận
  * Quy tắc:
- * - Ăn tại quán: 0đ
+ * - Ăn tại quán hoặc giỏ rỗng: 0đ
  * - Giao tận nơi: Giá gốc >= 200.000đ miễn phí (0đ); dưới 200.000đ là 10.000đ
  * @param {number} originalTotal - Tổng tiền gốc ban đầu
  * @param {'delivery' | 'dinein'} orderType - Hình thức đặt hàng
@@ -44,7 +44,7 @@ export function calculateShippingFee(
   freeshipThreshold = DEFAULT_PRICING_CONFIG.freeshipThreshold,
   standardFee = DEFAULT_PRICING_CONFIG.standardShippingFee
 ) {
-  if (orderType === 'dinein') {
+  if (orderType === 'dinein' || !originalTotal || originalTotal <= 0) {
     return 0;
   }
   return originalTotal >= freeshipThreshold ? 0 : standardFee;
@@ -63,11 +63,20 @@ export function calculateOrderPricing(items = [], orderType = 'delivery', config
   const freeshipThreshold = config.freeshipThreshold ?? DEFAULT_PRICING_CONFIG.freeshipThreshold;
   const standardFee = config.standardShippingFee ?? DEFAULT_PRICING_CONFIG.standardShippingFee;
 
-  const originalTotal = items.reduce((sum, item) => {
+  const originalTotal = (items || []).reduce((sum, item) => {
     const p = Number(item.price) || 0;
     const q = Number(item.quantity) || 1;
     return sum + p * q;
   }, 0);
+
+  if (originalTotal <= 0) {
+    return {
+      originalTotal: 0,
+      discountAmount: 0,
+      shippingFee: 0,
+      finalTotal: 0
+    };
+  }
 
   const discountAmount = calculateDiscount(originalTotal, step, discountPerStep);
   const shippingFee = calculateShippingFee(originalTotal, orderType, freeshipThreshold, standardFee);

@@ -2,6 +2,7 @@
  * Thành phần Drawer / Modal Giỏ Hàng & Chốt Đơn
  */
 import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js';
+import { copyToClipboard } from '../utils.js';
 
 export class CartDrawer {
   constructor(cart, config = {}, onCartChanged = null) {
@@ -262,10 +263,17 @@ export class CartDrawer {
   }
 
   _saveFormInputs() {
-    this.customerInfo.name = document.getElementById('customer-name')?.value || '';
-    this.customerInfo.phone = document.getElementById('customer-phone')?.value || '';
-    this.customerInfo.address = document.getElementById('customer-address')?.value || '';
-    this.customerInfo.note = document.getElementById('customer-note')?.value || '';
+    const nameEl = document.getElementById('customer-name');
+    if (nameEl) this.customerInfo.name = nameEl.value;
+
+    const phoneEl = document.getElementById('customer-phone');
+    if (phoneEl) this.customerInfo.phone = phoneEl.value;
+
+    const addrEl = document.getElementById('customer-address');
+    if (addrEl) this.customerInfo.address = addrEl.value;
+
+    const noteEl = document.getElementById('customer-note');
+    if (noteEl) this.customerInfo.note = noteEl.value;
   }
 
   _bindEvents() {
@@ -326,15 +334,15 @@ export class CartDrawer {
     });
 
     // Xử lý gửi đơn qua Zalo
-    document.getElementById('btn-send-zalo')?.addEventListener('click', () => {
+    document.getElementById('btn-send-zalo')?.addEventListener('click', async () => {
       this._saveFormInputs();
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
       
-      // Tự động sao chép trước
-      navigator.clipboard?.writeText(orderText).catch(() => {});
+      // Tự động sao chép trước (có fallback HTTP)
+      await copyToClipboard(orderText);
 
       const zaloTarget = this.config.zaloLink || this.config.zaloPhone || '';
       const url = generateZaloUrl(zaloTarget, orderText);
@@ -343,14 +351,14 @@ export class CartDrawer {
     });
 
     // Xử lý gửi qua Messenger
-    document.getElementById('btn-send-messenger')?.addEventListener('click', () => {
+    document.getElementById('btn-send-messenger')?.addEventListener('click', async () => {
       this._saveFormInputs();
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
 
-      navigator.clipboard?.writeText(orderText).catch(() => {});
+      await copyToClipboard(orderText);
 
       const messengerTarget = this.config.facebookMessengerUrl || 'https://m.me/';
       const url = generateMessengerUrl(messengerTarget, orderText);
@@ -359,19 +367,16 @@ export class CartDrawer {
     });
 
     // Sao chép nội dung đơn hàng
-    document.getElementById('btn-copy-order')?.addEventListener('click', () => {
+    document.getElementById('btn-copy-order')?.addEventListener('click', async () => {
       this._saveFormInputs();
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
 
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(orderText).then(() => {
-          this.showToast('Đã sao chép nội dung đơn hàng! Bạn có thể dán vào khung chat Zalo/FB.');
-        }).catch(() => {
-          prompt('Vui lòng sao chép toàn bộ nội dung đơn dưới đây:', orderText);
-        });
+      const success = await copyToClipboard(orderText);
+      if (success) {
+        this.showToast('Đã sao chép nội dung đơn hàng! Bạn có thể dán vào khung chat Zalo/FB.');
       } else {
         prompt('Vui lòng sao chép toàn bộ nội dung đơn dưới đây:', orderText);
       }

@@ -47,4 +47,14 @@ describe('Pricing Module', () => {
       finalTotal: 135000
     });
   });
+
+  it('giỏ hàng rỗng có giá gốc = 0 thì phí ship = 0 và tổng tiền = 0', () => {
+    assert.equal(calculateShippingFee(0, 'delivery'), 0);
+    assert.deepEqual(calculateOrderPricing([], 'delivery'), {
+      originalTotal: 0,
+      discountAmount: 0,
+      shippingFee: 0,
+      finalTotal: 0
+    });
+  });
 });
