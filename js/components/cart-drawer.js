@@ -1,9 +1,9 @@
 /**
  * Thành phần Drawer / Modal Giỏ Hàng & Chốt Đơn
  */
-import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js?v=1.2';
-import { copyToClipboard, escapeHtml, isValidVietnamesePhone, lockBodyScroll, unlockBodyScroll } from '../utils.js?v=1.2';
-import { fireOrderCelebration } from '../effects.js?v=1.2';
+import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js';
+import { copyToClipboard, escapeHtml, isValidVietnamesePhone, lockBodyScroll, unlockBodyScroll } from '../utils.js';
+import { fireOrderCelebration } from '../effects.js';
 import {
   IconShoppingBag,
   IconX,
@@ -22,7 +22,7 @@ import {
   IconCopy,
   IconZalo,
   IconMessenger
-} from '../icons.js?v=1.2';
+} from '../icons.js';
 
 export const CUSTOMER_STORAGE_KEY = 'jb_customer_info';
 
