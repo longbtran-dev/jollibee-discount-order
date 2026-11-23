@@ -23,6 +23,30 @@ describe('Menu Data Schema', () => {
     assert.ok(Array.isArray(sample.option_groups[0].options), 'options trong nhóm phải là mảng');
   });
 
+  it('toàn bộ option_groups của các combo không có option mặc định nào bị tính thêm tiền (> 0đ)', () => {
+    const raw = fs.readFileSync('data/menu.json', 'utf8');
+    const data = JSON.parse(raw);
+    const combos = data.categories.flatMap(c => c.products).filter(p => p.is_combo);
+    
+    const extraPriceDefaults = [];
+    combos.forEach(combo => {
+      (combo.option_groups || []).forEach(group => {
+        (group.options || []).forEach(opt => {
+          if (opt.is_default && opt.extra_price > 0) {
+            extraPriceDefaults.push({
+              combo: combo.name,
+              group: group.group_name,
+              option: opt.name,
+              extra_price: opt.extra_price
+            });
+          }
+        });
+      });
+    });
+
+    assert.equal(extraPriceDefaults.length, 0, `Không được có option mặc định tăng giá! Đã phát hiện: ${JSON.stringify(extraPriceDefaults)}`);
+  });
+
   it('config.js định nghĩa window.JOLLIBEE_CONFIG với đầy đủ thuộc tính', () => {
     assert.ok(fs.existsSync('config.js'), 'config.js phải tồn tại');
     const content = fs.readFileSync('config.js', 'utf8');

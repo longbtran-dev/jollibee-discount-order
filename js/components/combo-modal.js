@@ -13,10 +13,13 @@ export function createComboState(product) {
   const groups = product.option_groups || [];
   const selected = {};
 
-  // Chọn mặc định cho từng nhóm
+  // Chọn mặc định cho từng nhóm: Luôn ưu tiên option tiêu chuẩn 0đ, không tự ý chọn option tăng tiền
   groups.forEach(group => {
     if (group.options && group.options.length > 0) {
-      const defaultOpt = group.options.find(o => o.is_default) || group.options[0];
+      const defaultOpt = 
+        group.options.find(o => o.is_default && (Number(o.extra_price) || 0) === 0) ||
+        group.options.find(o => (Number(o.extra_price) || 0) === 0) ||
+        group.options[0];
       selected[group.group_id] = { ...defaultOpt, group_name: group.group_name };
     }
   });

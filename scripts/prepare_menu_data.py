@@ -65,6 +65,36 @@ def main():
                     "is_default": False if is_optional else bool(sel.get("selected_by_default")),
                     "image": sel.get("local_image_path") or ""
                 })
+
+            # Đảm bảo chỉ có DUY NHẤT 1 lựa chọn mặc định là option tiêu chuẩn có extra_price == 0
+            # Tuyệt đối không để mặc định vào option tăng giá (upsize/phụ thu)
+            has_valid_default = False
+            for opt in options:
+                if opt.get("is_default") and opt.get("extra_price", 0) == 0:
+                    has_valid_default = True
+                    break
+
+            if not has_valid_default:
+                # Xóa toàn bộ flag is_default cũ (tránh trường hợp raw data set default vào option tăng tiền)
+                for opt in options:
+                    opt["is_default"] = False
+                # Đặt mặc định vào option 0đ đầu tiên
+                for opt in options:
+                    if opt.get("extra_price", 0) == 0:
+                        opt["is_default"] = True
+                        has_valid_default = True
+                        break
+                if not has_valid_default and options:
+                    options[0]["is_default"] = True
+            else:
+                # Nếu đã có 1 option 0đ là default, tắt default ở tất cả các option tăng tiền khác
+                found_first_default = False
+                for opt in options:
+                    if opt.get("is_default"):
+                        if not found_first_default and opt.get("extra_price", 0) == 0:
+                            found_first_default = True
+                        else:
+                            opt["is_default"] = False
             
             option_groups.append({
                 "group_id": str(g.get("group_id")),

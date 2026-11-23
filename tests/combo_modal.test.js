@@ -78,4 +78,30 @@ describe('Combo State Logic', () => {
     assert.equal(state.getSelectedList().length, 1);
     assert.equal(state.getSelectedList()[0].option_name, 'Thêm 2 Gói Tương Cà');
   });
+
+  it('luôn ưu tiên mặc định chọn option 0đ, không bao giờ tự ý chọn option tăng tiền', () => {
+    const mockComboUpsell = {
+      id: 'combo_upsell',
+      name: '1 Mì Ý Sốt Cay Vừa + 1 Nước ngọt',
+      price: 50000,
+      option_groups: [
+        {
+          group_id: 'g_drinks',
+          group_name: 'CHỌN NƯỚC',
+          options: [
+            { option_id: 'pepsi_vua', name: 'Pepsi vừa', extra_price: 0, is_default: false },
+            { option_id: '7up_vua', name: '7UP vừa', extra_price: 0, is_default: false },
+            // Giả lập raw data cố tình đánh dấu is_default vào option tăng tiền
+            { option_id: 'pepsi_lon', name: 'Pepsi lớn (up)', extra_price: 5000, is_default: true }
+          ]
+        }
+      ]
+    };
+
+    const state = createComboState(mockComboUpsell);
+    // Phải chọn option 0đ (Pepsi vừa), KHÔNG được chọn Pepsi lớn +5k
+    assert.equal(state.selected['g_drinks'].option_id, 'pepsi_vua');
+    assert.equal(state.selected['g_drinks'].extra_price, 0);
+    assert.equal(state.getTotalPrice(), 50000); // Giữ nguyên đúng giá gốc combo 50.000đ
+  });
 });
