@@ -39,9 +39,17 @@ def main():
 
             options = []
             if is_optional:
+                opt_label = "Không thêm (None)"
+                if "sốt" in title.lower():
+                    opt_label = "Không thêm sốt (None)"
+                elif "món" in title.lower():
+                    opt_label = "Không thêm món (None)"
+                elif "tương" in title.lower():
+                    opt_label = "Không thêm tương (None)"
+
                 options.append({
                     "option_id": f"none_{g.get('group_id')}",
-                    "name": "Không thêm",
+                    "name": opt_label,
                     "extra_price": 0,
                     "quantity": 0,
                     "is_default": True,

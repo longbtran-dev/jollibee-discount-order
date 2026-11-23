@@ -107,19 +107,29 @@ export class ComboModal {
       let optionsListHtml = '';
       (group.options || []).forEach(opt => {
         const isChecked = currentSelected && currentSelected.option_id === opt.option_id;
-        const extraLabel = opt.extra_price > 0 ? `+${opt.extra_price.toLocaleString('vi-VN')} đ` : '';
-        const imgHtml = opt.image
-          ? `<img src="${opt.image}" alt="${opt.name}" class="w-12 h-12 object-contain rounded bg-white p-1 border border-amber-100 flex-shrink-0" onerror="this.style.display='none'">`
-          : '';
+        const isNone = (opt.option_id && String(opt.option_id).startsWith('none_')) || opt.name.toLowerCase().includes('không thêm');
+        
+        const extraLabel = isNone
+          ? `<span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">+0 đ</span>`
+          : (opt.extra_price > 0 ? `<span class="text-sm font-bold text-red-600">+${formatCurrency(opt.extra_price)}</span>` : '');
+
+        const iconHtml = isNone
+          ? `<div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-lg text-gray-400 font-black border border-gray-200 flex-shrink-0">🚫</div>`
+          : (opt.image
+              ? `<img src="${opt.image}" alt="${opt.name}" class="w-12 h-12 object-contain rounded bg-white p-1 border border-amber-100 flex-shrink-0" onerror="this.style.display='none'">`
+              : `<div class="w-12 h-12 rounded bg-amber-50 flex items-center justify-center text-xs font-bold text-amber-700 border border-amber-100 flex-shrink-0">🍗</div>`);
 
         optionsListHtml += `
           <label class="flex items-center justify-between p-3.5 border-b border-amber-100/60 last:border-b-0 cursor-pointer hover:bg-amber-50/60 transition ${isChecked ? 'bg-amber-50/80 font-medium' : ''}">
             <div class="flex items-center gap-3">
-              ${imgHtml}
-              <span class="text-sm sm:text-base text-gray-800">${opt.name}</span>
+              ${iconHtml}
+              <div class="flex flex-col">
+                <span class="text-sm sm:text-base text-gray-800 ${isNone ? 'font-semibold text-gray-700' : ''}">${opt.name}</span>
+                ${isNone ? `<span class="text-[11px] text-gray-400">Không chọn thêm món phụ cho phần này</span>` : ''}
+              </div>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
-              ${extraLabel ? `<span class="text-sm font-bold text-red-600">${extraLabel}</span>` : ''}
+              ${extraLabel}
               <input type="radio" name="opt_group_${group.group_id}" value="${opt.option_id}" 
                 class="w-5 h-5 text-red-600 focus:ring-red-500 border-gray-300"
                 ${isChecked ? 'checked' : ''}
@@ -133,10 +143,13 @@ export class ComboModal {
       groupsHtml += `
         <div class="mb-3 rounded-xl overflow-hidden border border-amber-200/80 bg-white shadow-sm">
           <button type="button" class="w-full bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 font-extrabold px-4 py-3 flex items-center justify-between text-left text-sm uppercase tracking-wide group-accordion-btn transition select-none" data-target="group-body-${group.group_id}">
-            <span class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-red-600"></span>
-              ${group.group_name}
-            </span>
+            <div class="flex items-center gap-2 min-w-0 pr-2">
+              <span class="w-2 h-2 rounded-full bg-red-600 flex-shrink-0"></span>
+              <span class="truncate">${group.group_name}</span>
+              <span class="text-[11px] font-bold text-gray-800 bg-white/80 px-2 py-0.5 rounded-full border border-amber-300 truncate max-w-[130px] sm:max-w-[180px] group-current-badge-${group.group_id}">
+                ${currentSelected ? currentSelected.name : ''}
+              </span>
+            </div>
             <span class="text-sm font-bold transform transition-transform group-arrow ${isFirst ? 'rotate-180' : ''}">▼</span>
           </button>
           <div id="group-body-${group.group_id}" class="group-options-body ${isFirst ? 'block' : 'hidden'} bg-amber-50/20">
@@ -237,6 +250,10 @@ export class ComboModal {
             if (origEl) origEl.innerText = formatCurrency(price);
             const priceEl = document.getElementById('combo-modal-price');
             if (priceEl) priceEl.innerText = formatCurrency(finalEst);
+
+            // Cập nhật nhãn badge hiển thị lựa chọn hiện tại ở thanh accordion
+            const badgeEl = container.querySelector(`.group-current-badge-${groupId}`);
+            if (badgeEl) badgeEl.innerText = opt.name;
 
             // Cập nhật highlight nền vàng cho label vừa chọn
             const groupBody = input.closest('.group-options-body');
