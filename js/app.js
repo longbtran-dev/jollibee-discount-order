@@ -7,6 +7,7 @@ import { CartDrawer } from './components/cart-drawer.js';
 import { formatCurrency } from './order-message.js';
 import { escapeHtml } from './utils.js';
 import { IconSliders, IconClock, IconPlus, IconSearch } from './icons.js';
+import { flyToCart, bounceCartBadge, fireFreeshipMilestone } from './effects.js';
 
 class JollibeeApp {
   constructor() {
@@ -14,6 +15,7 @@ class JollibeeApp {
     this.menuData = null;
     this.cart = new Cart();
     this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
+    this.lastOriginalTotal = 0;
     this.comboModal = new ComboModal('combo-modal-container');
     this.cartDrawer = new CartDrawer(
       this.cart, 
@@ -294,14 +296,15 @@ class JollibeeApp {
     // Gắn sự kiện thêm món / mở modal combo
     container.querySelectorAll('.btn-select-product').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        const pid = e.currentTarget.dataset.id;
-        const isCombo = e.currentTarget.dataset.isCombo === 'true';
-        this.handleProductClick(pid, isCombo);
+        const triggerEl = e.currentTarget;
+        const pid = triggerEl.dataset.id;
+        const isCombo = triggerEl.dataset.isCombo === 'true';
+        this.handleProductClick(pid, isCombo, triggerEl);
       });
     });
   }
 
-  handleProductClick(productId, isCombo) {
+  handleProductClick(productId, isCombo, triggerEl = null) {
     if (!this.menuData) return;
     
     // Tìm sản phẩm trong tất cả danh mục
@@ -317,12 +320,19 @@ class JollibeeApp {
       this.comboModal.open(product, (configuredProduct, selectedOptions) => {
         this.cart.addItem(configuredProduct, selectedOptions, 1);
         this.updateFloatingCart();
+        bounceCartBadge(document.getElementById('floating-cart-badge'));
         this.cartDrawer.showToast(`Đã thêm "${product.name}" vào giỏ hàng!`);
       });
     } else {
       // Thêm ngay món đơn
       this.cart.addItem(product, [], 1);
       this.updateFloatingCart();
+      const badgeEl = document.getElementById('floating-cart-badge');
+      if (triggerEl) {
+        flyToCart(triggerEl, badgeEl);
+      } else {
+        bounceCartBadge(badgeEl);
+      }
       this.cartDrawer.showToast(`Đã thêm "${product.name}" vào giỏ!`);
     }
   }
@@ -330,12 +340,28 @@ class JollibeeApp {
   updateFloatingCart() {
     const totalItems = this.cart.getTotalItemCount();
     const totals = this.cart.getTotals(this.orderType, this.config);
+    const freeshipThreshold = this.config.freeshipThreshold || 200000;
+
+    // Kích hoạt pháo hoa chúc mừng khi người dùng vừa đạt mốc Freeship
+    if (this.orderType === 'delivery' && this.lastOriginalTotal < freeshipThreshold && totals.originalTotal >= freeshipThreshold) {
+      fireFreeshipMilestone();
+    }
+    this.lastOriginalTotal = totals.originalTotal;
 
     const badgeEl = document.getElementById('floating-cart-badge');
     const priceEl = document.getElementById('floating-cart-final-price');
     const hintEl = document.getElementById('floating-cart-discount-hint');
     const origWrapper = document.getElementById('floating-cart-original-wrapper');
     const origPriceEl = document.getElementById('floating-cart-original-price');
+    const openCartBtn = document.getElementById('btn-open-cart-drawer');
+
+    if (openCartBtn) {
+      if (totalItems > 0) {
+        openCartBtn.classList.add('has-items-glow');
+      } else {
+        openCartBtn.classList.remove('has-items-glow');
+      }
+    }
 
     if (badgeEl) badgeEl.innerText = totalItems;
     if (priceEl) priceEl.innerText = formatCurrency(totals.finalTotal);

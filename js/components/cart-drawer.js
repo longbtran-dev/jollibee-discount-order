@@ -3,6 +3,7 @@
  */
 import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js';
 import { copyToClipboard } from '../utils.js';
+import { fireOrderCelebration } from '../effects.js';
 import {
   IconShoppingBag,
   IconX,
@@ -281,19 +282,30 @@ export class CartDrawer {
 
                 <!-- Mua thêm để được Freeship hiển thị ngay dưới Phí giao hàng -->
                 ${this.orderType === 'delivery' ? `
-                  <div class="pt-0.5">
+                  <div class="pt-1">
                     ${remainingToFreeship > 0 ? `
-                      <div class="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 flex items-center justify-between">
-                        <span class="flex items-center gap-1.5 font-medium">
-                          <span class="text-amber-600 flex items-center">${IconBike('w-3.5 h-3.5')}</span>
-                          <span>Mua thêm <b>${formatCurrency(remainingToFreeship)}</b> để được <b>Freeship</b>!</span>
-                        </span>
-                        <span class="text-red-600 font-extrabold text-[10px] bg-red-100/70 border border-red-200 px-1.5 py-0.5 rounded-md">Phí ship 10k</span>
+                      <div class="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 shadow-2xs">
+                        <div class="flex items-center justify-between">
+                          <span class="flex items-center gap-1.5 font-medium">
+                            <span class="text-amber-600 flex items-center">${IconBike('w-3.5 h-3.5')}</span>
+                            <span>Mua thêm <b>${formatCurrency(remainingToFreeship)}</b> để được <b>Freeship</b>!</span>
+                          </span>
+                          <span class="text-red-600 font-extrabold text-[10px] bg-red-100/70 border border-red-200 px-1.5 py-0.5 rounded-md">Phí ship 10k</span>
+                        </div>
+                        <div class="w-full bg-amber-200/60 rounded-full h-1.5 overflow-hidden mt-2">
+                          <div class="h-full bg-gradient-to-r from-amber-400 to-[#d71920] rounded-full transition-all duration-500 ease-out" 
+                            style="width: ${Math.min(100, Math.max(5, Math.round((pricing.originalTotal / (this.config.freeshipThreshold || 200000)) * 100)))}%"></div>
+                        </div>
                       </div>
                     ` : `
-                      <div class="p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center gap-1.5 font-bold">
-                        <span class="text-green-600 flex items-center">${IconCheckCircle('w-3.5 h-3.5')}</span>
-                        <span>Đã đủ điều kiện <b>Miễn Phí Giao Hàng</b> (Đơn từ 200k tiền gốc)!</span>
+                      <div class="p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 shadow-2xs">
+                        <div class="flex items-center gap-1.5 font-bold">
+                          <span class="text-green-600 flex items-center">${IconCheckCircle('w-3.5 h-3.5')}</span>
+                          <span>Đã đủ điều kiện <b>Miễn Phí Giao Hàng</b> (Đơn từ 200k tiền gốc)!</span>
+                        </div>
+                        <div class="w-full bg-green-200 rounded-full h-1.5 overflow-hidden mt-2">
+                          <div class="h-full bg-emerald-500 rounded-full transition-all duration-500 ease-out" style="width: 100%"></div>
+                        </div>
                       </div>
                     `}
                   </div>
@@ -455,6 +467,8 @@ export class CartDrawer {
       this._saveFormInputs();
       if (!this.validateForm()) return;
 
+      fireOrderCelebration();
+
       const pricing = this.cart.getTotals(this.orderType, this.config);
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
       
@@ -472,6 +486,8 @@ export class CartDrawer {
       this._saveFormInputs();
       if (!this.validateForm()) return;
 
+      fireOrderCelebration();
+
       const pricing = this.cart.getTotals(this.orderType, this.config);
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
 
@@ -487,6 +503,8 @@ export class CartDrawer {
     document.getElementById('btn-copy-order')?.addEventListener('click', async () => {
       this._saveFormInputs();
       if (!this.validateForm()) return;
+
+      fireOrderCelebration();
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
