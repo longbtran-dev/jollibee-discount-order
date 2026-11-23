@@ -5,10 +5,11 @@ import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency 
 import { copyToClipboard } from '../utils.js';
 
 export class CartDrawer {
-  constructor(cart, config = {}, onCartChanged = null) {
+  constructor(cart, config = {}, onCartChanged = null, onOrderTypeChanged = null) {
     this.cart = cart;
     this.config = config;
     this.onCartChanged = onCartChanged;
+    this.onOrderTypeChanged = onOrderTypeChanged;
     this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
     this.containerId = 'cart-drawer-container';
     this.customerInfo = {
@@ -17,6 +18,14 @@ export class CartDrawer {
       address: '',
       note: ''
     };
+  }
+
+  setOrderType(type) {
+    this.orderType = type;
+    const container = document.getElementById(this.containerId);
+    if (container && container.innerHTML.trim()) {
+      this.render();
+    }
   }
 
   getContainer() {
@@ -51,6 +60,10 @@ export class CartDrawer {
   }
 
   validateForm() {
+    // Ăn tại quán: Không cần thông tin khách hàng
+    if (this.orderType === 'dinein') {
+      return true;
+    }
     if (!this.customerInfo.name || !this.customerInfo.name.trim()) {
       alert('Vui lòng nhập Họ và Tên của bạn để shop dễ xưng hô!');
       document.getElementById('customer-name')?.focus();
@@ -177,31 +190,39 @@ export class CartDrawer {
             </div>
 
             ${items.length > 0 ? `
-              <!-- Customer Info Form -->
-              <div class="bg-amber-50/40 rounded-2xl border border-amber-200/80 p-3.5 shadow-xs space-y-3">
-                <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <span>📝</span>
-                  <span>Thông Tin Nhận Hàng</span>
-                </div>
-                <div>
-                  <input type="text" id="customer-name" value="${this.customerInfo.name}" placeholder="Họ và tên của bạn *" 
-                    class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
-                </div>
-                <div>
-                  <input type="tel" id="customer-phone" value="${this.customerInfo.phone}" placeholder="Số điện thoại nhận hàng *" 
-                    class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
-                </div>
-                ${this.orderType === 'delivery' ? `
+              <!-- Customer Info Form / Dine-in Notice -->
+              ${this.orderType === 'delivery' ? `
+                <div class="bg-amber-50/40 rounded-2xl border border-amber-200/80 p-3.5 shadow-xs space-y-3">
+                  <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <span>📝</span>
+                    <span>Thông Tin Giao Hàng</span>
+                  </div>
+                  <div>
+                    <input type="text" id="customer-name" value="${this.customerInfo.name}" placeholder="Họ và tên của bạn *" 
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
+                  </div>
+                  <div>
+                    <input type="tel" id="customer-phone" value="${this.customerInfo.phone}" placeholder="Số điện thoại nhận hàng *" 
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
+                  </div>
                   <div>
                     <input type="text" id="customer-address" value="${this.customerInfo.address}" placeholder="Địa chỉ giao hàng (Số nhà, đường, phường, quận/huyện) *" 
                       class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
                   </div>
-                ` : ''}
-                <div>
-                  <input type="text" id="customer-note" value="${this.customerInfo.note}" placeholder="${this.orderType === 'dinein' ? 'Chi nhánh Jollibee dự định ghé ăn hoặc ghi chú...' : 'Ghi chú cho shipper (ví dụ: giao lúc 12h, lấy thêm tương ớt)...'}" 
-                    class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
+                  <div>
+                    <input type="text" id="customer-note" value="${this.customerInfo.note}" placeholder="Ghi chú cho shipper (nếu có)..." 
+                      class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-hidden bg-white">
+                  </div>
                 </div>
-              </div>
+              ` : `
+                <div class="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 shadow-xs flex items-center gap-3">
+                  <div class="text-3xl flex-shrink-0">🍽️</div>
+                  <div class="text-xs text-amber-950">
+                    <span class="font-black block text-sm">Ăn Tại Quán: Không cần thông tin khách hàng</span>
+                    <span class="text-gray-600 mt-0.5 block leading-relaxed">Bạn chỉ cần gửi danh sách món ăn đã chọn, shop sẽ hỗ trợ bạn đặt ngay tại quán!</span>
+                  </div>
+                </div>
+              `}
 
               <!-- Price Breakdown Card -->
               <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-2.5">
@@ -320,11 +341,13 @@ export class CartDrawer {
     document.getElementById('btn-type-delivery')?.addEventListener('click', () => {
       this._saveFormInputs();
       this.orderType = 'delivery';
+      if (this.onOrderTypeChanged) this.onOrderTypeChanged('delivery');
       this.render();
     });
     document.getElementById('btn-type-dinein')?.addEventListener('click', () => {
       this._saveFormInputs();
       this.orderType = 'dinein';
+      if (this.onOrderTypeChanged) this.onOrderTypeChanged('dinein');
       this.render();
     });
 

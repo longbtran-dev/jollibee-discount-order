@@ -26,17 +26,24 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
     `      ĐƠN ĐẶT HỘ JOLLIBEE GIÁ RẺ`,
     `🍗 ============================ 🍗`,
     ``,
-    `📌 HÌNH THỨC: ${typeText}`,
-    `👤 Khách hàng: ${customer.name || '(Chưa nhập)'}`,
-    `📞 Số điện thoại: ${customer.phone || '(Chưa nhập)'}`
+    `📌 HÌNH THỨC: ${typeText}`
   ];
 
   if (orderType === 'delivery') {
+    lines.push(`👤 Khách hàng: ${customer.name || '(Chưa nhập)'}`);
+    lines.push(`📞 Số điện thoại: ${customer.phone || '(Chưa nhập)'}`);
     lines.push(`📍 Địa chỉ giao hàng: ${customer.address || '(Chưa nhập)'}`);
-  }
-
-  if (customer.note && customer.note.trim()) {
-    lines.push(`📝 Ghi chú: ${customer.note.trim()}`);
+    if (customer.note && customer.note.trim()) {
+      lines.push(`📝 Ghi chú: ${customer.note.trim()}`);
+    }
+  } else {
+    // Ăn tại quán: không yêu cầu thông tin khách hàng
+    if (customer.name && customer.name.trim()) {
+      lines.push(`👤 Khách hàng: ${customer.name.trim()}`);
+    }
+    if (customer.note && customer.note.trim()) {
+      lines.push(`📝 Ghi chú: ${customer.note.trim()}`);
+    }
   }
 
   lines.push(``);
@@ -84,7 +91,6 @@ export function generateZaloUrl(phoneOrLink, messageText) {
     const cleanPhone = baseUrl.replace(/\D/g, '');
     baseUrl = `https://zalo.me/${cleanPhone}`;
   }
-  // Loại bỏ dấu / ở cuối nếu có
   baseUrl = baseUrl.replace(/\/+$/, '');
   const encodedText = encodeURIComponent(messageText);
   return `${baseUrl}?text=${encodedText}`;

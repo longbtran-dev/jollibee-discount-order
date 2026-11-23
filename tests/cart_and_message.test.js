@@ -56,6 +56,33 @@ describe('Cart & Order Message Formatter', () => {
     assert.ok(msg.includes('110.000đ'));
   });
 
+  it('định dạng tin nhắn cho Ăn tại quán không bắt buộc và không hiển thị thông tin khách nếu không có', () => {
+    const customer = {}; // Trống hoàn toàn vì khách ăn tại quán không cần nhập
+    const items = [{
+      name: 'Combo Gà Giòn Cay',
+      unitPrice: 105000,
+      quantity: 1
+    }];
+    const pricing = { originalTotal: 105000, discountAmount: 15000, shippingFee: 0, finalTotal: 90000 };
+
+    const msg = formatOrderText(customer, items, pricing, 'dinein');
+    assert.ok(msg.includes('🍽️ ĂN TẠI QUÁN'));
+    assert.ok(!msg.includes('👤 Khách hàng:'));
+    assert.ok(!msg.includes('📞 Số điện thoại:'));
+    assert.ok(!msg.includes('📍 Địa chỉ giao hàng:'));
+    assert.ok(msg.includes('Combo Gà Giòn Cay'));
+    assert.ok(msg.includes('90.000đ'));
+  });
+
+  it('hiển thị lưu ý đơn hàng dưới 100k khi chưa đạt mốc giảm giá tối thiểu', () => {
+    const customer = { name: 'Khách test', phone: '0900000000', address: 'HN' };
+    const items = [{ name: 'Kem Vani', unitPrice: 10000, quantity: 1 }];
+    const pricing = { originalTotal: 10000, discountAmount: 0, shippingFee: 10000, finalTotal: 20000 };
+
+    const msg = formatOrderText(customer, items, pricing, 'delivery');
+    assert.ok(msg.includes('⚠️ Lưu ý: Đơn hàng dưới 100k (Chưa áp dụng chính sách giảm giá)'));
+  });
+
   it('tạo đường dẫn Zalo và Messenger chuẩn mã hóa URI', () => {
     const zaloUrl = generateZaloUrl('0901234567', 'Xin chào, tôi muốn đặt hàng');
     assert.ok(zaloUrl.startsWith('https://zalo.me/0901234567'));

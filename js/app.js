@@ -12,9 +12,38 @@ class JollibeeApp {
     this.config = window.JOLLIBEE_CONFIG || {};
     this.menuData = null;
     this.cart = new Cart();
+    this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
     this.comboModal = new ComboModal('combo-modal-container');
-    this.cartDrawer = new CartDrawer(this.cart, this.config, () => this.updateFloatingCart());
+    this.cartDrawer = new CartDrawer(
+      this.cart, 
+      this.config, 
+      () => this.updateFloatingCart(),
+      (newType) => this.setOrderType(newType, false)
+    );
     this.activeCategorySlug = null;
+  }
+
+  setOrderType(type, updateDrawer = true) {
+    this.orderType = type;
+    this.updateTopSwitcherUI();
+    if (updateDrawer) {
+      this.cartDrawer.setOrderType(type);
+    }
+    this.updateFloatingCart();
+  }
+
+  updateTopSwitcherUI() {
+    const btnDel = document.getElementById('top-btn-delivery');
+    const btnDin = document.getElementById('top-btn-dinein');
+    if (!btnDel || !btnDin) return;
+
+    if (this.orderType === 'delivery') {
+      btnDel.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-white text-gray-900 shadow-sm active:scale-98';
+      btnDin.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition text-white hover:bg-white/10 active:scale-98';
+    } else {
+      btnDel.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition text-white hover:bg-white/10 active:scale-98';
+      btnDin.className = 'flex-1 py-2 px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-[#ffc72c] text-gray-950 shadow-sm active:scale-98';
+    }
   }
 
   async init() {
@@ -107,7 +136,7 @@ class JollibeeApp {
     // Cuộn đến section
     const targetSection = document.getElementById(`section-${slug}`);
     if (targetSection) {
-      const headerOffset = 140;
+      const headerOffset = 180;
       const elementPosition = targetSection.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
       window.scrollTo({
@@ -289,7 +318,7 @@ class JollibeeApp {
 
   updateFloatingCart() {
     const totalItems = this.cart.getTotalItemCount();
-    const totals = this.cart.getTotals('delivery', this.config);
+    const totals = this.cart.getTotals(this.orderType, this.config);
 
     const badgeEl = document.getElementById('floating-cart-badge');
     const priceEl = document.getElementById('floating-cart-final-price');
@@ -309,21 +338,31 @@ class JollibeeApp {
 
     if (hintEl) {
       if (totalItems === 0) {
-        hintEl.innerText = '(Chưa chọn món)';
+        hintEl.innerText = this.orderType === 'dinein' ? '(Ăn tại quán • Chưa chọn món)' : '(Giao tận nơi • Chưa chọn món)';
         hintEl.className = 'text-[11px] text-gray-400 font-medium';
       } else if (totals.discountAmount > 0) {
-        hintEl.innerText = `Đã tiết kiệm -${formatCurrency(totals.discountAmount)} so với giá gốc Jollibee!`;
+        const modeHint = this.orderType === 'dinein' ? ' • Ăn tại quán' : (totals.shippingFee === 0 ? ' • Freeship' : ' • Phí ship 10k');
+        hintEl.innerText = `Đã tiết kiệm -${formatCurrency(totals.discountAmount)}${modeHint}`;
         hintEl.className = 'text-[11px] text-green-600 font-extrabold';
       } else {
         const nextStepThreshold = this.config.discountStep || 100000;
         const needed = nextStepThreshold - totals.originalTotal;
-        hintEl.innerText = `Đơn từ 100k mới được giảm giá (Cần thêm ${formatCurrency(needed)})`;
+        const modeHint = this.orderType === 'dinein' ? ' (Ăn tại quán)' : '';
+        hintEl.innerText = `Đơn từ 100k mới được giảm giá${modeHint} (Cần thêm ${formatCurrency(needed)})`;
         hintEl.className = 'text-[11px] text-amber-800 font-extrabold';
       }
     }
   }
 
   bindGlobalEvents() {
+    // Chuyển hình thức giao hàng / ăn tại quán ở header
+    document.getElementById('top-btn-delivery')?.addEventListener('click', () => {
+      this.setOrderType('delivery');
+    });
+    document.getElementById('top-btn-dinein')?.addEventListener('click', () => {
+      this.setOrderType('dinein');
+    });
+
     // Mở drawer giỏ hàng khi bấm vào nút nổi ở footer
     document.getElementById('btn-open-cart-drawer')?.addEventListener('click', () => {
       this.cartDrawer.open();
