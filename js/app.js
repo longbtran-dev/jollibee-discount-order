@@ -5,7 +5,7 @@ import { Cart } from './cart.js';
 import { ComboModal } from './components/combo-modal.js';
 import { CartDrawer } from './components/cart-drawer.js';
 import { formatCurrency } from './order-message.js';
-import { escapeHtml, formatDescriptionHtml } from './utils.js';
+import { escapeHtml, formatDescriptionHtml } from './utils.js?v=1.1';
 import { IconSliders, IconClock, IconPlus, IconSearch } from './icons.js';
 import { flyToCart, bounceCartBadge, fireFreeshipMilestone } from './effects.js';
 

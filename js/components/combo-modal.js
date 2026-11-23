@@ -4,7 +4,7 @@
 
 import { formatCurrency } from '../order-message.js';
 import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '../icons.js';
-import { formatDescriptionHtml } from '../utils.js';
+import { formatDescriptionHtml } from '../utils.js?v=1.1';
 
 /**
  * Khởi tạo bộ quản lý trạng thái chọn option cho Combo

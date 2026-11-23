@@ -2,7 +2,7 @@
  * Thành phần Drawer / Modal Giỏ Hàng & Chốt Đơn
  */
 import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js';
-import { copyToClipboard } from '../utils.js';
+import { copyToClipboard } from '../utils.js?v=1.1';
 import { fireOrderCelebration } from '../effects.js';
 import {
   IconShoppingBag,
