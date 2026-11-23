@@ -87,6 +87,10 @@ export class ComboModal {
     const product = this.currentProduct;
     const state = this.state;
     const currentPrice = state.getTotalPrice();
+    const discount = currentPrice >= 100000
+      ? Math.floor(currentPrice / 100000) * 15000
+      : Math.round((currentPrice * 0.15) / 1000) * 1000;
+    const discountedPrice = Math.max(0, currentPrice - discount);
 
     let groupsHtml = '';
     (product.option_groups || []).forEach((group, groupIdx) => {
@@ -162,9 +166,15 @@ export class ComboModal {
           <!-- Modal Footer Sticky -->
           <div class="p-4 bg-white border-t border-gray-100 shadow-lg flex items-center justify-between gap-4">
             <div>
-              <div class="text-xs text-gray-500 font-medium">Tổng tiền món này:</div>
-              <div class="text-xl font-extrabold text-red-600" id="combo-modal-price">
-                ${currentPrice.toLocaleString('vi-VN')} đ
+              <div class="text-[11px] text-gray-400">
+                <span>Giá gốc Jollibee: </span>
+                <span id="combo-modal-orig-price" class="line-through font-bold text-gray-500">${formatCurrency(currentPrice)}</span>
+              </div>
+              <div class="flex items-baseline gap-1 mt-0.5">
+                <span class="text-xs font-bold text-red-600">Đặt hộ:</span>
+                <span class="text-lg sm:text-xl font-black text-red-600" id="combo-modal-price">
+                  ${formatCurrency(discountedPrice)}
+                </span>
               </div>
             </div>
             <button type="button" id="combo-modal-confirm-btn" class="flex-1 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold py-3.5 px-6 rounded-xl shadow-md active:scale-98 transition flex items-center justify-center gap-2">
@@ -210,10 +220,16 @@ export class ComboModal {
           if (opt) {
             state.selectOption(groupId, opt);
             // Cập nhật giá hiển thị tức thì
+            const price = state.getTotalPrice();
+            const disc = price >= 100000
+              ? Math.floor(price / 100000) * 15000
+              : Math.round((price * 0.15) / 1000) * 1000;
+            const finalEst = Math.max(0, price - disc);
+
+            const origEl = document.getElementById('combo-modal-orig-price');
+            if (origEl) origEl.innerText = formatCurrency(price);
             const priceEl = document.getElementById('combo-modal-price');
-            if (priceEl) {
-              priceEl.innerText = formatCurrency(state.getTotalPrice());
-            }
+            if (priceEl) priceEl.innerText = formatCurrency(finalEst);
 
             // Cập nhật highlight nền vàng cho label vừa chọn
             const groupBody = input.closest('.group-options-body');

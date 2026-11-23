@@ -145,6 +145,19 @@ class JollibeeApp {
           ? 'bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 border border-amber-300'
           : 'bg-[#d71920] hover:bg-[#b81218] text-white shadow-xs';
 
+        const originalPrice = product.price;
+        let discountedPrice;
+        let savingsBadge = '';
+
+        if (originalPrice >= 100000) {
+          const discount = Math.floor(originalPrice / 100000) * 15000;
+          discountedPrice = originalPrice - discount;
+          savingsBadge = `Tiết kiệm -${Math.round(discount / 1000)}k`;
+        } else {
+          discountedPrice = Math.round((originalPrice * 0.85) / 1000) * 1000;
+          savingsBadge = `Gộp đơn -15%`;
+        }
+
         cardsHtml += `
           <div class="product-card bg-white rounded-2xl border border-gray-200/90 shadow-xs hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3.5 sm:p-4">
             <div class="flex gap-3">
@@ -166,11 +179,22 @@ class JollibeeApp {
               <div class="flex-1 min-w-0">
                 <h4 class="font-extrabold text-sm sm:text-base text-gray-900 leading-snug line-clamp-2">${product.name}</h4>
                 <p class="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">${product.description || 'Hương vị giòn rụm thơm ngon đặc trưng của Jollibee'}</p>
-                <div class="mt-2 flex items-baseline gap-2">
-                  <span class="text-base sm:text-lg font-black text-red-600">${formatCurrency(product.price)}</span>
-                  <span class="text-[10px] text-green-700 font-bold bg-green-50 px-1.5 py-0.5 rounded border border-green-200">
-                    Áp chiết khấu
-                  </span>
+                <div class="mt-2 space-y-1">
+                  <!-- Dòng Giá Gốc Jollibee để tiện so sánh -->
+                  <div class="flex items-center gap-1.5 text-xs text-gray-400">
+                    <span class="text-[11px] font-medium text-gray-500">Giá gốc Jollibee:</span>
+                    <span class="line-through font-bold text-gray-500">${formatCurrency(originalPrice)}</span>
+                  </div>
+                  <!-- Dòng Giá Đặt Hộ qua dịch vụ -->
+                  <div class="flex items-baseline gap-2 flex-wrap">
+                    <div class="flex items-baseline gap-1">
+                      <span class="text-xs font-extrabold text-[#d71920]">Giá đặt hộ:</span>
+                      <span class="text-base sm:text-lg font-black text-red-600">${formatCurrency(discountedPrice)}</span>
+                    </div>
+                    <span class="text-[10px] font-black text-green-700 bg-green-50 px-1.5 py-0.5 rounded-md border border-green-200">
+                      ${savingsBadge}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -270,16 +294,25 @@ class JollibeeApp {
     const badgeEl = document.getElementById('floating-cart-badge');
     const priceEl = document.getElementById('floating-cart-final-price');
     const hintEl = document.getElementById('floating-cart-discount-hint');
+    const origWrapper = document.getElementById('floating-cart-original-wrapper');
+    const origPriceEl = document.getElementById('floating-cart-original-price');
 
     if (badgeEl) badgeEl.innerText = totalItems;
     if (priceEl) priceEl.innerText = formatCurrency(totals.finalTotal);
+
+    if (totalItems > 0 && totals.originalTotal > 0) {
+      if (origWrapper) origWrapper.classList.remove('hidden');
+      if (origPriceEl) origPriceEl.innerText = formatCurrency(totals.originalTotal);
+    } else {
+      if (origWrapper) origWrapper.classList.add('hidden');
+    }
 
     if (hintEl) {
       if (totalItems === 0) {
         hintEl.innerText = '(Chưa chọn món)';
         hintEl.className = 'text-[11px] text-gray-400 font-medium';
       } else if (totals.discountAmount > 0) {
-        hintEl.innerText = `Đã giảm -${formatCurrency(totals.discountAmount)}!`;
+        hintEl.innerText = `Đã tiết kiệm -${formatCurrency(totals.discountAmount)} so với giá gốc Jollibee!`;
         hintEl.className = 'text-[11px] text-green-600 font-extrabold';
       } else {
         const nextStepThreshold = this.config.discountStep || 100000;

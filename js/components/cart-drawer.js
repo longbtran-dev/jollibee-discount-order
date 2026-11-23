@@ -118,7 +118,10 @@ export class CartDrawer {
             <div class="flex-1">
               <h4 class="font-bold text-sm text-gray-900">${item.name}</h4>
               ${item.optionsText ? `<p class="text-xs text-gray-500 mt-0.5">${item.optionsText}</p>` : ''}
-              <div class="text-xs font-extrabold text-red-600 mt-1">${formatCurrency(item.unitPrice)}</div>
+              <div class="flex items-center gap-1.5 mt-1 text-xs">
+                <span class="text-[11px] text-gray-400">Giá gốc:</span>
+                <span class="font-bold text-gray-600">${formatCurrency(item.unitPrice)}</span>
+              </div>
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
               <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
@@ -202,13 +205,20 @@ export class CartDrawer {
 
               <!-- Price Breakdown Card -->
               <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-xs space-y-2.5">
-                <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center gap-1.5 pb-1 border-b border-gray-100">
-                  <span>💰</span>
-                  <span>Bảng Báo Giá Chi Tiết</span>
+                <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-gray-100">
+                  <span class="flex items-center gap-1.5">
+                    <span>💰</span>
+                    <span>Bảng So Sánh Giá</span>
+                  </span>
+                  ${pricing.discountAmount > 0 ? `
+                    <span class="text-green-700 bg-green-50 px-2 py-0.5 rounded-full font-black text-[10px] border border-green-200">
+                      Tiết kiệm ${formatCurrency(pricing.discountAmount)}
+                    </span>
+                  ` : ''}
                 </div>
                 <div class="flex justify-between text-sm text-gray-600">
-                  <span>Tổng tiền gốc Jollibee:</span>
-                  <span class="font-bold text-gray-800">${formatCurrency(pricing.originalTotal)}</span>
+                  <span>Giá gốc tại quán Jollibee:</span>
+                  <span class="font-bold text-gray-800 line-through">${formatCurrency(pricing.originalTotal)}</span>
                 </div>
                 <div class="flex justify-between text-sm text-green-600">
                   <span>Chiết khấu đặt hộ (-15k/100k):</span>
@@ -221,8 +231,11 @@ export class CartDrawer {
                   </span>
                 </div>
                 <div class="pt-2 border-t border-gray-200 flex justify-between items-baseline">
-                  <span class="font-extrabold text-sm sm:text-base text-gray-900">Khách thực thanh toán:</span>
-                  <span class="font-black text-xl text-red-600">${formatCurrency(pricing.finalTotal)}</span>
+                  <div>
+                    <span class="font-extrabold text-sm sm:text-base text-gray-900 block">Khách thực thanh toán:</span>
+                    <span class="text-[11px] text-green-700 font-bold">Rẻ hơn mua tại quán Jollibee!</span>
+                  </div>
+                  <span class="font-black text-2xl text-red-600">${formatCurrency(pricing.finalTotal)}</span>
                 </div>
               </div>
 
