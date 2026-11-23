@@ -64,6 +64,9 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
   }
 
   lines.push(`👉 TỔNG THANH TOÁN THỰC TẾ: ${formatCurrency(pricing.finalTotal)}`);
+  if (pricing.originalTotal < 100000) {
+    lines.push(`⚠️ Lưu ý: Đơn hàng dưới 100k (Chưa áp dụng chính sách giảm giá)`);
+  }
   lines.push(``);
   lines.push(`(Shop vui lòng kiểm tra và hỗ trợ đặt hộ giúp em nhé. Em cảm ơn!)`);
 

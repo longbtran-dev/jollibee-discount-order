@@ -317,8 +317,8 @@ class JollibeeApp {
       } else {
         const nextStepThreshold = this.config.discountStep || 100000;
         const needed = nextStepThreshold - totals.originalTotal;
-        hintEl.innerText = `Thêm ${formatCurrency(needed)} để được giảm 15k`;
-        hintEl.className = 'text-[11px] text-amber-700 font-semibold';
+        hintEl.innerText = `Đơn từ 100k mới được giảm giá (Cần thêm ${formatCurrency(needed)})`;
+        hintEl.className = 'text-[11px] text-amber-800 font-extrabold';
       }
     }
   }

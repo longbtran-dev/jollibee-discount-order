@@ -239,11 +239,29 @@ export class CartDrawer {
                 </div>
               </div>
 
-              <!-- OTP Reminder Notice -->
-              <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-xs text-amber-900 flex items-start gap-2">
-                <span class="text-base flex-shrink-0">💡</span>
-                <span>${this.config.otpReminderNotice || 'Lưu ý: Nếu có tin nhắn mã OTP từ Jollibee gửi về SĐT của bạn, vui lòng gửi mã đó cho shop để hoàn tất đặt nhé!'}</span>
-              </div>
+              <!-- Min Order Notice for < 100k vs Qualified Notice -->
+              ${pricing.originalTotal < 100000 ? `
+                <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 flex items-start gap-3 shadow-xs">
+                  <span class="text-xl flex-shrink-0">⚠️</span>
+                  <div>
+                    <div class="font-black text-amber-950 text-sm">Lưu ý áp dụng giảm giá:</div>
+                    <div class="mt-1 leading-relaxed text-gray-700">
+                      Đơn hàng phải từ <b>100.000đ</b> trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!
+                      <div class="mt-1.5 text-red-600 font-extrabold flex items-center gap-1">
+                        <span>👉</span>
+                        <span>Chọn thêm <b>${formatCurrency(100000 - pricing.originalTotal)}</b> nữa để được giảm ngay 15.000đ!</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ` : `
+                <div class="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center justify-between shadow-xs">
+                  <span class="flex items-center gap-1.5 font-bold">
+                    <span>🎉</span>
+                    <span>Đơn hàng đã đủ điều kiện áp dụng giảm giá (-${formatCurrency(pricing.discountAmount)})!</span>
+                  </span>
+                </div>
+              `}
             ` : ''}
 
           </div>
@@ -352,6 +370,14 @@ export class CartDrawer {
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
+      if (pricing.originalTotal < 100000) {
+        const proceed = confirm('⚠️ Lưu ý: Đơn hàng từ 100.000đ trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!\n\nBạn có muốn chọn thêm món để được giảm ngay 15k không? (Bấm "Hủy / Cancel" để chọn thêm món, hoặc "OK" để tiếp tục gửi đơn).');
+        if (!proceed) {
+          this.close();
+          return;
+        }
+      }
+
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
       
       // Tự động sao chép trước (có fallback HTTP)
@@ -369,6 +395,14 @@ export class CartDrawer {
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
+      if (pricing.originalTotal < 100000) {
+        const proceed = confirm('⚠️ Lưu ý: Đơn hàng từ 100.000đ trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!\n\nBạn có muốn chọn thêm món để được giảm ngay 15k không? (Bấm "Hủy / Cancel" để chọn thêm món, hoặc "OK" để tiếp tục gửi đơn).');
+        if (!proceed) {
+          this.close();
+          return;
+        }
+      }
+
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
 
       await copyToClipboard(orderText);
@@ -385,6 +419,14 @@ export class CartDrawer {
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
+      if (pricing.originalTotal < 100000) {
+        const proceed = confirm('⚠️ Lưu ý: Đơn hàng từ 100.000đ trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!\n\nBạn có muốn chọn thêm món để được giảm ngay 15k không? (Bấm "Hủy / Cancel" để chọn thêm món, hoặc "OK" để tiếp tục gửi đơn).');
+        if (!proceed) {
+          this.close();
+          return;
+        }
+      }
+
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
 
       const success = await copyToClipboard(orderText);
