@@ -85,4 +85,41 @@ describe('End-to-End System Integration Flow', () => {
     assert.equal(pricingSub200.shippingFee, 10000);
     assert.equal(pricingSub200.finalTotal, 194000);
   });
+
+  it('toàn bộ luồng nâng cấp UX #2 & #3: thêm món -> lưu trữ localStorage -> hoàn tác -> xác thực đơn hợp lệ', () => {
+    const mockStorage = new Map();
+    global.localStorage = {
+      getItem: (k) => mockStorage.get(k) || null,
+      setItem: (k, v) => mockStorage.set(k, String(v)),
+      removeItem: (k) => mockStorage.delete(k),
+      clear: () => mockStorage.clear()
+    };
+
+    const cart = new Cart();
+    // 1. Thêm 1 Gà giòn 35k
+    cart.addItem({ id: 'p1', name: 'Gà Giòn Vui Vẻ', price: 35000 });
+    // 2. Thêm nhầm 1 Mì Ý 40k
+    cart.addItem({ id: 'p2', name: 'Mì Ý Thơm Ngon', price: 40000 });
+    assert.equal(cart.getItems().length, 2);
+    assert.ok(mockStorage.has('jb_cart_items'), 'Dữ liệu giỏ hàng phải được tự động lưu vào storage');
+
+    // 3. Khách bấm nút [Hoàn tác] trên Toast
+    const undone = cart.undoLastAdd();
+    assert.equal(undone.name, 'Mì Ý Thơm Ngon');
+    assert.equal(cart.getItems().length, 1);
+    assert.equal(cart.getItems()[0].name, 'Gà Giòn Vui Vẻ');
+
+    // 4. Thêm combo 105k để đủ điều kiện đặt đơn >= 100k
+    cart.addItem({ id: 'c1', name: 'Combo No Nê', price: 105000 });
+    const totals = cart.getTotals('delivery');
+    assert.equal(totals.originalTotal, 140000); // 35k + 105k
+    assert.equal(totals.discountAmount, 15000); // 140k giảm 15k
+    assert.equal(totals.finalTotal, 135000);   // 140k - 15k + 10k ship
+
+    // 5. Kiểm tra tính bền vững: tạo instance giỏ mới khôi phục đúng từ storage
+    const restoredCart = new Cart();
+    restoredCart.loadFromStorage();
+    assert.equal(restoredCart.getItems().length, 2);
+    assert.equal(restoredCart.getTotals('delivery').finalTotal, 135000);
+  });
 });
