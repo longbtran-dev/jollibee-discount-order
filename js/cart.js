@@ -56,6 +56,8 @@ export class Cart {
       productId: product.id,
       name: product.name,
       image: product.image || '',
+      description: product.description || '',
+      isCombo: Boolean(product.is_combo),
       basePrice,
       unitPrice,
       quantity: qty,

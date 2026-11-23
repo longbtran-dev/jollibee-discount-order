@@ -53,8 +53,20 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
   items.forEach((item, index) => {
     const itemTotal = (item.unitPrice || 0) * (item.quantity || 1);
     lines.push(`${index + 1}. ${item.name} x${item.quantity || 1} -> ${formatCurrency(itemTotal)}`);
-    if (item.optionsText) {
-      lines.push(`   └ Tuỳ chọn: ${item.optionsText}`);
+    if (item.selectedOptions && item.selectedOptions.length > 1) {
+      lines.push(`   └ Món gồm:`);
+      item.selectedOptions.forEach(opt => {
+        const extra = opt.extra_price > 0 ? ` (+${formatCurrency(opt.extra_price)})` : '';
+        lines.push(`     • ${opt.option_name || opt.name}${extra}`);
+      });
+    } else if (item.optionsText) {
+      const parts = item.optionsText.split(',').map(s => s.trim()).filter(Boolean);
+      if (parts.length > 1) {
+        lines.push(`   └ Món gồm:`);
+        parts.forEach(p => lines.push(`     • ${p}`));
+      } else {
+        lines.push(`   └ Tuỳ chọn: ${item.optionsText}`);
+      }
     }
   });
 

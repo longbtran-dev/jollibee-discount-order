@@ -155,23 +155,110 @@ export class CartDrawer {
     } else {
       items.forEach(item => {
         const itemTotal = item.unitPrice * item.quantity;
-        itemsListHtml += `
-          <div class="py-3 border-b border-gray-100 flex items-start gap-3">
-            <div class="flex-1">
-              <h4 class="font-bold text-sm text-gray-900">${item.name}</h4>
-              ${item.optionsText ? `<p class="text-xs text-gray-500 mt-0.5">${item.optionsText}</p>` : ''}
-              <div class="flex items-center gap-1.5 mt-1 text-xs">
-                <span class="text-[11px] text-gray-400">Giá gốc:</span>
-                <span class="font-bold text-gray-600">${formatCurrency(item.unitPrice)}</span>
+
+        // Xây dựng danh sách chi tiết các món/tùy chọn xuống hàng rõ ràng
+        let optionsDetailsHtml = '';
+        if (item.selectedOptions && item.selectedOptions.length > 0) {
+          const listItems = item.selectedOptions.map(opt => `
+            <li class="flex items-start gap-1.5 text-xs text-gray-700 font-medium leading-snug">
+              <span class="text-[#d71920] font-bold text-[10px] mt-0.5">•</span>
+              <span class="break-words">${opt.option_name || opt.name}</span>
+              ${opt.extra_price > 0 ? `<span class="text-red-600 font-bold text-[10px] bg-red-100/80 px-1 rounded flex-shrink-0">(+${formatCurrency(opt.extra_price)})</span>` : ''}
+            </li>
+          `).join('');
+
+          optionsDetailsHtml = `
+            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-2xs">
+              <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
+                <span>Chi tiết món đã chọn:</span>
               </div>
+              <ul class="space-y-1">
+                ${listItems}
+              </ul>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
-              <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
-                <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-minus" data-id="${item.cartItemId}">${IconMinus('w-3 h-3')}</button>
-                <span class="w-8 text-center text-xs font-bold text-gray-800">${item.quantity}</span>
-                <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-plus" data-id="${item.cartItemId}">${IconPlus('w-3 h-3')}</button>
+          `;
+        } else if (item.optionsText) {
+          const parts = item.optionsText.split(',').map(s => s.trim()).filter(Boolean);
+          const listItems = parts.map(part => `
+            <li class="flex items-start gap-1.5 text-xs text-gray-700 font-medium leading-snug">
+              <span class="text-[#d71920] font-bold text-[10px] mt-0.5">•</span>
+              <span class="break-words">${part}</span>
+            </li>
+          `).join('');
+
+          optionsDetailsHtml = `
+            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-2xs">
+              <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
+                <span>Tùy chọn:</span>
               </div>
-              <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-red-500 rounded hover:bg-red-50 btn-cart-remove" data-id="${item.cartItemId}" title="Xóa món">${IconTrash('w-3.5 h-3.5')}</button>
+              <ul class="space-y-1">
+                ${listItems}
+              </ul>
+            </div>
+          `;
+        } else if (item.description && item.description.includes('+')) {
+          const parts = item.description.split('+').map(s => s.trim()).filter(Boolean);
+          const listItems = parts.map(part => `
+            <li class="flex items-start gap-1.5 text-xs text-gray-700 font-medium leading-snug">
+              <span class="text-[#d71920] font-bold text-[10px] mt-0.5">•</span>
+              <span class="break-words">${part}</span>
+            </li>
+          `).join('');
+
+          optionsDetailsHtml = `
+            <div class="mt-1.5 p-2 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-2xs">
+              <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
+                <span>Combo bao gồm:</span>
+              </div>
+              <ul class="space-y-1">
+                ${listItems}
+              </ul>
+            </div>
+          `;
+        }
+
+        itemsListHtml += `
+          <div class="py-3 border-b border-gray-100 last:border-b-0 flex gap-2.5 sm:gap-3 items-start">
+            <!-- Thumbnail món ăn -->
+            ${item.image ? `
+              <div class="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-amber-50/60 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start mt-0.5">
+                <img src="${item.image}" alt="${item.name}" class="w-full h-full object-contain" onerror="this.style.display='none'">
+              </div>
+            ` : ''}
+
+            <!-- Nội dung chính -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-start justify-between gap-2">
+                <h4 class="font-extrabold text-sm text-gray-900 leading-snug break-words">${item.name}</h4>
+                <button type="button" class="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-600 rounded-lg hover:bg-red-50 btn-cart-remove flex-shrink-0 transition" data-id="${item.cartItemId}" title="Xóa món">
+                  ${IconTrash('w-3.5 h-3.5')}
+                </button>
+              </div>
+
+              <!-- Chi tiết từng món dạng xuống dòng -->
+              ${optionsDetailsHtml}
+
+              <!-- Đơn giá & Nút điều chỉnh số lượng -->
+              <div class="flex items-center justify-between mt-2.5 pt-1.5 border-t border-gray-100">
+                <div class="flex items-baseline gap-1.5 flex-wrap">
+                  <span class="text-[11px] text-gray-400">Đơn giá:</span>
+                  <span class="font-bold text-sm text-red-600">${formatCurrency(item.unitPrice)}</span>
+                  ${item.quantity > 1 ? `<span class="text-xs text-gray-500 font-medium whitespace-nowrap">x ${item.quantity} = <b class="text-red-700">${formatCurrency(itemTotal)}</b></span>` : ''}
+                </div>
+
+                <div class="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 shadow-2xs flex-shrink-0">
+                  <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-minus" data-id="${item.cartItemId}">
+                    ${IconMinus('w-3 h-3')}
+                  </button>
+                  <span class="w-7 text-center text-xs font-bold text-gray-800">${item.quantity}</span>
+                  <button type="button" class="w-7 h-7 flex items-center justify-center text-gray-600 hover:bg-gray-200 active:scale-95 btn-cart-plus" data-id="${item.cartItemId}">
+                    ${IconPlus('w-3 h-3')}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         `;
