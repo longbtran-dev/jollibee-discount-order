@@ -79,6 +79,13 @@ export class CartDrawer {
   }
 
   validateForm() {
+    const pricing = this.cart.getTotals(this.orderType, this.config);
+    if (pricing.originalTotal < 100000) {
+      const needed = 100000 - pricing.originalTotal;
+      alert(`Đơn hàng của bạn hiện tại là ${formatCurrency(pricing.originalTotal)}.\n\nShop chỉ nhận đặt hộ với đơn hàng từ 100.000đ trở lên (cứ mỗi 100k giảm 15k).\nVui lòng chọn thêm ${formatCurrency(needed)} để đủ điều kiện gửi đơn nhé!`);
+      return false;
+    }
+
     // Ăn tại quán: Không cần thông tin khách hàng
     if (this.orderType === 'dinein') {
       return true;
@@ -198,9 +205,6 @@ export class CartDrawer {
               </button>
             </div>
 
-            <!-- Freeship Alert -->
-            ${freeshipNoticeHtml}
-
             <!-- Items List -->
             <div class="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-xs">
               <div class="flex items-center justify-between pb-2 border-b border-gray-100 mb-1">
@@ -274,6 +278,31 @@ export class CartDrawer {
                     ${pricing.shippingFee === 0 ? 'Miễn phí (0đ)' : formatCurrency(pricing.shippingFee)}
                   </span>
                 </div>
+
+                <!-- Mua thêm để được Freeship hiển thị ngay dưới Phí giao hàng -->
+                ${this.orderType === 'delivery' ? `
+                  <div class="pt-0.5">
+                    ${remainingToFreeship > 0 ? `
+                      <div class="p-2.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-xs text-amber-900 flex items-center justify-between">
+                        <span class="flex items-center gap-1.5 font-medium">
+                          <span class="text-amber-600 flex items-center">${IconBike('w-3.5 h-3.5')}</span>
+                          <span>Mua thêm <b>${formatCurrency(remainingToFreeship)}</b> để được <b>Freeship</b>!</span>
+                        </span>
+                        <span class="text-red-600 font-extrabold text-[10px] bg-red-100/70 border border-red-200 px-1.5 py-0.5 rounded-md">Phí ship 10k</span>
+                      </div>
+                    ` : `
+                      <div class="p-2.5 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center gap-1.5 font-bold">
+                        <span class="text-green-600 flex items-center">${IconCheckCircle('w-3.5 h-3.5')}</span>
+                        <span>Đã đủ điều kiện <b>Miễn Phí Giao Hàng</b> (Đơn từ 200k tiền gốc)!</span>
+                      </div>
+                    `}
+                  </div>
+                ` : `
+                  <div class="text-[11px] text-gray-400 italic">
+                    * Ăn tại quán không tính phí giao hàng
+                  </div>
+                `}
+
                 <div class="pt-2 border-t border-gray-200 flex justify-between items-baseline">
                   <div>
                     <span class="font-extrabold text-sm sm:text-base text-gray-900 block">Khách thực thanh toán:</span>
@@ -283,19 +312,22 @@ export class CartDrawer {
                 </div>
               </div>
 
-              <!-- Min Order Notice for < 100k vs Qualified Notice -->
+              <!-- Min Order Notice for < 100k (Báo lỗi trực tiếp) vs Qualified Notice -->
               ${pricing.originalTotal < 100000 ? `
-                <div class="p-3.5 bg-amber-50 border border-amber-300 rounded-2xl text-xs text-amber-900 flex items-start gap-3 shadow-xs">
-                  <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0">
+                <div class="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-950 flex items-start gap-3 shadow-xs">
+                  <div class="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 mt-0.5">
                     ${IconAlertTriangle('w-4 h-4')}
                   </div>
-                  <div>
-                    <div class="font-black text-amber-950 text-sm">Lưu ý áp dụng giảm giá:</div>
+                  <div class="flex-1">
+                    <div class="font-black text-red-700 text-sm flex items-center justify-between">
+                      <span>Chưa đạt đơn tối thiểu 100.000đ</span>
+                      <span class="bg-red-200/80 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-extrabold">Báo lỗi</span>
+                    </div>
                     <div class="mt-1 leading-relaxed text-gray-700">
-                      Đơn hàng phải từ <b>100.000đ</b> trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!
+                      Shop chỉ nhận đặt hộ với đơn từ <b>100.000đ</b> trở lên (cứ mỗi 100k giảm 15k).
                       <div class="mt-1.5 text-red-600 font-extrabold flex items-center gap-1.5">
                         <span class="text-red-600 flex items-center">${IconArrowRight('w-3.5 h-3.5')}</span>
-                        <span>Chọn thêm <b>${formatCurrency(100000 - pricing.originalTotal)}</b> nữa để được giảm ngay 15.000đ!</span>
+                        <span>Vui lòng chọn thêm <b>${formatCurrency(100000 - pricing.originalTotal)}</b> nữa để gửi đơn nhé!</span>
                       </div>
                     </div>
                   </div>
@@ -304,7 +336,7 @@ export class CartDrawer {
                 <div class="p-3 bg-green-50 border border-green-200 rounded-xl text-xs text-green-800 flex items-center justify-between shadow-xs">
                   <span class="flex items-center gap-1.5 font-bold">
                     <span class="text-green-600">${IconCheckCircle('w-4 h-4')}</span>
-                    <span>Đơn hàng đã đủ điều kiện áp dụng giảm giá (-${formatCurrency(pricing.discountAmount)})!</span>
+                    <span>Đơn hàng đã đủ điều kiện đặt hộ và áp dụng giảm giá (-${formatCurrency(pricing.discountAmount)})!</span>
                   </span>
                 </div>
               `}
@@ -315,12 +347,18 @@ export class CartDrawer {
           <!-- Drawer Footer Action Buttons -->
           ${items.length > 0 ? `
             <div class="p-4 bg-white border-t border-gray-200 shadow-xl space-y-2">
+              ${pricing.originalTotal < 100000 ? `
+                <div class="p-2.5 bg-red-50 border border-red-200 rounded-xl text-center text-xs text-red-700 font-extrabold flex items-center justify-center gap-1.5 shadow-2xs">
+                  ${IconAlertTriangle('w-4 h-4 text-red-600')}
+                  <span>Đơn chưa đạt tối thiểu 100.000đ để đặt hộ</span>
+                </div>
+              ` : ''}
               <div class="grid grid-cols-2 gap-2">
-                <button type="button" id="btn-send-zalo" class="w-full bg-[#0068ff] hover:bg-[#0058d8] text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-98 transition text-xs sm:text-sm">
+                <button type="button" id="btn-send-zalo" class="w-full ${pricing.originalTotal < 100000 ? 'bg-blue-400 opacity-80' : 'bg-[#0068ff] hover:bg-[#0058d8]'} text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-98 transition text-xs sm:text-sm">
                   ${IconZalo('w-5 h-5')}
                   <span>Gửi Qua Zalo</span>
                 </button>
-                <button type="button" id="btn-send-messenger" class="w-full bg-[#0084ff] hover:bg-[#0074e0] text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-98 transition text-xs sm:text-sm">
+                <button type="button" id="btn-send-messenger" class="w-full ${pricing.originalTotal < 100000 ? 'bg-sky-400 opacity-80' : 'bg-[#0084ff] hover:bg-[#0074e0]'} text-white font-extrabold py-3 px-3 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-98 transition text-xs sm:text-sm">
                   ${IconMessenger('w-5 h-5')}
                   <span>Gửi Messenger</span>
                 </button>
@@ -418,14 +456,6 @@ export class CartDrawer {
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
-      if (pricing.originalTotal < 100000) {
-        const proceed = confirm('⚠️ Lưu ý: Đơn hàng từ 100.000đ trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!\n\nBạn có muốn chọn thêm món để được giảm ngay 15k không? (Bấm "Hủy / Cancel" để chọn thêm món, hoặc "OK" để tiếp tục gửi đơn).');
-        if (!proceed) {
-          this.close();
-          return;
-        }
-      }
-
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
       
       // Tự động sao chép trước (có fallback HTTP)
@@ -443,14 +473,6 @@ export class CartDrawer {
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
-      if (pricing.originalTotal < 100000) {
-        const proceed = confirm('⚠️ Lưu ý: Đơn hàng từ 100.000đ trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!\n\nBạn có muốn chọn thêm món để được giảm ngay 15k không? (Bấm "Hủy / Cancel" để chọn thêm món, hoặc "OK" để tiếp tục gửi đơn).');
-        if (!proceed) {
-          this.close();
-          return;
-        }
-      }
-
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
 
       await copyToClipboard(orderText);
@@ -467,14 +489,6 @@ export class CartDrawer {
       if (!this.validateForm()) return;
 
       const pricing = this.cart.getTotals(this.orderType, this.config);
-      if (pricing.originalTotal < 100000) {
-        const proceed = confirm('⚠️ Lưu ý: Đơn hàng từ 100.000đ trở lên shop mới có thể hỗ trợ đặt giảm giá giúp bạn được nhé!\n\nBạn có muốn chọn thêm món để được giảm ngay 15k không? (Bấm "Hủy / Cancel" để chọn thêm món, hoặc "OK" để tiếp tục gửi đơn).');
-        if (!proceed) {
-          this.close();
-          return;
-        }
-      }
-
       const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
 
       const success = await copyToClipboard(orderText);

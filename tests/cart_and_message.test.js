@@ -2,6 +2,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { Cart } from '../js/cart.js';
 import { formatOrderText, generateZaloUrl, generateMessengerUrl } from '../js/order-message.js';
+import { CartDrawer } from '../js/components/cart-drawer.js';
 
 describe('Cart & Order Message Formatter', () => {
   it('thêm món đơn và combo có phụ thu tính đúng tổng giá mục giỏ hàng', () => {
@@ -91,5 +92,28 @@ describe('Cart & Order Message Formatter', () => {
     const fbUrl = generateMessengerUrl('https://m.me/shopjollibee', 'Xin chào');
     assert.ok(fbUrl.startsWith('https://m.me/shopjollibee'));
     assert.ok(fbUrl.includes(encodeURIComponent('Xin chào')));
+  });
+
+  it('validateForm chặn và báo lỗi khi đơn hàng dưới 100k', () => {
+    let alertMsg = '';
+    global.alert = (msg) => { alertMsg = msg; };
+    const cart = new Cart();
+    cart.addItem({ id: 'p1', name: 'Mì Ý', price: 35000 }); // 35k < 100k
+    const drawer = new CartDrawer(cart, {});
+    const isValid = drawer.validateForm();
+    assert.equal(isValid, false);
+    assert.ok(alertMsg.includes('100.000đ'));
+  });
+
+  it('validateForm cho phép đơn >= 100k ở chế độ Ăn tại quán', () => {
+    let alertMsg = '';
+    global.alert = (msg) => { alertMsg = msg; };
+    const cart = new Cart();
+    cart.addItem({ id: 'c1', name: 'Combo 105k', price: 105000 });
+    const drawer = new CartDrawer(cart, {});
+    drawer.orderType = 'dinein';
+    const isValid = drawer.validateForm();
+    assert.equal(isValid, true);
+    assert.equal(alertMsg, '');
   });
 });

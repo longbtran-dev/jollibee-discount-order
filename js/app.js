@@ -359,8 +359,8 @@ class JollibeeApp {
         const nextStepThreshold = this.config.discountStep || 100000;
         const needed = nextStepThreshold - totals.originalTotal;
         const modeHint = this.orderType === 'dinein' ? ' (Ăn tại quán)' : '';
-        hintEl.innerText = `Đơn từ 100k mới được giảm giá${modeHint} (Cần thêm ${formatCurrency(needed)})`;
-        hintEl.className = 'text-[11px] text-amber-800 font-extrabold';
+        hintEl.innerText = `Cần tối thiểu 100k để đặt hộ${modeHint} (Cần thêm ${formatCurrency(needed)})`;
+        hintEl.className = 'text-[11px] text-red-600 font-extrabold';
       }
     }
   }
