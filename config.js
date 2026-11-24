@@ -4,8 +4,8 @@
  */
 window.JOLLIBEE_CONFIG = {
   // Thông tin cửa hàng & kênh liên hệ
-  shopName: "Dịch Vụ Đặt Hộ Jollibee Giá Rẻ",
-  shopSubtitle: "Chiết khấu cao - Đặt nhanh qua Zalo & Facebook",
+  shopName: "longbtran.shop",
+  shopSubtitle: "Đặt Hộ Jollibee Chiết Khấu Cao • Nhanh Chóng & Uy Tín",
   zaloPhone: "0900000000",
   zaloLink: "https://zalo.me/0900000000",
   facebookMessengerUrl: "https://m.me/",
