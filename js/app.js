@@ -551,16 +551,23 @@ class JollibeeApp {
       if (totalItems === 0) {
         hintEl.innerText = this.orderType === 'dinein' ? '(Ăn tại quán • Chưa chọn món)' : '(Giao tận nơi • Chưa chọn món)';
         hintEl.className = 'text-[11px] text-gray-400 font-medium';
-      } else if (totals.discountAmount > 0) {
-        const modeHint = this.orderType === 'dinein' ? ' • Ăn tại quán' : (totals.shippingFee === 0 ? ' • Freeship' : ' • Phí ship 10k');
-        hintEl.innerText = `Đã tiết kiệm -${formatCurrency(totals.discountAmount)}${modeHint}`;
-        hintEl.className = 'text-[11px] text-green-600 font-extrabold';
-      } else {
-        const nextStepThreshold = this.config.discountStep || 100000;
-        const needed = nextStepThreshold - totals.originalTotal;
+      } else if (totals.originalTotal < 100000) {
+        const needed = 100000 - totals.originalTotal;
         const modeHint = this.orderType === 'dinein' ? ' (Ăn tại quán)' : '';
-        hintEl.innerText = `Cần tối thiểu 100k để đặt hộ${modeHint} (Cần thêm ${formatCurrency(needed)})`;
+        hintEl.innerText = `Thêm ${formatCurrency(needed)} để giảm ngay 15k!${modeHint}`;
         hintEl.className = 'text-[11px] text-red-600 font-extrabold';
+      } else if (totals.originalTotal < 200000) {
+        const needed = 200000 - totals.originalTotal;
+        const perk = this.orderType === 'delivery' ? 'giảm 30k & Freeship!' : 'giảm 30k!';
+        hintEl.innerText = `Đã giảm 15k • Thêm ${formatCurrency(needed)} để ${perk}`;
+        hintEl.className = 'text-[11px] text-green-700 font-extrabold';
+      } else {
+        const currentStep = Math.floor(totals.originalTotal / 100000);
+        const nextStep = (currentStep + 1) * 100000;
+        const needed = nextStep - totals.originalTotal;
+        const nextDisc = (currentStep + 1) * 15;
+        hintEl.innerText = `Đã giảm ${Math.round(totals.discountAmount / 1000)}k • Thêm ${formatCurrency(needed)} để giảm ${nextDisc}k!`;
+        hintEl.className = 'text-[11px] text-green-700 font-extrabold';
       }
     }
   }
