@@ -52,7 +52,9 @@ describe('End-to-End System Integration Flow', () => {
     };
     const orderText = formatOrderText(customer, cart.getItems(), totals, 'delivery');
 
-    assert.ok(orderText.includes('ĐƠN ĐẶT HỘ JOLLIBEE GIÁ RẺ'));
+    assert.ok(orderText.includes('HÌNH THỨC: [GIAO TẬN NƠI]'));
+    assert.ok(!orderText.includes('ĐƠN ĐẶT HỘ JOLLIBEE GIÁ RẺ'));
+    assert.ok(!orderText.includes('Shop vui lòng kiểm tra'));
     assert.ok(orderText.includes('Trần Thị Mai'));
     assert.ok(orderText.includes('0912345678'));
     assert.ok(orderText.includes('Số 15 Lê Lợi, Quận 1, TP.HCM'));

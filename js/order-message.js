@@ -22,10 +22,6 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
   const typeText = orderType === 'delivery' ? '[GIAO TẬN NƠI]' : '[ĂN TẠI QUÁN / TỚI LẤY]';
   
   const lines = [
-    `================================`,
-    `   ĐƠN ĐẶT HỘ JOLLIBEE GIÁ RẺ`,
-    `================================`,
-    ``,
     `HÌNH THỨC: ${typeText}`
   ];
 
@@ -86,8 +82,6 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
   if (pricing.originalTotal < 100000) {
     lines.push(`(Lưu ý: Đơn hàng dưới 100k - Chưa áp dụng chính sách giảm giá)`);
   }
-  lines.push(``);
-  lines.push(`(Shop vui lòng kiểm tra và hỗ trợ đặt hộ giúp em nhé. Em cảm ơn!)`);
 
   return lines.join('\n');
 }

@@ -49,7 +49,9 @@ describe('Cart & Order Message Formatter', () => {
     const pricing = { originalTotal: 115000, discountAmount: 15000, shippingFee: 10000, finalTotal: 110000 };
 
     const msg = formatOrderText(customer, items, pricing, 'delivery');
-    assert.ok(msg.includes('ĐƠN ĐẶT HỘ JOLLIBEE'));
+    assert.ok(msg.includes('HÌNH THỨC: [GIAO TẬN NƠI]'));
+    assert.ok(!msg.includes('ĐƠN ĐẶT HỘ JOLLIBEE'));
+    assert.ok(!msg.includes('Shop vui lòng kiểm tra'));
     assert.ok(msg.includes('Nguyễn Văn A'));
     assert.ok(msg.includes('0987654321'));
     assert.ok(msg.includes('123 Cầu Giấy, HN'));
