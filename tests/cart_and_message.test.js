@@ -294,4 +294,45 @@ describe('Cart & Order Message Formatter', () => {
     assert.ok(mockInput.classList.contains('border-red-500'));
     assert.ok(mockInput.classList.contains('ring-red-200'));
   });
+
+  it('kéo thả chuột từ bên trong ô input ra ngoài backdrop không làm tắt giỏ hàng', () => {
+    const cart = new Cart();
+    const drawer = new CartDrawer(cart, {});
+    let isClosed = false;
+    drawer.close = () => { isClosed = true; };
+
+    const listeners = {};
+    const mockBackdrop = {
+      id: 'cart-drawer-backdrop',
+      addEventListener: (ev, fn) => { (listeners[ev] = listeners[ev] || []).push(fn); }
+    };
+    const mockInput = { id: 'customer-name' };
+
+    global.document = {
+      getElementById: (id) => (id === 'cart-drawer-backdrop' ? mockBackdrop : null),
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+
+    drawer._bindGlobalDrawerEvents();
+
+    // Giả lập người dùng bôi đen chọn chữ: mousedown trên input, mouseup/click trên backdrop
+    // 1. mousedown bắt đầu trên ô input (hoặc panel bên trong)
+    listeners['mousedown']?.forEach(fn => fn({ target: mockInput }));
+
+    // 2. Kéo chuột ra ngoài và nhả chuột tạo sự kiện click trên backdrop
+    listeners['click']?.forEach(fn => fn({ target: mockBackdrop }));
+
+    // Giỏ hàng KHÔNG ĐƯỢC PHÉP đóng
+    assert.equal(isClosed, false);
+
+    // Ngược lại: nếu người dùng cố ý click chuột trực tiếp trên backdrop:
+    // 1. mousedown trên backdrop
+    listeners['mousedown']?.forEach(fn => fn({ target: mockBackdrop }));
+    // 2. click trên backdrop
+    listeners['click']?.forEach(fn => fn({ target: mockBackdrop }));
+
+    // Giỏ hàng được đóng an toàn
+    assert.equal(isClosed, true);
+  });
 });

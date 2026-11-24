@@ -301,9 +301,26 @@ export class ComboModal {
     // Đóng modal an toàn
     const handleClose = () => this.close();
     document.getElementById('combo-modal-close-btn')?.addEventListener('click', handleClose);
-    document.getElementById('combo-modal-backdrop')?.addEventListener('click', (e) => {
-      if (e.target.id === 'combo-modal-backdrop') handleClose();
-    });
+    
+    const backdrop = document.getElementById('combo-modal-backdrop');
+    if (backdrop) {
+      let isMouseDownOnBackdrop = false;
+
+      backdrop.addEventListener('mousedown', (e) => {
+        isMouseDownOnBackdrop = (e.target === backdrop);
+      });
+
+      backdrop.addEventListener('touchstart', (e) => {
+        isMouseDownOnBackdrop = (e.target === backdrop);
+      }, { passive: true });
+
+      backdrop.addEventListener('click', (e) => {
+        if (isMouseDownOnBackdrop && e.target === backdrop) {
+          handleClose();
+        }
+        isMouseDownOnBackdrop = false;
+      });
+    }
 
     // Bắt phím Escape để đóng modal
     if (!this._escHandler && typeof document !== 'undefined') {

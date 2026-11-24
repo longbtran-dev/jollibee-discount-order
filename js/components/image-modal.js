@@ -99,9 +99,24 @@ export class ImageModal {
 
     const handleClose = () => this.close();
     closeBtn?.addEventListener('click', handleClose);
-    backdrop?.addEventListener('click', (e) => {
-      if (e.target.id === 'image-modal-backdrop') handleClose();
-    });
+    if (backdrop) {
+      let isMouseDownOnBackdrop = false;
+
+      backdrop.addEventListener('mousedown', (e) => {
+        isMouseDownOnBackdrop = (e.target === backdrop);
+      });
+
+      backdrop.addEventListener('touchstart', (e) => {
+        isMouseDownOnBackdrop = (e.target === backdrop);
+      }, { passive: true });
+
+      backdrop.addEventListener('click', (e) => {
+        if (isMouseDownOnBackdrop && e.target === backdrop) {
+          handleClose();
+        }
+        isMouseDownOnBackdrop = false;
+      });
+    }
 
     this._escHandler = (e) => {
       if (e.key === 'Escape') handleClose();

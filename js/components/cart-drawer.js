@@ -331,8 +331,16 @@ export class CartDrawer {
     document.addEventListener('keydown', onKey);
 
     dialog.querySelector('#btn-dialog-cancel')?.addEventListener('click', close);
+    let isMouseDownOnDialogBackdrop = false;
+    dialog.addEventListener('mousedown', (e) => {
+      isMouseDownOnDialogBackdrop = (e.target === dialog);
+    });
+    dialog.addEventListener('touchstart', (e) => {
+      isMouseDownOnDialogBackdrop = (e.target === dialog);
+    }, { passive: true });
     dialog.addEventListener('click', (e) => {
-      if (e.target.id === 'app-confirm-dialog') close();
+      if (isMouseDownOnDialogBackdrop && e.target === dialog) close();
+      isMouseDownOnDialogBackdrop = false;
     });
 
     dialog.querySelector('#btn-dialog-confirm')?.addEventListener('click', () => {
@@ -402,8 +410,16 @@ export class CartDrawer {
     document.addEventListener('keydown', onKey);
 
     modal.querySelector('#btn-close-copy-modal')?.addEventListener('click', close);
+    let isMouseDownOnCopyBackdrop = false;
+    modal.addEventListener('mousedown', (e) => {
+      isMouseDownOnCopyBackdrop = (e.target === modal);
+    });
+    modal.addEventListener('touchstart', (e) => {
+      isMouseDownOnCopyBackdrop = (e.target === modal);
+    }, { passive: true });
     modal.addEventListener('click', (e) => {
-      if (e.target.id === 'app-copy-modal') close();
+      if (isMouseDownOnCopyBackdrop && e.target === modal) close();
+      isMouseDownOnCopyBackdrop = false;
     });
 
     modal.querySelector('#btn-select-all-copy')?.addEventListener('click', () => {
@@ -896,9 +912,28 @@ export class CartDrawer {
       this.close();
     };
     document.getElementById('cart-drawer-close-btn')?.addEventListener('click', handleClose);
-    document.getElementById('cart-drawer-backdrop')?.addEventListener('click', (e) => {
-      if (e.target.id === 'cart-drawer-backdrop') handleClose();
-    });
+    
+    const backdrop = document.getElementById('cart-drawer-backdrop');
+    if (backdrop) {
+      let isMouseDownOnBackdrop = false;
+
+      backdrop.addEventListener('mousedown', (e) => {
+        isMouseDownOnBackdrop = (e.target === backdrop);
+      });
+
+      backdrop.addEventListener('touchstart', (e) => {
+        isMouseDownOnBackdrop = (e.target === backdrop);
+      }, { passive: true });
+
+      backdrop.addEventListener('click', (e) => {
+        // Chỉ đóng khi cả mousedown và click đều diễn ra trực tiếp trên backdrop
+        // Ngăn chặn việc bôi đen / chọn chữ trong ô input rồi kéo chuột ra ngoài làm tắt giỏ hàng
+        if (isMouseDownOnBackdrop && e.target === backdrop) {
+          handleClose();
+        }
+        isMouseDownOnBackdrop = false;
+      });
+    }
 
     // Bắt phím Escape để đóng giỏ hàng
     if (!this._escHandler && typeof document !== 'undefined') {
