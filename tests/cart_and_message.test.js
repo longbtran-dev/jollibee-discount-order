@@ -96,27 +96,28 @@ describe('Cart & Order Message Formatter', () => {
     assert.ok(fbUrl.includes(encodeURIComponent('Xin chào')));
   });
 
-  it('validateForm chặn và báo lỗi khi đơn hàng dưới 100k', () => {
-    let alertMsg = '';
-    global.alert = (msg) => { alertMsg = msg; };
+  it('validateForm chặn và báo lỗi qua in-app toast khi đơn hàng dưới 100k (không dùng alert)', () => {
+    let toastMsg = '';
     const cart = new Cart();
     cart.addItem({ id: 'p1', name: 'Mì Ý', price: 35000 }); // 35k < 100k
     const drawer = new CartDrawer(cart, {});
+    drawer.showToast = (msg) => { toastMsg = msg; };
     const isValid = drawer.validateForm();
     assert.equal(isValid, false);
-    assert.ok(alertMsg.includes('100.000đ'));
+    assert.ok(toastMsg.includes('100.000đ') || (drawer.lastValidationError && drawer.lastValidationError.includes('100.000đ')));
   });
 
   it('validateForm cho phép đơn >= 100k ở chế độ Ăn tại quán', () => {
-    let alertMsg = '';
-    global.alert = (msg) => { alertMsg = msg; };
+    let toastMsg = '';
     const cart = new Cart();
     cart.addItem({ id: 'c1', name: 'Combo 105k', price: 105000 });
     const drawer = new CartDrawer(cart, {});
+    drawer.showToast = (msg) => { toastMsg = msg; };
     drawer.orderType = 'dinein';
     const isValid = drawer.validateForm();
     assert.equal(isValid, true);
-    assert.equal(alertMsg, '');
+    assert.equal(toastMsg, '');
+    assert.equal(drawer.lastValidationError, null);
   });
 
   it('validateForm từ chối khi số điện thoại giao hàng không đúng định dạng', () => {
@@ -259,5 +260,38 @@ describe('Cart & Order Message Formatter', () => {
     // Đóng drawer dọn dẹp sạch sẽ
     drawer.close();
     assert.equal(mockContainer.innerHTML, '');
+  });
+
+  it('showConfirmDialog gọi hàm onConfirm an toàn khi được xác nhận', () => {
+    const cart = new Cart();
+    const drawer = new CartDrawer(cart, {});
+    let confirmed = false;
+    drawer.showConfirmDialog({
+      title: 'Xóa giỏ hàng?',
+      message: 'Bạn có chắc chắn?',
+      onConfirm: () => { confirmed = true; }
+    });
+    // Trong môi trường Node không có document, showConfirmDialog tự động thực thi callback
+    assert.equal(confirmed, true);
+  });
+
+  it('_highlightFieldError thêm class báo lỗi và thông báo lỗi bên dưới ô input', () => {
+    const cart = new Cart();
+    const drawer = new CartDrawer(cart, {});
+    const classes = new Set();
+    const mockInput = {
+      classList: {
+        add: (...cls) => cls.forEach(c => classes.add(c)),
+        remove: (...cls) => cls.forEach(c => classes.delete(c)),
+        contains: (c) => classes.has(c)
+      },
+      parentElement: null,
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+
+    drawer._highlightFieldError(mockInput, 'Vui lòng nhập tên');
+    assert.ok(mockInput.classList.contains('border-red-500'));
+    assert.ok(mockInput.classList.contains('ring-red-200'));
   });
 });

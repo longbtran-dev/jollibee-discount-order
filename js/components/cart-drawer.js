@@ -17,6 +17,7 @@ import {
   IconSparkles,
   IconCheck,
   IconCheckCircle,
+  IconAlertCircle,
   IconAlertTriangle,
   IconArrowRight,
   IconCopy,
@@ -108,56 +109,315 @@ export class CartDrawer {
     container.innerHTML = '';
   }
 
-  showToast(message) {
-    if (typeof document === 'undefined') return;
+  showToast(message, type = 'info') {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
+    const existing = document.getElementById('cart-toast');
+    if (existing) existing.remove();
+
     const toast = document.createElement('div');
-    toast.className = 'fixed top-5 left-1/2 -translate-x-1/2 z-[100] bg-gray-900 text-white font-medium text-sm px-5 py-3 rounded-xl shadow-xl flex items-center gap-2.5 animate-in fade-in slide-in-from-top-4 duration-200';
-    toast.innerHTML = `<span class="text-green-400">${IconCheck('w-4 h-4')}</span><span>${escapeHtml(message)}</span>`;
+    toast.id = 'cart-toast';
+
+    let iconSvg = IconCheckCircle('w-4 h-4 text-emerald-400');
+    let borderClass = 'border-emerald-500/30';
+    let bgBadge = 'bg-gray-950/95';
+
+    if (type === 'warning') {
+      iconSvg = IconAlertTriangle('w-4 h-4 text-amber-400');
+      borderClass = 'border-amber-500/40';
+    } else if (type === 'error') {
+      iconSvg = IconAlertCircle('w-4 h-4 text-red-400');
+      borderClass = 'border-red-500/40';
+    } else if (type === 'success') {
+      iconSvg = IconCheckCircle('w-4 h-4 text-emerald-400');
+      borderClass = 'border-emerald-500/30';
+    } else if (type === 'info') {
+      iconSvg = IconSparkles('w-4 h-4 text-sky-400');
+      borderClass = 'border-sky-500/30';
+    }
+
+    toast.className = `fixed top-4 left-1/2 -translate-x-1/2 z-[200] max-w-[92vw] sm:max-w-md ${bgBadge} text-white px-4 py-2.5 sm:px-5 sm:py-3 rounded-2xl text-xs sm:text-sm font-semibold shadow-2xl flex items-center gap-2.5 border ${borderClass} backdrop-blur-md animate-in fade-in slide-in-from-top-4 duration-200 cursor-pointer select-none`;
+    toast.innerHTML = `
+      <span class="flex-shrink-0 flex items-center">${iconSvg}</span>
+      <span class="leading-snug break-words flex-1">${escapeHtml(message)}</span>
+    `;
     document.body.appendChild(toast);
+
+    let isDismissed = false;
+    const dismiss = () => {
+      if (isDismissed) return;
+      isDismissed = true;
+      toast.classList.add('opacity-0', 'transition-opacity', 'duration-200');
+      setTimeout(() => toast.remove(), 200);
+    };
+
+    toast.addEventListener('click', dismiss);
+    setTimeout(dismiss, 3500);
+  }
+
+  _highlightFieldError(input, errorText) {
+    if (!input) return;
+
+    // Xóa thông báo lỗi cũ nếu có
+    const parent = input.parentElement;
+    parent?.querySelectorAll('.field-error-msg').forEach(el => el.remove());
+
+    // Thêm viền đỏ, hiệu ứng rung và nền cảnh báo nhẹ
+    input.classList.remove('border-gray-300');
+    input.classList.add('border-red-500', 'ring-2', 'ring-red-200', 'bg-red-50/50', 'animate-shake');
+
+    // Gắn thông báo lỗi ngay dưới ô nhập
+    if (parent && errorText) {
+      const errorEl = document.createElement('p');
+      errorEl.className = 'field-error-msg text-[11px] font-bold text-red-600 mt-1 flex items-center gap-1 animate-in fade-in duration-150';
+      errorEl.innerHTML = `${IconAlertTriangle('w-3.5 h-3.5 flex-shrink-0')} <span>${escapeHtml(errorText)}</span>`;
+      parent.appendChild(errorEl);
+    }
+
+    // Tự động gỡ hiệu ứng rung sau 400ms để có thể rung lại nếu người dùng tiếp tục bấm gửi
     setTimeout(() => {
-      toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-      setTimeout(() => toast.remove(), 300);
-    }, 2500);
+      input.classList.remove('animate-shake');
+    }, 400);
+
+    // Khi người dùng gõ vào ô nhập -> tự động xóa trạng thái báo lỗi ngay lập tức
+    const onInput = () => {
+      input.classList.remove('border-red-500', 'ring-2', 'ring-red-200', 'bg-red-50/50');
+      input.classList.add('border-gray-300');
+      parent?.querySelectorAll('.field-error-msg').forEach(el => el.remove());
+      input.removeEventListener('input', onInput);
+    };
+    input.addEventListener('input', onInput);
   }
 
   validateForm() {
     const pricing = this.cart.getTotals(this.orderType, this.config);
     if (pricing.originalTotal < 100000) {
       const needed = 100000 - pricing.originalTotal;
-      const msg = `Đơn hàng của bạn hiện tại là ${formatCurrency(pricing.originalTotal)}.\n\nShop chỉ nhận đặt hộ với đơn hàng từ 100.000đ trở lên (cứ mỗi 100k giảm 15k).\nVui lòng chọn thêm ${formatCurrency(needed)} để đủ điều kiện gửi đơn nhé!`;
-      if (typeof alert === 'function') alert(msg);
-      this.showToast(`Đơn cần tối thiểu 100.000đ (cần thêm ${formatCurrency(needed)})`);
+      const msg = `Đơn cần tối thiểu 100.000đ để đặt hộ (cần thêm ${formatCurrency(needed)})`;
+      this.lastValidationError = msg;
+      this.showToast(msg, 'warning');
+
+      if (typeof document !== 'undefined') {
+        const warningEl = document.getElementById('min-order-notice-card') || document.querySelector('.drawer-scroll-body');
+        if (warningEl) {
+          warningEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          warningEl.classList.add('animate-shake');
+          setTimeout(() => warningEl.classList.remove('animate-shake'), 400);
+        }
+      }
       return false;
     }
 
     // Ăn tại quán: Không cần thông tin khách hàng
     if (this.orderType === 'dinein') {
+      this.lastValidationError = null;
       return true;
     }
+
     if (!this.customerInfo.name || !this.customerInfo.name.trim()) {
-      const msg = 'Vui lòng nhập Họ và Tên của bạn để shop dễ xưng hô!';
-      if (typeof alert === 'function') alert(msg);
-      this.showToast(msg);
-      if (typeof document !== 'undefined') document.getElementById('customer-name')?.focus();
+      const msg = 'Vui lòng nhập Họ và Tên của bạn để nhận hàng!';
+      this.lastValidationError = msg;
+      this.showToast(msg, 'warning');
+      if (typeof document !== 'undefined') {
+        const input = document.getElementById('customer-name');
+        if (input) {
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => input.focus(), 250);
+          this._highlightFieldError(input, msg);
+        }
+      }
       return false;
     }
-    if (!this.customerInfo.phone || !isValidVietnamesePhone(this.customerInfo.phone)) {
+
+    if (!this.customerInfo.phone || !this.customerInfo.phone.trim()) {
+      const msg = 'Vui lòng nhập Số điện thoại nhận hàng!';
+      this.lastValidationError = msg;
+      this.showToast(msg, 'warning');
+      if (typeof document !== 'undefined') {
+        const input = document.getElementById('customer-phone');
+        if (input) {
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => input.focus(), 250);
+          this._highlightFieldError(input, msg);
+        }
+      }
+      return false;
+    }
+
+    if (!isValidVietnamesePhone(this.customerInfo.phone)) {
       const msg = 'Số điện thoại nhận hàng không hợp lệ (cần 10 chữ số, VD: 0912345678)!';
-      if (typeof alert === 'function') alert(msg);
-      this.showToast(msg);
-      if (typeof document !== 'undefined') document.getElementById('customer-phone')?.focus();
+      this.lastValidationError = msg;
+      this.showToast(msg, 'warning');
+      if (typeof document !== 'undefined') {
+        const input = document.getElementById('customer-phone');
+        if (input) {
+          input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => input.focus(), 250);
+          this._highlightFieldError(input, msg);
+        }
+      }
       return false;
     }
+
     if (this.orderType === 'delivery') {
       if (!this.customerInfo.address || !this.customerInfo.address.trim()) {
         const msg = 'Vui lòng nhập Địa chỉ giao hàng chi tiết!';
-        if (typeof alert === 'function') alert(msg);
-        this.showToast(msg);
-        if (typeof document !== 'undefined') document.getElementById('customer-address')?.focus();
+        this.lastValidationError = msg;
+        this.showToast(msg, 'warning');
+        if (typeof document !== 'undefined') {
+          const input = document.getElementById('customer-address');
+          if (input) {
+            input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => input.focus(), 250);
+            this._highlightFieldError(input, msg);
+          }
+        }
         return false;
       }
     }
+
+    this.lastValidationError = null;
     return true;
+  }
+
+  /**
+   * Hộp thoại xác nhận thay thế hoàn toàn confirm() nguyên bản của trình duyệt
+   */
+  showConfirmDialog({ title, message, confirmText = 'Xác nhận xóa', cancelText = 'Hủy', onConfirm }) {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') {
+      if (typeof onConfirm === 'function') onConfirm();
+      return;
+    }
+
+    const existing = document.getElementById('app-confirm-dialog');
+    if (existing) existing.remove();
+
+    const dialog = document.createElement('div');
+    dialog.id = 'app-confirm-dialog';
+    dialog.className = 'fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150';
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+
+    dialog.innerHTML = `
+      <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl space-y-4 border border-gray-100 transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shadow-inner">
+          ${IconTrash('w-7 h-7')}
+        </div>
+        <div class="space-y-1.5">
+          <h4 class="text-base sm:text-lg font-black text-gray-900">${escapeHtml(title)}</h4>
+          <p class="text-xs sm:text-sm text-gray-500 leading-relaxed">${escapeHtml(message)}</p>
+        </div>
+        <div class="flex items-center gap-2.5 pt-2">
+          <button type="button" id="btn-dialog-cancel" class="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 hover:bg-gray-100 text-gray-700 font-bold text-xs sm:text-sm transition active:scale-95">
+            ${escapeHtml(cancelText)}
+          </button>
+          <button type="button" id="btn-dialog-confirm" class="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs sm:text-sm shadow-md shadow-red-200 transition active:scale-95">
+            ${escapeHtml(confirmText)}
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+
+    const close = () => {
+      dialog.classList.add('opacity-0', 'transition-opacity', 'duration-150');
+      setTimeout(() => dialog.remove(), 150);
+      document.removeEventListener('keydown', onKey);
+    };
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') close();
+    };
+    document.addEventListener('keydown', onKey);
+
+    dialog.querySelector('#btn-dialog-cancel')?.addEventListener('click', close);
+    dialog.addEventListener('click', (e) => {
+      if (e.target.id === 'app-confirm-dialog') close();
+    });
+
+    dialog.querySelector('#btn-dialog-confirm')?.addEventListener('click', () => {
+      close();
+      if (typeof onConfirm === 'function') onConfirm();
+    });
+  }
+
+  /**
+   * Modal hỗ trợ sao chép thủ công thay thế hoàn toàn prompt() nguyên bản của trình duyệt
+   */
+  showCopyFallbackModal(orderText) {
+    if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
+
+    const existing = document.getElementById('app-copy-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'app-copy-modal';
+    modal.className = 'fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+
+    modal.innerHTML = `
+      <div class="bg-white rounded-3xl max-w-md w-full p-5 sm:p-6 shadow-2xl space-y-3.5 border border-gray-100 transform transition-all animate-in zoom-in-95 duration-200">
+        <div class="flex items-center justify-between pb-2 border-b border-gray-100">
+          <div class="flex items-center gap-2 text-gray-900 font-extrabold text-sm sm:text-base">
+            <span class="text-amber-500 flex items-center">${IconCopy('w-5 h-5')}</span>
+            <span>Sao Chép Nội Dung Đơn Hàng</span>
+          </div>
+          <button type="button" id="btn-close-copy-modal" class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500 transition">
+            ${IconX('w-4 h-4')}
+          </button>
+        </div>
+        <p class="text-xs text-gray-500 leading-snug">
+          Vui lòng sao chép toàn bộ nội dung bên dưới để gửi qua Zalo hoặc Facebook Messenger:
+        </p>
+        <textarea id="copy-modal-textarea" readonly class="w-full h-48 p-3 text-xs bg-gray-50 border border-gray-200 rounded-xl font-mono text-gray-800 leading-relaxed focus:outline-none focus:ring-2 focus:ring-red-500 select-all resize-none">${escapeHtml(orderText)}</textarea>
+        <div class="flex gap-2 pt-1">
+          <button type="button" id="btn-select-all-copy" class="flex-1 py-2.5 px-4 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold text-xs sm:text-sm rounded-xl shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+            ${IconCopy('w-4 h-4')}
+            <span>Chọn Tất Cả & Sao Chép</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const textarea = modal.querySelector('#copy-modal-textarea');
+    if (textarea) {
+      setTimeout(() => {
+        textarea.focus();
+        textarea.select();
+      }, 100);
+    }
+
+    const close = () => {
+      modal.classList.add('opacity-0', 'transition-opacity', 'duration-150');
+      setTimeout(() => modal.remove(), 150);
+      document.removeEventListener('keydown', onKey);
+    };
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') close();
+    };
+    document.addEventListener('keydown', onKey);
+
+    modal.querySelector('#btn-close-copy-modal')?.addEventListener('click', close);
+    modal.addEventListener('click', (e) => {
+      if (e.target.id === 'app-copy-modal') close();
+    });
+
+    modal.querySelector('#btn-select-all-copy')?.addEventListener('click', () => {
+      if (textarea) {
+        textarea.focus();
+        textarea.select();
+        try {
+          document.execCommand('copy');
+          this.showToast('Đã sao chép toàn bộ nội dung đơn!', 'success');
+        } catch {
+          this.showToast('Vui lòng nhấn giữ nội dung và chọn Sao Chép', 'info');
+        }
+      }
+    });
   }
 
   /**
@@ -503,7 +763,7 @@ export class CartDrawer {
 
           <!-- Min Order Notice for < 100k vs Qualified Notice With Upsell Tip -->
           ${pricing.originalTotal < 100000 ? `
-            <div class="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-950 flex items-start gap-3 shadow-sm">
+            <div id="min-order-notice-card" class="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-950 flex items-start gap-3 shadow-sm transition-all duration-300">
               <div class="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 mt-0.5">
                 ${IconAlertTriangle('w-4 h-4')}
               </div>
@@ -724,19 +984,30 @@ export class CartDrawer {
     container.querySelectorAll('.btn-cart-remove').forEach(btn => {
       btn.addEventListener('click', (e) => {
         this._saveFormInputs();
-        this.cart.removeItem(e.currentTarget.dataset.id);
+        const cartItemId = e.currentTarget.dataset.id;
+        const itemToRemove = this.cart.getItems().find(i => i.cartItemId === cartItemId);
+        this.cart.removeItem(cartItemId);
         if (this.onCartChanged) this.onCartChanged();
         this.render();
+        if (itemToRemove) {
+          this.showToast(`Đã bỏ "${itemToRemove.name}" khỏi giỏ hàng`, 'info');
+        }
       });
     });
 
     document.getElementById('btn-clear-cart')?.addEventListener('click', () => {
-      const confirmed = typeof confirm === 'function' ? confirm('Bạn có chắc muốn xóa toàn bộ món trong giỏ hàng?') : true;
-      if (confirmed) {
-        this.cart.clear();
-        if (this.onCartChanged) this.onCartChanged();
-        this.render();
-      }
+      this.showConfirmDialog({
+        title: 'Xác nhận xóa giỏ hàng',
+        message: 'Bạn có chắc chắn muốn xóa tất cả món đã chọn khỏi giỏ hàng không? Bạn sẽ cần chọn món lại từ đầu.',
+        confirmText: 'Xác nhận xóa',
+        cancelText: 'Giữ lại món',
+        onConfirm: () => {
+          this.cart.clear();
+          if (this.onCartChanged) this.onCartChanged();
+          this.render();
+          this.showToast('Đã xóa toàn bộ món trong giỏ hàng', 'info');
+        }
+      });
     });
 
     // Xử lý gửi đơn qua Zalo (khắc phục hoàn toàn lỗi Popup Blocker trên iOS Safari)
@@ -753,7 +1024,7 @@ export class CartDrawer {
 
       // 1. Sao chép vào bộ nhớ tạm không chặn luồng
       copyToClipboard(orderText).catch(err => console.warn('Clipboard copy warning:', err));
-      this.showToast('Đang chuyển hướng sang Zalo & đã sao chép đơn!');
+      this.showToast('Đang chuyển hướng sang Zalo & đã sao chép đơn!', 'success');
 
       // 2. Điều hướng trực tiếp tương thích 100% mobile WebKit / Safari
       setTimeout(() => {
@@ -776,7 +1047,7 @@ export class CartDrawer {
       const url = generateMessengerUrl(messengerTarget, orderText);
 
       copyToClipboard(orderText).catch(err => console.warn('Clipboard copy warning:', err));
-      this.showToast('Đang chuyển hướng sang Messenger & đã sao chép đơn!');
+      this.showToast('Đang chuyển hướng sang Messenger & đã sao chép đơn!', 'success');
 
       setTimeout(() => {
         if (typeof window !== 'undefined') {
@@ -797,9 +1068,9 @@ export class CartDrawer {
 
       const success = await copyToClipboard(orderText);
       if (success) {
-        this.showToast('Đã sao chép nội dung đơn hàng! Bạn có thể dán vào khung chat Zalo/FB.');
-      } else if (typeof prompt === 'function') {
-        prompt('Vui lòng sao chép toàn bộ nội dung đơn dưới đây:', orderText);
+        this.showToast('Đã sao chép nội dung đơn hàng! Bạn có thể dán vào khung chat Zalo/FB.', 'success');
+      } else {
+        this.showCopyFallbackModal(orderText);
       }
     });
   }
