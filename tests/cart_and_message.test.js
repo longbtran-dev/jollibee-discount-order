@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { Cart } from '../js/cart.js';
 import { formatOrderText, generateZaloUrl, generateMessengerUrl } from '../js/order-message.js';
 import { CartDrawer } from '../js/components/cart-drawer.js';
+import { ImageModal } from '../js/components/image-modal.js';
+import { getActiveModalCount, resetActiveModalCount } from '../js/utils.js';
 
 describe('Cart & Order Message Formatter', () => {
   it('thêm món đơn và combo có phụ thu tính đúng tổng giá mục giỏ hàng', () => {
@@ -334,5 +336,130 @@ describe('Cart & Order Message Formatter', () => {
 
     // Giỏ hàng được đóng an toàn
     assert.equal(isClosed, true);
+  });
+
+  it('loadFromStorage lọc bỏ dữ liệu hỏng (NaN, âm, sai cấu trúc) chống lỗi NaN đ', () => {
+    const storageMap = new Map();
+    storageMap.set('jb_cart_items', JSON.stringify([
+      null,
+      { cartItemId: '', name: 'Rỗng ID', unitPrice: 30000, quantity: 1 },
+      { cartItemId: 'bad_price', name: 'Sai giá', unitPrice: 'abc', quantity: 1 },
+      { cartItemId: 'neg_qty', name: 'Số lượng âm', unitPrice: 30000, quantity: -2 },
+      { cartItemId: 'valid_1', productId: 'p1', name: 'Gà Giòn', unitPrice: '35000', quantity: '2', selectedOptions: 'bad' }
+    ]));
+
+    global.localStorage = {
+      getItem: (key) => storageMap.get(key) || null,
+      setItem: (key, val) => storageMap.set(key, String(val)),
+      removeItem: (key) => storageMap.delete(key),
+      clear: () => storageMap.clear()
+    };
+
+    const cart = new Cart();
+    assert.equal(cart.getItems().length, 1);
+    assert.equal(cart.getItems()[0].cartItemId, 'valid_1');
+    assert.equal(cart.getItems()[0].unitPrice, 35000);
+    assert.equal(cart.getItems()[0].quantity, 2);
+    assert.deepEqual(cart.getItems()[0].selectedOptions, []);
+    assert.equal(cart.getTotals('delivery').originalTotal, 70000);
+  });
+
+  it('removeItem dọn sạch historyStack và updateItemOptions cập nhật cấu hình Combo tại chỗ', () => {
+    if (global.localStorage && typeof global.localStorage.clear === 'function') {
+      global.localStorage.clear();
+    }
+    const cart = new Cart();
+    cart.addItem({ id: 'p1', name: 'Gà Giòn', price: 35000 });
+    const comboProduct = { id: 'c1', name: 'Combo Đôi', base_price: 100000, price: 100000, is_combo: true };
+    const addedCombo = cart.addItem(comboProduct, [{ group_name: 'Nước', option_id: 'pepsi', option_name: 'Pepsi vừa', extra_price: 0 }], 2);
+
+    // Xóa p1 thủ công -> historyStack chỉ còn lại c1
+    cart.removeItem('p1_base');
+    assert.equal(cart.getProductQuantity('p1'), 0);
+
+    // Đổi tùy chọn nước của Combo sang Pepsi lớn (+5.000đ) -> giữ nguyên số lượng 2
+    const updated = cart.updateItemOptions(addedCombo.cartItemId, comboProduct, [
+      { group_name: 'Nước', option_id: 'pepsi_l', option_name: 'Pepsi lớn', extra_price: 5000 }
+    ]);
+    assert.ok(updated);
+    assert.equal(updated.quantity, 2);
+    assert.equal(updated.unitPrice, 105000);
+    assert.equal(cart.getItems().length, 1);
+  });
+
+  it('formatOrderText xử lý chuẩn Combo có 1 tùy chọn chứa dấu phẩy mà không cắt vỡ chuỗi', () => {
+    const items = [{
+      name: '1 Mì Ý + 1 Nước',
+      unitPrice: 55000,
+      quantity: 1,
+      selectedOptions: [
+        { option_name: 'Pepsi lớn, ít đá, thêm chanh', extra_price: 5000 }
+      ],
+      optionsText: 'Pepsi lớn, ít đá, thêm chanh (+5.000đ)'
+    }];
+    const pricing = { originalTotal: 55000, discountAmount: 0, shippingFee: 0, finalTotal: 55000 };
+    const msg = formatOrderText({}, items, pricing, 'dinein');
+    assert.ok(msg.includes('• Pepsi lớn, ít đá, thêm chanh (+5.000đ)'));
+  });
+
+  it('chạm đúp open() không làm kẹt overflow-hidden và bấm Escape khi xem ảnh không làm sập CartDrawer', () => {
+    resetActiveModalCount();
+    const bodyClasses = new Set();
+    const keyHandlers = [];
+    const containers = {
+      'cart-drawer-container': { id: 'cart-drawer-container', innerHTML: '', querySelector: () => null, querySelectorAll: () => [] },
+      'image-modal-container': { id: 'image-modal-container', innerHTML: '', querySelector: () => null, querySelectorAll: () => [] }
+    };
+
+    global.document = {
+      body: {
+        classList: {
+          add: (c) => bodyClasses.add(c),
+          remove: (c) => bodyClasses.delete(c),
+          contains: (c) => bodyClasses.has(c)
+        },
+        appendChild: () => {}
+      },
+      getElementById: (id) => containers[id] || null,
+      addEventListener: (ev, fn) => { if (ev === 'keydown') keyHandlers.push(fn); },
+      removeEventListener: () => {}
+    };
+
+    const cart = new Cart([{
+      cartItemId: 'c1_opt',
+      productId: 'c1',
+      name: 'Combo Gà Giòn',
+      isCombo: true,
+      unitPrice: 80000,
+      quantity: 1,
+      selectedOptions: [{ option_name: 'Pepsi vừa', extra_price: 0 }]
+    }]);
+    const imageModal = new ImageModal();
+    const drawer = new CartDrawer(cart, {}, null, null, imageModal, {
+      getUpsellSuggestions: () => [{ id: 's1', name: 'Bánh Xoài Đào', price: 20000, image: '' }]
+    });
+
+    // Chạm đúp mở giỏ 2 lần liên tiếp
+    drawer.open();
+    drawer.open();
+    assert.equal(getActiveModalCount(), 1);
+    assert.ok(containers['cart-drawer-container'].innerHTML.includes('btn-cart-edit-combo'));
+    assert.ok(containers['cart-drawer-container'].innerHTML.includes('Bánh Xoài Đào'));
+
+    // Mở xem ảnh phóng to chồng lên trên giỏ hàng
+    imageModal.open({ title: 'Combo Gà Giòn', image: '' });
+    assert.equal(getActiveModalCount(), 2);
+
+    // Nhấn phím Escape 1 lần -> CHỈ tắt ImageModal, CartDrawer vẫn mở!
+    keyHandlers.forEach(fn => fn({ key: 'Escape', preventDefault() {}, stopPropagation() {} }));
+    assert.equal(imageModal._isOpen, false);
+    assert.equal(drawer._isOpen, true);
+    assert.equal(getActiveModalCount(), 1);
+    assert.equal(bodyClasses.has('overflow-hidden'), true);
+
+    // Đóng giỏ hàng -> trả bộ đếm về 0 và gỡ sạch overflow-hidden
+    drawer.close();
+    assert.equal(getActiveModalCount(), 0);
+    assert.equal(bodyClasses.has('overflow-hidden'), false);
   });
 });

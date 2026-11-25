@@ -7,7 +7,14 @@ import {
   debounce,
   lockBodyScroll,
   unlockBodyScroll,
-  getActiveModalCount
+  getActiveModalCount,
+  resetActiveModalCount,
+  registerOpenModal,
+  unregisterOpenModal,
+  trapFocusInModal,
+  normalizeVietnamese,
+  safeImageUrl,
+  FALLBACK_FOOD_IMAGE
 } from '../js/utils.js';
 
 describe('Utility Functions', () => {
@@ -107,5 +114,120 @@ describe('Utility Functions', () => {
     unlockBodyScroll(); // Đóng nốt modal 1 -> gỡ overflow-hidden
     assert.equal(getActiveModalCount(), 0);
     assert.equal(mockClassList.has('overflow-hidden'), false);
+  });
+
+  it('registerOpenModal & unregisterOpenModal quản lý Modal Stack LIFO và chỉ đóng modal trên cùng khi bấm Escape', () => {
+    resetActiveModalCount();
+    const mockClassList = new Set();
+    const keyListeners = [];
+
+    global.document = {
+      body: {
+        classList: {
+          add: (cls) => mockClassList.add(cls),
+          remove: (cls) => mockClassList.delete(cls),
+          contains: (cls) => mockClassList.has(cls)
+        }
+      },
+      addEventListener: (ev, fn) => {
+        if (ev === 'keydown') keyListeners.push(fn);
+      },
+      removeEventListener: () => {}
+    };
+
+    let drawerClosed = 0;
+    let imageModalClosed = 0;
+
+    // Mở CartDrawer 2 lần liên tiếp (chạm đúp) -> chỉ đăng ký 1 định danh duy nhất
+    registerOpenModal('cart-drawer', () => {
+      drawerClosed++;
+      unregisterOpenModal('cart-drawer');
+    });
+    registerOpenModal('cart-drawer', () => {
+      drawerClosed++;
+      unregisterOpenModal('cart-drawer');
+    });
+    assert.equal(getActiveModalCount(), 1);
+    assert.equal(mockClassList.has('overflow-hidden'), true);
+
+    // Mở chồng ImageModal bên trên CartDrawer
+    registerOpenModal('image-modal', () => {
+      imageModalClosed++;
+      unregisterOpenModal('image-modal');
+    });
+    assert.equal(getActiveModalCount(), 2);
+
+    // Nhấn phím Escape lần 1 -> CHỈ đóng ImageModal, CartDrawer vẫn mở!
+    keyListeners.forEach(fn => fn({ key: 'Escape', preventDefault() {}, stopPropagation() {} }));
+    assert.equal(imageModalClosed, 1);
+    assert.equal(drawerClosed, 0);
+    assert.equal(getActiveModalCount(), 1);
+    assert.equal(mockClassList.has('overflow-hidden'), true);
+
+    // Nhấn phím Escape lần 2 -> đóng nốt CartDrawer và gỡ overflow-hidden
+    keyListeners.forEach(fn => fn({ key: 'Escape', preventDefault() {}, stopPropagation() {} }));
+    assert.equal(drawerClosed, 1);
+    assert.equal(getActiveModalCount(), 0);
+    assert.equal(mockClassList.has('overflow-hidden'), false);
+  });
+
+  it('normalizeVietnamese bỏ dấu tiếng Việt, quy đồng đ/d và mỳ/mì chính xác', () => {
+    assert.equal(normalizeVietnamese('Gà Giòn Vui Vẻ'), 'ga gion vui ve');
+    assert.equal(normalizeVietnamese('Đùi Gà Sốt Đậm Đà'), 'dui ga sot dam da');
+    assert.equal(normalizeVietnamese('Mỳ Ý Sốt Bò Bằm'), normalizeVietnamese('Mì Ý Sốt Bò Bằm'));
+    assert.equal(normalizeVietnamese('  my   y  '), 'mi y');
+    assert.equal(normalizeVietnamese(null), '');
+  });
+
+  it('safeImageUrl chặn javascript: URI độc hại và trả về SVG dự phòng nội tuyến khi rỗng', () => {
+    assert.equal(safeImageUrl(''), FALLBACK_FOOD_IMAGE);
+    assert.equal(safeImageUrl(null), FALLBACK_FOOD_IMAGE);
+    assert.equal(safeImageUrl('javascript:alert(1)'), FALLBACK_FOOD_IMAGE);
+    assert.equal(safeImageUrl('  javascript:void(0) '), FALLBACK_FOOD_IMAGE);
+    assert.equal(safeImageUrl('data:text/html,<script>alert(1)</script>'), FALLBACK_FOOD_IMAGE);
+    assert.equal(safeImageUrl('images/products/ga.jpg'), 'images/products/ga.jpg');
+    assert.equal(safeImageUrl('images/a"b.jpg'), 'images/a&quot;b.jpg');
+    assert.ok(FALLBACK_FOOD_IMAGE.startsWith('data:image/svg+xml'));
+  });
+
+  it('trapFocusInModal giữ vòng lặp phím Tab trong Modal và khôi phục Focus khi đóng', () => {
+    let focusedEl = null;
+    const openerBtn = { id: 'opener', focus() { focusedEl = this; } };
+    focusedEl = openerBtn;
+
+    const btnFirst = { id: 'first', offsetParent: {}, focus() { focusedEl = this; } };
+    const btnLast = { id: 'last', offsetParent: {}, focus() { focusedEl = this; } };
+    let modalKeyHandler = null;
+
+    const mockModal = {
+      querySelectorAll: () => [btnFirst, btnLast],
+      addEventListener: (ev, fn) => { if (ev === 'keydown') modalKeyHandler = fn; },
+      removeEventListener: (ev, fn) => { if (ev === 'keydown' && modalKeyHandler === fn) modalKeyHandler = null; }
+    };
+
+    global.document = {
+      get activeElement() { return focusedEl; }
+    };
+
+    const release = trapFocusInModal(mockModal);
+    // Focus ban đầu nhảy vào phần tử đầu tiên trong Modal
+    assert.equal(focusedEl, btnFirst);
+
+    // Shift + Tab ở phần tử đầu tiên -> vòng xuống phần tử cuối cùng
+    let prevented = false;
+    modalKeyHandler({ key: 'Tab', shiftKey: true, preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.equal(focusedEl, btnLast);
+
+    // Tab ở phần tử cuối cùng -> vòng lại phần tử đầu tiên
+    prevented = false;
+    modalKeyHandler({ key: 'Tab', shiftKey: false, preventDefault() { prevented = true; } });
+    assert.equal(prevented, true);
+    assert.equal(focusedEl, btnFirst);
+
+    // Giải phóng Focus Trap -> trả focus về nút đã mở Modal
+    release();
+    assert.equal(focusedEl, openerBtn);
+    assert.equal(modalKeyHandler, null);
   });
 });

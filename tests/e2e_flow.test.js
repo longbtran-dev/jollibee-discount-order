@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { Cart } from '../js/cart.js';
 import { calculateDiscount, calculateShippingFee, calculateOrderPricing } from '../js/pricing.js';
 import { formatOrderText, generateZaloUrl, generateMessengerUrl } from '../js/order-message.js';
+import { JollibeeApp } from '../js/app.js';
 
 describe('End-to-End System Integration Flow', () => {
   const menuRaw = fs.readFileSync('data/menu.json', 'utf8');
@@ -123,5 +124,57 @@ describe('End-to-End System Integration Flow', () => {
     restoredCart.loadFromStorage();
     assert.equal(restoredCart.getItems().length, 2);
     assert.equal(restoredCart.getTotals('delivery').finalTotal, 135000);
+  });
+
+  it('JollibeeApp: không bắn pháo hoa nhầm lúc F5, tìm kiếm không dấu & gợi ý món bù mốc 1 chạm', () => {
+    const mockStorage = new Map();
+    mockStorage.set('jb_cart_items', JSON.stringify([
+      { cartItemId: 'p1_base', productId: 'p1', name: 'Gà Giòn', unitPrice: 240000, quantity: 1 }
+    ]));
+    global.localStorage = {
+      getItem: (k) => mockStorage.get(k) || null,
+      setItem: (k, v) => mockStorage.set(k, String(v)),
+      removeItem: (k) => mockStorage.delete(k),
+      clear: () => mockStorage.clear()
+    };
+
+    let confettiFired = 0;
+    global.window = {
+      JOLLIBEE_CONFIG: {},
+      confetti: () => { confettiFired++; }
+    };
+
+    const menuContainer = { innerHTML: '', querySelectorAll: () => [] };
+    global.document = {
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      getElementById: (id) => (id === 'menu-sections-container' ? menuContainer : null),
+      querySelector: () => null,
+      querySelectorAll: () => []
+    };
+
+    const app = new JollibeeApp();
+    // Khởi tạo lastOriginalTotal phải bằng đúng 240.000đ đã lưu, không bắn pháo hoa khi tải trang
+    assert.equal(app.lastOriginalTotal, 240000);
+    app.updateFloatingCart();
+    assert.equal(confettiFired, 0);
+
+    // Nạp thực đơn thật để kiểm thử tìm kiếm không dấu & gợi ý Upsell 1 chạm
+    app.menuData = menuData;
+    app.productMap = new Map();
+    menuData.categories.forEach(c => c.products.forEach(p => app.productMap.set(String(p.id), p)));
+
+    // Tìm kiếm không dấu "ga gion" và "my y" phải ra kết quả
+    app.renderMenuSections('ga gion');
+    assert.ok(!menuContainer.innerHTML.includes('Không tìm thấy món ăn nào'));
+    assert.ok(menuContainer.innerHTML.includes('Gà'));
+
+    app.renderMenuSections('my y');
+    assert.ok(!menuContainer.innerHTML.includes('Không tìm thấy món ăn nào'));
+
+    // Gợi ý Upsell khi thiếu 20.000đ trả về tối đa 3 món lẻ hợp lệ
+    const suggestions = app.getUpsellSuggestions(20000);
+    assert.ok(Array.isArray(suggestions) && suggestions.length > 0 && suggestions.length <= 3);
+    suggestions.forEach(item => assert.equal(Boolean(item.is_combo), false));
   });
 });

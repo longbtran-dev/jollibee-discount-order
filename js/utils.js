@@ -1,6 +1,12 @@
 /**
- * Các hàm tiện ích hỗ trợ an toàn và tương thích trình duyệt
+ * Các hàm tiện ích hỗ trợ an toàn, A11y và tương thích trình duyệt
  */
+
+/**
+ * Ảnh dự phòng SVG nội tuyến siêu nhẹ (0 HTTP request, không bao giờ 404 hay phụ thuộc domain bên thứ 3)
+ */
+export const FALLBACK_FOOD_IMAGE =
+  "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Crect width='160' height='160' rx='20' fill='%23fffaf0'/%3E%3Ctext x='50%25' y='52%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-weight='800' font-size='16' fill='%23d71920'%3EJollibee%3C/text%3E%3C/svg%3E";
 
 /**
  * Mã hóa an toàn chuỗi văn bản chống tấn công XSS
@@ -19,6 +25,51 @@ export function escapeHtml(str) {
       default: return match;
     }
   });
+}
+
+/**
+ * Kiểm tra & làm sạch URL ảnh an toàn (chặn javascript: URI và thay thế khi rỗng)
+ * @param {string} url
+ * @returns {string}
+ */
+export function safeImageUrl(url) {
+  if (!url || typeof url !== 'string') return FALLBACK_FOOD_IMAGE;
+  const trimmed = url.trim();
+  if (!trimmed) return FALLBACK_FOOD_IMAGE;
+  if (/^(javascript:|vbscript:|data:(?!image\/))/i.test(trimmed)) {
+    return FALLBACK_FOOD_IMAGE;
+  }
+  return escapeHtml(trimmed);
+}
+
+/**
+ * Chuẩn hóa chuỗi tiếng Việt: bỏ dấu, chuyển đ -> d, quy đồng mỳ/mì phục vụ tìm kiếm thông minh
+ * @param {string} str
+ * @returns {string}
+ */
+export function normalizeVietnamese(str) {
+  if (!str) return '';
+  return String(str)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[đĐ]/g, 'd')
+    .toLowerCase()
+    .replace(/\bmy\b/g, 'mi')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Kiểm tra cài đặt giảm chuyển động (prefers-reduced-motion) của hệ điều hành
+ * @returns {boolean}
+ */
+export function prefersReducedMotion() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  try {
+    return Boolean(window.matchMedia('(prefers-reduced-motion: reduce)')?.matches);
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -49,16 +100,76 @@ export function debounce(fn, delay = 200) {
   };
 }
 
+// ============================================================================
+// Quản lý tập trung ngăn xếp Modal (LIFO Modal Stack) & Khóa cuộn Body an toàn
+// ============================================================================
 let activeModalCount = 0;
+const openModalStack = []; // [{ id: string, onEscape: Function }]
+let boundEscDoc = null;
+
+function syncBodyOverflowClass() {
+  if (typeof document === 'undefined' || !document.body || !document.body.classList) return;
+  if (activeModalCount + openModalStack.length > 0) {
+    document.body.classList.add('overflow-hidden');
+  } else {
+    document.body.classList.remove('overflow-hidden');
+  }
+}
+
+function handleGlobalEscape(e) {
+  if (!e || e.key !== 'Escape' || openModalStack.length === 0) return;
+  if (typeof e.preventDefault === 'function') e.preventDefault();
+  if (typeof e.stopPropagation === 'function') e.stopPropagation();
+
+  const topModal = openModalStack[openModalStack.length - 1];
+  if (topModal && typeof topModal.onEscape === 'function') {
+    topModal.onEscape();
+  }
+}
 
 /**
- * Khóa cuộn trang Body an toàn theo bộ đếm modal mở (tránh gỡ nhầm khi lồng modal)
+ * Đăng ký một Modal vào ngăn xếp LIFO theo định danh duy nhất (chống cộng dồn khi chạm đúp)
+ * và đảm bảo nhấn phím Escape chỉ đóng đúng Modal đang nằm trên đỉnh.
+ * @param {string} id
+ * @param {Function} [onEscape]
+ */
+export function registerOpenModal(id, onEscape) {
+  if (!id) return;
+  const existingIdx = openModalStack.findIndex(m => m.id === id);
+  if (existingIdx !== -1) {
+    openModalStack.splice(existingIdx, 1);
+  }
+  openModalStack.push({ id, onEscape });
+
+  syncBodyOverflowClass();
+
+  if (typeof document !== 'undefined' && typeof document.addEventListener === 'function' && boundEscDoc !== document) {
+    if (boundEscDoc && typeof boundEscDoc.removeEventListener === 'function') {
+      boundEscDoc.removeEventListener('keydown', handleGlobalEscape);
+    }
+    document.addEventListener('keydown', handleGlobalEscape);
+    boundEscDoc = document;
+  }
+}
+
+/**
+ * Hủy đăng ký Modal khỏi ngăn xếp và chỉ mở lại cuộn trang khi toàn bộ Modal đã đóng
+ * @param {string} id
+ */
+export function unregisterOpenModal(id) {
+  const idx = openModalStack.findIndex(m => m.id === id);
+  if (idx !== -1) {
+    openModalStack.splice(idx, 1);
+  }
+  syncBodyOverflowClass();
+}
+
+/**
+ * Khóa cuộn trang Body an toàn theo bộ đếm modal mở
  */
 export function lockBodyScroll() {
   activeModalCount++;
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.classList.add('overflow-hidden');
-  }
+  syncBodyOverflowClass();
 }
 
 /**
@@ -66,23 +177,94 @@ export function lockBodyScroll() {
  */
 export function unlockBodyScroll() {
   activeModalCount = Math.max(0, activeModalCount - 1);
-  if (activeModalCount === 0 && typeof document !== 'undefined' && document.body) {
-    document.body.classList.remove('overflow-hidden');
-  }
+  syncBodyOverflowClass();
 }
 
 /**
- * Lấy số lượng modal đang mở hiện tại
+ * Lấy tổng số lượng modal đang mở hiện tại
  */
 export function getActiveModalCount() {
-  return activeModalCount;
+  return activeModalCount + openModalStack.length;
 }
 
 /**
- * Reset bộ đếm modal (hỗ trợ kiểm thử cô lập)
+ * Reset bộ đếm & ngăn xếp modal (hỗ trợ kiểm thử cô lập)
  */
 export function resetActiveModalCount() {
   activeModalCount = 0;
+  openModalStack.length = 0;
+  if (boundEscDoc && typeof boundEscDoc.removeEventListener === 'function') {
+    boundEscDoc.removeEventListener('keydown', handleGlobalEscape);
+  }
+  boundEscDoc = null;
+}
+
+/**
+ * Tiện ích bẫy tiêu điểm bàn phím (Focus Trap) bên trong Modal/Drawer và khôi phục Focus khi đóng
+ * @param {HTMLElement} modalEl
+ * @param {object} [options]
+ * @param {boolean} [options.autoFocus=true]
+ * @returns {Function} Hàm dọn dẹp & trả lại Focus ban đầu
+ */
+export function trapFocusInModal(modalEl, { autoFocus = true } = {}) {
+  if (
+    typeof document === 'undefined' ||
+    !modalEl ||
+    typeof modalEl.querySelectorAll !== 'function' ||
+    typeof modalEl.addEventListener !== 'function'
+  ) {
+    return () => {};
+  }
+
+  const previousFocused = document.activeElement;
+  const focusableSelector =
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  const getFocusable = () =>
+    Array.from(modalEl.querySelectorAll(focusableSelector)).filter(el => {
+      if (el.offsetParent !== null) return true;
+      if (typeof el.getClientRects === 'function' && el.getClientRects().length > 0) return true;
+      return false;
+    });
+
+  if (autoFocus) {
+    const initialList = getFocusable();
+    if (initialList.length > 0 && typeof initialList[0].focus === 'function') {
+      initialList[0].focus();
+    }
+  }
+
+  const onKeyDown = (e) => {
+    if (!e || e.key !== 'Tab') return;
+    const focusables = getFocusable();
+    if (focusables.length === 0) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof last.focus === 'function') last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof first.focus === 'function') first.focus();
+    }
+  };
+
+  modalEl.addEventListener('keydown', onKeyDown);
+
+  return () => {
+    if (typeof modalEl.removeEventListener === 'function') {
+      modalEl.removeEventListener('keydown', onKeyDown);
+    }
+    if (previousFocused && typeof previousFocused.focus === 'function') {
+      try {
+        previousFocused.focus();
+      } catch {
+        // Bỏ qua nếu phần tử gốc không còn trong DOM
+      }
+    }
+  };
 }
 
 /**
@@ -101,7 +283,7 @@ export async function copyToClipboard(text) {
   }
 
   // Fallback qua textarea và document.execCommand
-  if (typeof document === 'undefined') return false;
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function') return false;
   try {
     const textArea = document.createElement('textarea');
     textArea.value = text;
@@ -136,7 +318,7 @@ export function formatDescriptionHtml(description) {
     if (parts.length > 1) {
       const itemsHtml = parts.map(part => `
         <li class="flex items-start gap-1.5 text-xs text-gray-800 font-semibold leading-snug">
-          <span class="text-[#d71920] font-black text-xs leading-none mt-0.5">•</span>
+          <span class="text-[#d71920] font-black text-xs leading-none mt-0.5" aria-hidden="true">•</span>
           <span class="break-words">${escapeHtml(part)}</span>
         </li>
       `).join('');
@@ -144,7 +326,7 @@ export function formatDescriptionHtml(description) {
       return `
         <div class="mt-1.5 p-2 sm:p-2.5 bg-amber-50/70 rounded-xl border border-amber-200/60 shadow-sm">
           <div class="text-[10px] font-black uppercase tracking-wider text-amber-900 mb-1 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[#d71920] flex-shrink-0" aria-hidden="true"></span>
             <span>Combo bao gồm:</span>
           </div>
           <ul class="space-y-1">

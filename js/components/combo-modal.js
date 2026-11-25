@@ -1,35 +1,80 @@
 /**
  * Logic trạng thái và thành phần giao diện Modal tùy chỉnh Combo
+ * Hỗ trợ Modal Stack LIFO, Focus Trap, A11y Accordion & nạp lại cấu hình khi Đổi món trong giỏ.
  */
 
 import { formatCurrency } from '../order-message.js';
-import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag } from '../icons.js';
-import { formatDescriptionHtml, escapeHtml, lockBodyScroll, unlockBodyScroll } from '../utils.js';
+import { IconX, IconChevronDown, IconPlus, IconMinus, IconShoppingBag, IconCheck } from '../icons.js';
+import {
+  formatDescriptionHtml,
+  escapeHtml,
+  safeImageUrl,
+  FALLBACK_FOOD_IMAGE,
+  registerOpenModal,
+  unregisterOpenModal,
+  trapFocusInModal
+} from '../utils.js';
 
 /**
  * Khởi tạo bộ quản lý trạng thái chọn option cho Combo
+ * @param {object} product
+ * @param {Array|null} [initialSelectedOptions=null] - Danh sách option đã chọn trước đó (khi sửa Combo trong giỏ)
  */
-export function createComboState(product) {
+export function createComboState(product, initialSelectedOptions = null) {
   const basePrice = Number(product.base_price !== undefined ? product.base_price : product.price) || 0;
   const groups = product.option_groups || [];
   const selected = {};
+  const usedPresetIndices = new Set();
 
-  // Chọn mặc định cho từng nhóm theo cấu hình cờ is_default
   groups.forEach(group => {
     if (group.options && group.options.length > 0) {
-      const defaultOpt = 
-        group.options.find(o => o.is_default) ||
-        group.options[0];
-      selected[group.group_id] = { ...defaultOpt, group_name: group.group_name };
+      let chosenOpt = null;
+
+      // Nếu truyền vào danh sách option đã lưu trước đó -> ưu tiên khôi phục đúng lựa chọn của khách
+      if (Array.isArray(initialSelectedOptions) && initialSelectedOptions.length > 0) {
+        const presetIdx = initialSelectedOptions.findIndex((preset, idx) => {
+          if (usedPresetIndices.has(idx) || !preset) return false;
+          const groupMatches =
+            (preset.group_id && String(preset.group_id) === String(group.group_id)) ||
+            (!preset.group_id && preset.group_name && preset.group_name === group.group_name);
+          if (!groupMatches && preset.group_name && preset.group_name !== group.group_name) return false;
+
+          return group.options.some(
+            o =>
+              (preset.option_id && String(o.option_id) === String(preset.option_id)) ||
+              (preset.option_name && o.name === preset.option_name)
+          );
+        });
+
+        if (presetIdx !== -1) {
+          usedPresetIndices.add(presetIdx);
+          const preset = initialSelectedOptions[presetIdx];
+          chosenOpt = group.options.find(
+            o =>
+              (preset.option_id && String(o.option_id) === String(preset.option_id)) ||
+              (preset.option_name && o.name === preset.option_name)
+          );
+        }
+      }
+
+      if (!chosenOpt) {
+        chosenOpt = group.options.find(o => o.is_default) || group.options[0];
+      }
+
+      selected[group.group_id] = {
+        ...chosenOpt,
+        group_id: group.group_id,
+        group_name: group.group_name
+      };
     }
   });
 
   return {
     selected,
     selectOption(groupId, option) {
-      const group = groups.find(g => g.group_id === groupId);
+      const group = groups.find(g => String(g.group_id) === String(groupId));
       const groupName = group ? group.group_name : '';
-      selected[groupId] = { ...option, group_name: groupName };
+      selected[groupId] = { ...option, group_id: groupId, group_name: groupName };
     },
     getTotalPrice() {
       let totalExtra = 0;
@@ -47,6 +92,7 @@ export function createComboState(product) {
           return true;
         })
         .map(opt => ({
+          group_id: opt.group_id,
           group_name: opt.group_name,
           option_id: opt.option_id,
           option_name: opt.name,
@@ -67,7 +113,9 @@ export class ComboModal {
     this.currentProduct = null;
     this.state = null;
     this.onConfirmCallback = null;
-    this._escHandler = null;
+    this.submitLabel = 'Thêm Vào Giỏ';
+    this.isEditing = false;
+    this._releaseFocusTrap = null;
     this._isOpen = false;
   }
 
@@ -81,28 +129,30 @@ export class ComboModal {
     return el;
   }
 
-  open(product, onConfirm) {
+  open(product, onConfirm, options = {}) {
     if (this._isOpen) {
       this.close();
     }
     this.currentProduct = product;
-    this.state = createComboState(product);
+    this.state = createComboState(product, options.initialSelectedOptions || null);
     this.onConfirmCallback = onConfirm;
+    this.submitLabel = options.submitLabel || 'Thêm Vào Giỏ';
+    this.isEditing = Boolean(options.initialSelectedOptions);
     this._isOpen = true;
-    lockBodyScroll();
+    registerOpenModal('combo-modal', () => this.close());
     this.render();
   }
 
   close() {
+    if (this._releaseFocusTrap) {
+      this._releaseFocusTrap();
+      this._releaseFocusTrap = null;
+    }
     if (!this._isOpen) return;
     this._isOpen = false;
     const container = this.getContainer();
     container.innerHTML = '';
-    unlockBodyScroll();
-    if (this._escHandler && typeof document !== 'undefined') {
-      document.removeEventListener('keydown', this._escHandler);
-      this._escHandler = null;
-    }
+    unregisterOpenModal('combo-modal');
   }
 
   render() {
@@ -116,37 +166,39 @@ export class ComboModal {
     (product.option_groups || []).forEach((group, groupIdx) => {
       const isFirst = groupIdx === 0;
       const currentSelected = state.selected[group.group_id];
+      const safeDomGroupId = `combo-group-body-${groupIdx}`;
+      const escapedGroupId = escapeHtml(group.group_id);
 
       let optionsListHtml = '';
       (group.options || []).forEach(opt => {
-        const isChecked = currentSelected && currentSelected.option_id === opt.option_id;
+        const isChecked = currentSelected && String(currentSelected.option_id) === String(opt.option_id);
         const isNone = (opt.option_id && String(opt.option_id).startsWith('none_')) || opt.name.toLowerCase().includes('không thêm');
-        
+
         const extraLabel = isNone
-          ? `<span class="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">+0 đ</span>`
+          ? `<span class="text-xs font-bold text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">+0 đ</span>`
           : (opt.extra_price > 0 ? `<span class="text-sm font-bold text-red-600">+${formatCurrency(opt.extra_price)}</span>` : '');
 
         const iconHtml = isNone
-          ? `<div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 font-bold border border-gray-200 flex-shrink-0">${IconMinus('w-5 h-5')}</div>`
+          ? `<div class="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 font-bold border border-gray-200 flex-shrink-0">${IconMinus('w-5 h-5')}</div>`
           : (opt.image
-              ? `<img src="${escapeHtml(opt.image)}" alt="${escapeHtml(opt.name)}" class="w-12 h-12 object-contain rounded bg-white p-1 border border-amber-100 flex-shrink-0" onerror="this.style.display='none'">`
+              ? `<img src="${safeImageUrl(opt.image)}" alt="${escapeHtml(opt.name)}" width="48" height="48" loading="lazy" decoding="async" class="w-12 h-12 object-contain rounded bg-white p-1 border border-amber-100 flex-shrink-0" onerror="this.onerror=null; this.src='${FALLBACK_FOOD_IMAGE}'">`
               : `<div class="w-12 h-12 rounded bg-amber-50 flex items-center justify-center text-amber-700 border border-amber-100 flex-shrink-0">${IconShoppingBag('w-6 h-6')}</div>`);
 
         optionsListHtml += `
           <label class="flex items-center justify-between p-3.5 border-b border-amber-100/60 last:border-b-0 cursor-pointer hover:bg-amber-50/60 transition ${isChecked ? 'bg-amber-50/80 font-medium' : ''}">
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-3 min-w-0 pr-2">
               ${iconHtml}
-              <div class="flex flex-col">
-                <span class="text-sm sm:text-base text-gray-800 ${isNone ? 'font-semibold text-gray-700' : ''}">${escapeHtml(opt.name)}</span>
-                ${isNone ? `<span class="text-[11px] text-gray-400">Không chọn thêm món phụ cho phần này</span>` : ''}
+              <div class="flex flex-col min-w-0">
+                <span class="text-sm sm:text-base text-gray-800 break-words ${isNone ? 'font-semibold text-gray-700' : ''}">${escapeHtml(opt.name)}</span>
+                ${isNone ? `<span class="text-[11px] text-gray-500">Không chọn thêm món phụ cho phần này</span>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
               ${extraLabel}
-              <input type="radio" name="opt_group_${group.group_id}" value="${escapeHtml(opt.option_id)}" 
+              <input type="radio" name="opt_group_${groupIdx}" value="${escapeHtml(opt.option_id)}" 
                 class="w-5 h-5 text-red-600 focus:ring-red-500 border-gray-300"
                 ${isChecked ? 'checked' : ''}
-                data-group-id="${escapeHtml(group.group_id)}"
+                data-group-id="${escapedGroupId}"
                 data-option-id="${escapeHtml(opt.option_id)}">
             </div>
           </label>
@@ -155,17 +207,21 @@ export class ComboModal {
 
       groupsHtml += `
         <div class="mb-3 rounded-xl overflow-hidden border border-amber-200/80 bg-white shadow-sm">
-          <button type="button" class="w-full bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 font-extrabold px-4 py-3 flex items-center justify-between text-left text-sm uppercase tracking-wide group-accordion-btn transition select-none" data-target="group-body-${group.group_id}">
+          <button type="button"
+            class="w-full bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-900 font-extrabold px-4 py-3 flex items-center justify-between text-left text-sm uppercase tracking-wide group-accordion-btn transition select-none"
+            data-target="${safeDomGroupId}"
+            aria-expanded="${isFirst ? 'true' : 'false'}"
+            aria-controls="${safeDomGroupId}">
             <div class="flex items-center gap-2 min-w-0 pr-2">
-              <span class="w-2 h-2 rounded-full bg-red-600 flex-shrink-0"></span>
+              <span class="w-2 h-2 rounded-full bg-red-600 flex-shrink-0" aria-hidden="true"></span>
               <span class="truncate">${escapeHtml(group.group_name)}</span>
-              <span class="text-[11px] font-bold text-gray-800 bg-white/80 px-2 py-0.5 rounded-full border border-amber-300 truncate max-w-[130px] sm:max-w-[180px] group-current-badge-${group.group_id}">
+              <span class="text-[11px] font-bold text-gray-800 bg-white/85 px-2 py-0.5 rounded-full border border-amber-300 truncate max-w-[130px] sm:max-w-[180px]" data-badge-for="${escapedGroupId}">
                 ${currentSelected ? escapeHtml(currentSelected.name) : ''}
               </span>
             </div>
             <span class="transform transition-transform group-arrow ${isFirst ? 'rotate-180' : ''} flex items-center">${IconChevronDown('w-4 h-4')}</span>
           </button>
-          <div id="group-body-${group.group_id}" class="group-options-body ${isFirst ? 'block' : 'hidden'} bg-amber-50/20">
+          <div id="${safeDomGroupId}" class="group-options-body ${isFirst ? 'block' : 'hidden'} bg-amber-50/20">
             ${optionsListHtml}
           </div>
         </div>
@@ -173,24 +229,24 @@ export class ComboModal {
     });
 
     container.innerHTML = `
-      <div class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 animate-backdrop" id="combo-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="combo-modal-title">
-        <div class="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-modal-panel transform-gpu will-change-transform">
+      <div class="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 animate-backdrop" id="combo-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="combo-modal-title">
+        <div id="combo-modal-panel" class="relative w-full max-w-lg bg-white rounded-t-3xl sm:rounded-2xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-modal-panel transform-gpu will-change-transform">
           
           <!-- Modal Header -->
           <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white">
             <h3 id="combo-modal-title" class="font-extrabold text-sm sm:text-lg line-clamp-1 pr-2">${escapeHtml(product.name)}</h3>
-            <button type="button" id="combo-modal-close-btn" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0" aria-label="Đóng">${IconX('w-4 h-4')}</button>
+            <button type="button" id="combo-modal-close-btn" class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0 active:scale-95" aria-label="Đóng tùy chọn combo">${IconX('w-4 h-4')}</button>
           </div>
 
           <!-- Product Summary -->
           <div class="p-3 sm:p-4 bg-amber-50/40 border-b border-amber-100 flex items-start gap-3">
             ${product.image ? `
-              <button type="button" id="combo-modal-image-preview-btn" class="cursor-zoom-in relative group flex-shrink-0 focus:outline-none" title="Nhấn để xem ảnh phóng to">
-                <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-sm transform group-hover:scale-105 transition" onerror="this.style.display='none'">
+              <button type="button" id="combo-modal-image-preview-btn" class="cursor-zoom-in relative group flex-shrink-0 focus:outline-none active:scale-95 transition" aria-label="Xem ảnh phóng to ${escapeHtml(product.name)}" title="Nhấn để xem ảnh phóng to">
+                <img src="${safeImageUrl(product.image)}" alt="${escapeHtml(product.name)}" width="80" height="80" class="w-16 h-16 sm:w-20 sm:h-20 object-contain rounded-lg bg-white p-1 border border-amber-200 shadow-sm transform group-hover:scale-105 transition" onerror="this.onerror=null; this.src='${FALLBACK_FOOD_IMAGE}'">
               </button>
             ` : ''}
             <div class="flex-1 min-w-0">
-              <div class="text-xs text-red-600 font-semibold mb-0.5">Giá combo: <span id="combo-modal-top-price" class="font-bold">${formatCurrency(currentPrice)}</span></div>
+              <div class="text-xs text-red-700 font-semibold mb-0.5">Giá combo: <span id="combo-modal-top-price" class="font-bold">${formatCurrency(currentPrice)}</span></div>
               ${formatDescriptionHtml(product.description)}
             </div>
           </div>
@@ -203,7 +259,7 @@ export class ComboModal {
           <!-- Modal Footer Sticky -->
           <div class="p-3 sm:p-4 bg-white border-t border-gray-100 shadow-lg flex items-center justify-between gap-3">
             <div class="flex-shrink-0">
-              <div class="text-[10px] sm:text-[11px] text-gray-500">
+              <div class="text-[10px] sm:text-[11px] text-gray-600">
                 <span>Đơn giá combo:</span>
               </div>
               <div class="flex items-baseline gap-1 mt-0.5">
@@ -211,13 +267,13 @@ export class ComboModal {
                   ${formatCurrency(currentPrice)}
                 </span>
               </div>
-              <div class="text-[10px] text-amber-700 font-bold" id="combo-modal-discount-note">
+              <div class="text-[10px] text-amber-800 font-bold" id="combo-modal-discount-note">
                 (Gộp đơn ≥100k giảm 15k/100k)
               </div>
             </div>
-            <button type="button" id="combo-modal-confirm-btn" class="flex-1 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold py-3 px-4 sm:px-6 rounded-xl shadow-md active:scale-98 transition flex items-center justify-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
-              ${IconPlus('w-4 h-4')}
-              <span>Thêm Vào Giỏ</span>
+            <button type="button" id="combo-modal-confirm-btn" class="flex-1 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold py-3 px-4 sm:px-6 rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
+              ${this.isEditing ? IconCheck('w-4 h-4') : IconPlus('w-4 h-4')}
+              <span>${escapeHtml(this.submitLabel)}</span>
             </button>
           </div>
 
@@ -225,7 +281,10 @@ export class ComboModal {
       </div>
     `;
 
-    // Gắn sự kiện đóng/mở Accordion
+    const panelEl = typeof container.querySelector === 'function' ? container.querySelector('#combo-modal-panel') : null;
+    this._releaseFocusTrap = trapFocusInModal(panelEl || container);
+
+    // Gắn sự kiện đóng/mở Accordion kèm cập nhật aria-expanded
     container.querySelectorAll('.group-accordion-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const targetId = btn.dataset.target;
@@ -237,10 +296,12 @@ export class ComboModal {
             bodyEl.classList.remove('hidden');
             bodyEl.classList.add('block');
             arrowEl?.classList.add('rotate-180');
+            btn.setAttribute('aria-expanded', 'true');
           } else {
             bodyEl.classList.remove('block');
             bodyEl.classList.add('hidden');
             arrowEl?.classList.remove('rotate-180');
+            btn.setAttribute('aria-expanded', 'false');
           }
         }
       });
@@ -252,12 +313,11 @@ export class ComboModal {
       input.addEventListener('change', (e) => {
         const groupId = e.target.dataset.groupId;
         const optId = e.target.dataset.optionId;
-        const group = (product.option_groups || []).find(g => g.group_id === groupId);
+        const group = (product.option_groups || []).find(g => String(g.group_id) === String(groupId));
         if (group) {
-          const opt = group.options.find(o => o.option_id === optId);
+          const opt = group.options.find(o => String(o.option_id) === String(optId));
           if (opt) {
-            state.selectOption(groupId, opt);
-            // Cập nhật giá hiển thị tức thì
+            state.selectOption(group.group_id, opt);
             const price = state.getTotalPrice();
 
             const priceEl = document.getElementById('combo-modal-price');
@@ -265,11 +325,12 @@ export class ComboModal {
             const topPriceEl = document.getElementById('combo-modal-top-price');
             if (topPriceEl) topPriceEl.innerText = formatCurrency(price);
 
-            // Cập nhật nhãn badge hiển thị lựa chọn hiện tại ở thanh accordion
-            const badgeEl = container.querySelector(`.group-current-badge-${groupId}`);
+            // Truy vấn badge an toàn qua dataset (không bao giờ ném DOMException kể cả khi group_id có ký tự đặc biệt)
+            const badgeEl = Array.from(container.querySelectorAll('[data-badge-for]')).find(
+              el => el.dataset.badgeFor === String(group.group_id)
+            );
             if (badgeEl) badgeEl.innerText = opt.name;
 
-            // Cập nhật highlight nền vàng cho label vừa chọn
             const groupBody = input.closest('.group-options-body');
             if (groupBody) {
               groupBody.querySelectorAll('label').forEach(lbl => {
@@ -301,7 +362,7 @@ export class ComboModal {
     // Đóng modal an toàn
     const handleClose = () => this.close();
     document.getElementById('combo-modal-close-btn')?.addEventListener('click', handleClose);
-    
+
     const backdrop = document.getElementById('combo-modal-backdrop');
     if (backdrop) {
       let isMouseDownOnBackdrop = false;
@@ -322,15 +383,7 @@ export class ComboModal {
       });
     }
 
-    // Bắt phím Escape để đóng modal
-    if (!this._escHandler && typeof document !== 'undefined') {
-      this._escHandler = (e) => {
-        if (e.key === 'Escape') handleClose();
-      };
-      document.addEventListener('keydown', this._escHandler);
-    }
-
-    // Sự kiện xác nhận thêm giỏ
+    // Sự kiện xác nhận thêm / cập nhật giỏ
     document.getElementById('combo-modal-confirm-btn')?.addEventListener('click', () => {
       if (typeof this.onConfirmCallback === 'function') {
         this.onConfirmCallback(product, state.getSelectedList());

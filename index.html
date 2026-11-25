@@ -5,197 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Đặt Hộ Jollibee Giá Rẻ, Chiết Khấu Cao</title>
   <meta name="description" content="longbtran.shop - Dịch vụ đặt hộ Jollibee chiết khấu cao. Cứ mỗi 100k giảm 15k, đơn từ 200k freeship. Xem menu, chọn combo tùy thích và nhận báo giá trực tiếp ngay!">
-  
+
   <!-- Google Fonts: Quicksand -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Quicksand', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-          },
-          colors: {
-            jollibee: {
-              red: '#d71920',
-              redDark: '#b81218',
-              yellow: '#ffc72c',
-              yellowDark: '#f5b81b',
-              cream: '#fffaf0'
-            }
-          }
-        }
-      }
-    }
-  </script>
+  <!-- Static Pre-compiled Tailwind CSS (Siêu nhẹ, không chặn luồng vẽ trang) -->
+  <link rel="stylesheet" href="css/tailwind.min.css?v=1.4">
 
-  <style>
-    /* Chống tràn ngang nhưng không chặn position: sticky */
-    html, body {
-      overflow-x: clip;
-      width: 100%;
-      box-sizing: border-box;
-      touch-action: manipulation;
-    }
-    *, *:before, *:after {
-      box-sizing: inherit;
-    }
-    button, a, input, select {
-      touch-action: manipulation;
-    }
-
-    /* Ẩn thanh cuộn nhưng vẫn cuộn được cho tabs */
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-    body { font-family: 'Quicksand', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-
-    /* Hiệu ứng nảy giỏ hàng mượt mà 60fps */
-    @keyframes cart-bounce {
-      0%, 100% { transform: scale(1); }
-      25% { transform: scale(1.25) rotate(-6deg); }
-      50% { transform: scale(0.92) rotate(3deg); }
-      75% { transform: scale(1.1) rotate(-1deg); }
-    }
-    .animate-cart-bounce {
-      animation: cart-bounce 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
-    }
-
-    /* Hiệu ứng rung báo lỗi cho ô nhập liệu hoặc hộp cảnh báo */
-    @keyframes input-shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-6px); }
-      40%, 80% { transform: translateX(6px); }
-    }
-    .animate-shake {
-      animation: input-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-    }
-
-    /* Hiệu ứng lấp lánh (Shimmer) cho ưu đãi nổi bật */
-    @keyframes shimmer-sweep {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(200%); }
-    }
-    .shimmer-effect {
-      position: relative;
-      overflow: hidden;
-    }
-    .shimmer-effect::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-      transform: translateX(-100%);
-      animation: shimmer-sweep 2.8s infinite ease-in-out;
-      pointer-events: none;
-    }
-
-    /* Hiệu ứng hover & active xúc giác cho thẻ món */
-    .product-card {
-      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-    }
-    @media (hover: hover) {
-      .product-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.08);
-      }
-    }
-    .product-card:active {
-      transform: scale(0.985);
-    }
-
-    /* Hiệu ứng nút bấm có độ nẩy xúc giác */
-    .btn-tactile {
-      transition: transform 0.12s ease-out, filter 0.12s ease-out;
-    }
-    .btn-tactile:active {
-      transform: scale(0.95);
-    }
-
-    /* Hiệu ứng phát sáng nhẹ tối ưu GPU (opacity trên pseudo-element, 0 repaint layout) */
-    .has-items-glow {
-      position: relative;
-    }
-    .has-items-glow::after {
-      content: '';
-      position: absolute;
-      inset: -2px;
-      border-radius: inherit;
-      box-shadow: 0 4px 16px 2px rgba(215, 25, 32, 0.55);
-      opacity: 0.3;
-      animation: subtle-glow-pulse 2s infinite ease-in-out;
-      pointer-events: none;
-    }
-    @keyframes subtle-glow-pulse {
-      0%, 100% { opacity: 0.25; }
-      50% { opacity: 0.85; }
-    }
-
-    /* Hiệu ứng trượt Drawer & Modal tăng tốc phần cứng 60fps */
-    @keyframes drawer-slide-up-mobile {
-      from { transform: translate3d(0, 100%, 0); }
-      to { transform: translate3d(0, 0, 0); }
-    }
-    @keyframes drawer-slide-in-desktop {
-      from { transform: translate3d(100%, 0, 0); }
-      to { transform: translate3d(0, 0, 0); }
-    }
-    .animate-drawer-panel {
-      animation: drawer-slide-up-mobile 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      will-change: transform;
-    }
-    @media (min-width: 640px) {
-      .animate-drawer-panel {
-        animation: drawer-slide-in-desktop 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      }
-    }
-
-    @keyframes modal-scale-in {
-      from { opacity: 0; transform: scale3d(0.96, 0.96, 1); }
-      to { opacity: 1; transform: scale3d(1, 1, 1); }
-    }
-    .animate-modal-panel {
-      animation: modal-scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      will-change: transform, opacity;
-    }
-
-    @keyframes fade-in-backdrop {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    .animate-backdrop {
-      animation: fade-in-backdrop 0.18s ease-out forwards;
-      will-change: opacity;
-    }
-  </style>
-
-  <!-- Lightweight Confetti Library (10KB standalone, 0 dependencies) -->
-  <script src="js/confetti.js"></script>
-  <!-- Config script -->
-  <script src="config.js?v=1.1"></script>
+  <!-- Non-blocking Deferred Scripts -->
+  <script src="config.js?v=1.2" defer></script>
+  <script src="js/confetti.js" defer></script>
 </head>
 <body class="bg-gray-50 text-gray-800 antialiased min-h-screen pb-36">
 
   <!-- Top Announcement Banner -->
   <div id="top-banner" class="bg-[#ffc72c] text-gray-950 font-extrabold text-[11px] sm:text-xs py-1.5 px-3 text-center border-b border-amber-300 flex items-center justify-center gap-1.5 shadow-sm shimmer-effect leading-snug">
-    <span class="text-red-700 inline-flex items-center flex-shrink-0">
-      <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+    <span class="text-red-700 inline-flex items-center flex-shrink-0" aria-hidden="true">
+      <svg aria-hidden="true" focusable="false" class="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
     </span>
     <span id="banner-text">Giảm 15.000đ cho mỗi 100k tiền gốc Jollibee! Đơn từ 200k Freeship!</span>
   </div>
 
-  <!-- Header -->
-  <header class="bg-[#d71920] text-white shadow-md sticky top-0 z-30">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center gap-2.5">
-        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border-2 border-[#ffc72c] text-[#d71920] flex-shrink-0">
-          <svg class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg>
+  <!-- Brand Header & Order Mode Switcher (Cuộn tự nhiên để giải phóng diện tích màn hình Mobile) -->
+  <header class="bg-[#d71920] text-white">
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 pt-3 pb-2.5 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shadow-sm border-2 border-[#ffc72c] text-[#d71920] flex-shrink-0" aria-hidden="true">
+          <svg aria-hidden="true" focusable="false" class="w-6 h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z"/><line x1="6" x2="18" y1="17" y2="17"/></svg>
         </div>
-        <div>
+        <div class="min-w-0">
           <h1 id="shop-title" class="font-black text-base sm:text-lg leading-tight tracking-tight text-white flex items-center gap-1.5 flex-wrap">
             <span>longbtran.shop - Đặt Hộ Jollibee Giá Rẻ</span>
             <span class="bg-[#ffc72c] text-gray-900 text-[10px] font-extrabold px-1.5 py-0.5 rounded-full uppercase flex-shrink-0">-15k/100k</span>
@@ -203,55 +43,59 @@
           <p id="shop-subtitle" class="text-[11px] text-amber-100 font-medium">Chiết khấu cao - Đặt nhanh qua Zalo & Facebook</p>
         </div>
       </div>
-      <div class="flex items-center gap-2">
-        <a id="header-hotline-btn" href="tel:0900000000" class="hidden sm:flex items-center gap-1.5 bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-full text-xs font-bold transition">
-          <svg class="w-3.5 h-3.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-          <span id="header-hotline-text">Hotline</span>
+
+      <!-- Nút gọi Hotline hiển thị trên cả Mobile (nút gọn chuẩn vùng chạm) lẫn Desktop -->
+      <div class="flex items-center flex-shrink-0">
+        <a id="header-hotline-btn" href="tel:0900000000" aria-label="Gọi Hotline hỗ trợ đặt đơn"
+          class="flex items-center gap-1.5 bg-white/20 hover:bg-white/30 active:scale-95 px-3 py-2 rounded-full text-xs font-extrabold transition shadow-sm">
+          <svg aria-hidden="true" focusable="false" class="w-4 h-4 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          <span class="sm:hidden">Gọi</span>
+          <span id="header-hotline-text" class="hidden sm:inline">Hotline</span>
         </a>
       </div>
     </div>
 
-    <!-- Search Box -->
-    <div class="max-w-4xl mx-auto px-3 sm:px-4 pb-2.5">
-      <div class="relative flex items-center">
-        <span class="absolute left-3.5 text-gray-400 pointer-events-none flex items-center">
-          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-        </span>
-        <input type="text" id="menu-search-input" placeholder="Tìm món gà, mì ý, burger, combo..." 
-          class="w-full bg-white/95 text-gray-900 placeholder-gray-400 text-xs sm:text-sm pl-10 pr-10 py-2 sm:py-2.5 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#ffc72c]">
-        <button type="button" id="clear-search-btn" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1">
-          <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Top Order Type Switcher (Khách chọn trước khi vào giỏ hàng) -->
+    <!-- Top Order Type Switcher -->
     <div class="max-w-4xl mx-auto px-2.5 sm:px-4 pb-2.5">
-      <div class="bg-black/25 p-1 rounded-xl grid grid-cols-2 gap-1.5 border border-white/10 shadow-inner w-full">
-        <button type="button" id="top-btn-delivery" 
-          class="w-full min-w-0 py-2 px-1.5 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-white text-gray-900 shadow-sm active:scale-98">
-          <span id="top-icon-delivery" class="text-[#d71920] flex items-center flex-shrink-0">
-            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M5 14h5l3-6h4l1 3"/><path d="M14 17.5h-5.5"/><path d="M18 10h3"/><path d="M2 9h4"/></svg>
+      <div class="bg-black/25 p-1 rounded-xl grid grid-cols-2 gap-1.5 border border-white/10 shadow-inner w-full" role="group" aria-label="Chọn hình thức nhận hàng">
+        <button type="button" id="top-btn-delivery" aria-pressed="true"
+          class="w-full min-w-0 py-2 px-1.5 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition bg-white text-gray-900 shadow-sm active:scale-95">
+          <span id="top-icon-delivery" class="text-[#d71920] flex items-center flex-shrink-0" aria-hidden="true">
+            <svg aria-hidden="true" focusable="false" class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M5 14h5l3-6h4l1 3"/><path d="M14 17.5h-5.5"/><path d="M18 10h3"/><path d="M2 9h4"/></svg>
           </span>
           <span class="truncate">Giao Tận Nơi</span>
           <span class="text-[9px] bg-red-100 text-[#d71920] px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">Freeship</span>
         </button>
-        <button type="button" id="top-btn-dinein" 
-          class="w-full min-w-0 py-2 px-1.5 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition text-white hover:bg-white/10 active:scale-98">
-          <span id="top-icon-dinein" class="text-amber-200 flex items-center flex-shrink-0">
-            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/><path d="M15 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V2"/><path d="M15 11v9"/><path d="M6 2v18"/></svg>
+        <button type="button" id="top-btn-dinein" aria-pressed="false"
+          class="w-full min-w-0 py-2 px-1.5 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition text-white hover:bg-white/10 active:scale-95">
+          <span id="top-icon-dinein" class="text-amber-200 flex items-center flex-shrink-0" aria-hidden="true">
+            <svg aria-hidden="true" focusable="false" class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2v6a3 3 0 0 1-3 3 3 3 0 0 1-3-3V2"/><path d="M15 2v14a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2V2"/><path d="M15 11v9"/><path d="M6 2v18"/></svg>
           </span>
           <span class="truncate">Ăn Tại Quán</span>
           <span class="text-[9px] bg-amber-400/30 text-amber-100 px-1.5 py-0.5 rounded-full font-bold flex-shrink-0">0đ ship</span>
         </button>
       </div>
     </div>
+  </header>
 
-    <!-- Sticky Category Tabs -->
-    <nav class="bg-white border-b border-gray-200 shadow-sm">
+  <!-- Compact Sticky Bar (~96px): Giữ cố định Thanh Tìm Kiếm + Danh Mục Món Ăn -->
+  <div id="sticky-nav-bar" class="sticky top-0 z-30 bg-[#d71920] shadow-md">
+    <div class="max-w-4xl mx-auto px-3 sm:px-4 py-2">
+      <div class="relative flex items-center">
+        <span class="absolute left-3.5 text-gray-500 pointer-events-none flex items-center" aria-hidden="true">
+          <svg aria-hidden="true" focusable="false" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </span>
+        <input type="search" id="menu-search-input" aria-label="Tìm kiếm món ăn trong thực đơn" placeholder="Tìm món (VD: ga gion, mi y, burger, nuoc)..." 
+          class="w-full bg-white text-gray-900 placeholder-gray-500 text-xs sm:text-sm pl-10 pr-10 py-2 rounded-xl shadow-inner focus:outline-none focus:ring-2 focus:ring-[#ffc72c]">
+        <button type="button" id="clear-search-btn" aria-label="Xóa từ khóa tìm kiếm" class="hidden absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center text-gray-500 hover:text-gray-800 rounded-lg active:scale-95 transition">
+          <svg aria-hidden="true" focusable="false" class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <nav aria-label="Danh mục thực đơn" class="bg-white border-b border-gray-200 shadow-sm">
       <div class="max-w-4xl mx-auto px-2">
-        <div id="category-tabs" class="flex gap-2 overflow-x-auto no-scrollbar py-2.5 px-2 text-xs font-extrabold whitespace-nowrap">
-          <!-- Dynamically populated categories -->
+        <div id="category-tabs" class="flex gap-2 overflow-x-auto no-scrollbar py-2 px-2 text-xs font-extrabold whitespace-nowrap">
           <div class="animate-pulse flex gap-2">
             <div class="h-8 w-24 bg-gray-200 rounded-full"></div>
             <div class="h-8 w-28 bg-gray-200 rounded-full"></div>
@@ -260,14 +104,14 @@
         </div>
       </div>
     </nav>
-  </header>
+  </div>
 
   <!-- Main Content Area -->
   <main class="max-w-4xl mx-auto px-3 sm:px-4 py-3 sm:py-4 space-y-6 sm:space-y-8">
     <!-- Notice Card -->
     <div class="bg-gradient-to-r from-red-50 to-amber-50 border border-amber-200/80 rounded-xl sm:rounded-2xl p-2.5 sm:p-3.5 shadow-sm flex items-center gap-2.5 sm:gap-3">
-      <div class="w-8 h-8 rounded-lg bg-[#d71920]/10 text-[#d71920] flex items-center justify-center flex-shrink-0">
-        <svg class="w-4 h-4 sm:w-5 sm:h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
+      <div class="w-8 h-8 rounded-lg bg-[#d71920]/10 text-[#d71920] flex items-center justify-center flex-shrink-0" aria-hidden="true">
+        <svg aria-hidden="true" focusable="false" class="w-4 h-4 sm:w-5 sm:h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
       </div>
       <div class="min-w-0 flex-1">
         <h2 class="font-extrabold text-xs sm:text-sm text-gray-900 leading-tight">Đặt Hộ Cực Kỳ Đơn Giản:</h2>
@@ -277,7 +121,6 @@
 
     <!-- Product Sections Container -->
     <div id="menu-sections-container" class="space-y-8">
-      <!-- Loading Skeleton -->
       <div class="animate-pulse space-y-4">
         <div class="h-6 w-40 bg-gray-200 rounded"></div>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -293,32 +136,32 @@
     <div class="max-w-4xl mx-auto flex items-center justify-between gap-2.5 sm:gap-3">
       
       <!-- Cart Info Preview -->
-      <button type="button" id="btn-open-cart-info" class="flex items-center gap-2.5 sm:gap-3 text-left focus:outline-none min-w-0 flex-1">
+      <button type="button" id="btn-open-cart-info" aria-label="Xem tóm tắt giỏ hàng" class="flex items-center gap-2.5 sm:gap-3 text-left focus:outline-none min-w-0 flex-1">
         <div class="relative flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#ffc72c] text-gray-900 font-extrabold shadow-sm active:scale-95 transition flex-shrink-0">
-          <svg class="w-5 h-5 sm:w-6 sm:h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          <svg aria-hidden="true" focusable="false" class="w-5 h-5 sm:w-6 sm:h-6" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
           <span id="floating-cart-badge" class="absolute -top-1 -right-1 bg-[#d71920] text-white text-[10px] sm:text-[11px] font-black w-5 h-5 min-w-[20px] rounded-full flex items-center justify-center border-2 border-white shadow-sm pointer-events-none">
             0
           </span>
         </div>
         <div class="min-w-0 flex-1 flex flex-col justify-center">
           <div class="flex items-baseline gap-1.5 leading-tight truncate">
-            <span class="text-[11px] sm:text-xs text-gray-500 font-bold flex-shrink-0">Thực trả:</span>
+            <span class="text-[11px] sm:text-xs text-gray-600 font-bold flex-shrink-0">Thực trả:</span>
             <span id="floating-cart-final-price" class="text-sm sm:text-lg font-black text-red-600 truncate">0 đ</span>
-            <span id="floating-cart-original-wrapper" class="hidden text-[11px] sm:text-xs text-gray-400 line-through font-semibold whitespace-nowrap">
+            <span id="floating-cart-original-wrapper" class="hidden text-[11px] sm:text-xs text-gray-500 line-through font-semibold whitespace-nowrap">
               <span id="floating-cart-original-price">0 đ</span>
             </span>
           </div>
-          <div id="floating-cart-discount-hint" class="text-[10px] sm:text-[11px] text-green-700 font-bold truncate mt-0.5">
+          <div id="floating-cart-discount-hint" class="text-[10px] sm:text-[11px] text-gray-600 font-semibold truncate mt-0.5">
             (Chưa chọn món)
           </div>
         </div>
       </button>
 
       <!-- View Cart Button -->
-      <button type="button" id="btn-open-cart-drawer" class="bg-[#d71920] hover:bg-[#b81218] active:scale-98 text-white font-extrabold text-xs sm:text-sm py-2.5 sm:py-3 px-3.5 sm:px-5 rounded-xl shadow-md flex items-center gap-1.5 transition flex-shrink-0 whitespace-nowrap">
+      <button type="button" id="btn-open-cart-drawer" class="bg-[#d71920] hover:bg-[#b81218] active:scale-95 text-white font-extrabold text-xs sm:text-sm py-2.5 sm:py-3 px-3.5 sm:px-5 rounded-xl shadow-md flex items-center gap-1.5 transition flex-shrink-0 whitespace-nowrap">
         <span>Xem Giỏ</span>
         <span class="hidden sm:inline">& Báo Giá</span>
-        <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        <svg aria-hidden="true" focusable="false" class="w-3.5 h-3.5 sm:w-4 sm:h-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
       </button>
 
     </div>
@@ -330,6 +173,6 @@
   <div id="image-modal-container"></div>
 
   <!-- App Entry Script -->
-  <script type="module" src="js/app.js?v=1.3"></script>
+  <script type="module" src="js/app.js?v=1.4"></script>
 </body>
 </html>

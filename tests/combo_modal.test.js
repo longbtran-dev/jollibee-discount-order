@@ -157,4 +157,50 @@ describe('ComboModal Component', () => {
     assert.equal(mockContainer.innerHTML, '');
     assert.equal(mockClassList.has('overflow-hidden'), false);
   });
+
+  it('createComboState hỗ trợ nạp lại cấu hình đã chọn (Đổi món trong giỏ) & an toàn với group_id có ký tự đặc biệt', () => {
+    const specialCombo = {
+      id: 'c_special',
+      name: 'Combo Đặc Biệt',
+      base_price: 80000,
+      price: 80000,
+      option_groups: [
+        {
+          group_id: 'nhom 1: nuoc/size (lon)',
+          group_name: 'CHỌN NƯỚC',
+          options: [
+            { option_id: 'opt_a', name: 'Pepsi vừa', extra_price: 0, is_default: true },
+            { option_id: 'opt_b', name: 'Mirinda lớn', extra_price: 5000, is_default: false }
+          ]
+        }
+      ]
+    };
+
+    const preselected = [
+      { group_name: 'CHỌN NƯỚC', option_id: 'opt_b', option_name: 'Mirinda lớn', extra_price: 5000 }
+    ];
+    const state = createComboState(specialCombo, preselected);
+    assert.equal(state.selected['nhom 1: nuoc/size (lon)'].option_id, 'opt_b');
+    assert.equal(state.getTotalPrice(), 85000);
+
+    // Render modal với group_id chứa dấu cách/dấu hai chấm không ném lỗi selector và có aria-expanded
+    resetActiveModalCount();
+    const mockContainer = {
+      id: 'combo-modal-container',
+      innerHTML: '',
+      querySelectorAll: () => []
+    };
+    global.document = {
+      body: { classList: { add() {}, remove() {}, contains() { return false; } } },
+      getElementById: (id) => (id === 'combo-modal-container' ? mockContainer : null),
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+
+    const modal = new ComboModal();
+    modal.open(specialCombo, null, { initialSelectedOptions: preselected, submitLabel: 'Lưu Thay Đổi' });
+    assert.ok(mockContainer.innerHTML.includes('aria-expanded="true"'));
+    assert.ok(mockContainer.innerHTML.includes('Lưu Thay Đổi'));
+    modal.close();
+  });
 });

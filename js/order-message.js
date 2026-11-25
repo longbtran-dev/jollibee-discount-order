@@ -49,7 +49,7 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
   items.forEach((item, index) => {
     const itemTotal = (item.unitPrice || 0) * (item.quantity || 1);
     lines.push(`${index + 1}. ${item.name} x${item.quantity || 1} -> ${formatCurrency(itemTotal)}`);
-    if (item.selectedOptions && item.selectedOptions.length > 1) {
+    if (Array.isArray(item.selectedOptions) && item.selectedOptions.length > 0) {
       lines.push(`   └ Món gồm:`);
       item.selectedOptions.forEach(opt => {
         const extra = opt.extra_price > 0 ? ` (+${formatCurrency(opt.extra_price)})` : '';

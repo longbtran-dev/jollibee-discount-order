@@ -106,4 +106,16 @@ describe('Image Modal Lightbox Component', () => {
     assert.equal(actionFired, true);
     assert.equal(mockContainer.innerHTML, '');
   });
+
+  it('chặn URL ảnh độc hại chống XSS và không gọi tới images/placeholder.png gây lỗi 404', () => {
+    const modal = new ImageModal();
+    modal.open({
+      title: 'Test XSS',
+      image: 'javascript:alert(1)'
+    });
+    assert.ok(!mockContainer.innerHTML.includes('javascript:alert'));
+    assert.ok(!mockContainer.innerHTML.includes('images/placeholder.png'));
+    assert.ok(mockContainer.innerHTML.includes('data:image/svg+xml'));
+    modal.close();
+  });
 });

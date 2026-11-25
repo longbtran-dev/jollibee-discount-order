@@ -1,15 +1,23 @@
 /**
  * Thành phần Lightbox xem ảnh món ăn phóng to (Image Modal)
+ * Tích hợp ngăn xếp LIFO Modal Stack, Focus Trap & URL ảnh an toàn chống XSS/404.
  */
-import { IconX, IconPlus, IconSliders, IconZoomIn } from '../icons.js';
+import { IconX, IconPlus, IconSliders } from '../icons.js';
 import { formatCurrency } from '../order-message.js';
-import { escapeHtml, lockBodyScroll, unlockBodyScroll } from '../utils.js';
+import {
+  escapeHtml,
+  safeImageUrl,
+  FALLBACK_FOOD_IMAGE,
+  registerOpenModal,
+  unregisterOpenModal,
+  trapFocusInModal
+} from '../utils.js';
 
 export class ImageModal {
   constructor(options = {}) {
     this.containerId = 'image-modal-container';
     this.onActionClick = options.onActionClick || null;
-    this._escHandler = null;
+    this._releaseFocusTrap = null;
     this._isOpen = false;
   }
 
@@ -35,20 +43,20 @@ export class ImageModal {
    */
   open({ title, image, price, originalPrice, isCombo = false, onAction = null }) {
     if (this._isOpen) {
-      this.close(); // Dọn dẹp modal cũ nếu đang mở
+      this.close();
     }
 
     const container = this.getContainer();
     const formattedTitle = escapeHtml(title || 'Món ăn Jollibee');
-    const imgSrc = image || 'images/placeholder.png';
+    const imgSrc = safeImageUrl(image);
     const hasPrice = price !== undefined && price !== null;
 
     container.innerHTML = `
-      <div id="image-modal-backdrop" class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-3 sm:p-4 animate-backdrop" role="dialog" aria-modal="true" aria-labelledby="image-modal-title">
-        <div class="relative max-w-sm sm:max-w-md w-full bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-modal-panel transform-gpu will-change-transform border border-gray-100">
+      <div id="image-modal-backdrop" class="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-3 sm:p-4 animate-backdrop" role="dialog" aria-modal="true" aria-labelledby="image-modal-title">
+        <div id="image-modal-panel" class="relative max-w-sm sm:max-w-md w-full bg-white rounded-3xl overflow-hidden shadow-2xl flex flex-col animate-modal-panel transform-gpu will-change-transform border border-gray-100">
           
-          <!-- Nút đóng góc phải -->
-          <button type="button" id="image-modal-close-btn" class="absolute top-3 right-3 z-20 w-8 h-8 rounded-full bg-black/60 hover:bg-black/80 text-white flex items-center justify-center transition shadow-md active:scale-90" aria-label="Đóng" title="Đóng">
+          <!-- Nút đóng góc phải (chuẩn vùng chạm >= 36px) -->
+          <button type="button" id="image-modal-close-btn" class="absolute top-3 right-3 z-20 w-9 h-9 rounded-full bg-black/65 hover:bg-black/85 text-white flex items-center justify-center transition shadow-md active:scale-95" aria-label="Đóng xem ảnh" title="Đóng">
             ${IconX('w-4 h-4')}
           </button>
 
@@ -56,7 +64,7 @@ export class ImageModal {
           <div class="relative w-full bg-gradient-to-b from-amber-50/60 to-white p-4 sm:p-6 flex items-center justify-center min-h-[240px] max-h-[55vh] overflow-hidden">
             <img src="${imgSrc}" alt="${formattedTitle}" 
               class="max-w-full max-h-[50vh] object-contain drop-shadow-md rounded-xl transition duration-300 hover:scale-105"
-              onerror="this.onerror=null; this.src='https://placehold.co/400x300/fffaf0/d71920?text=Jollibee'">
+              onerror="this.onerror=null; this.src='${FALLBACK_FOOD_IMAGE}'">
             ${isCombo ? `
               <span class="absolute top-3 left-3 bg-[#d71920] text-white text-[10px] font-black px-2 py-0.5 rounded-lg shadow-sm uppercase tracking-wide">
                 Combo
@@ -72,7 +80,7 @@ export class ImageModal {
                 <div class="flex items-baseline gap-2 mt-1">
                   <span class="text-base sm:text-lg font-black text-red-600">${formatCurrency(price)}</span>
                   ${originalPrice && originalPrice > price ? `
-                    <span class="text-xs text-gray-400 line-through font-semibold">${formatCurrency(originalPrice)}</span>
+                    <span class="text-xs text-gray-500 line-through font-semibold">${formatCurrency(originalPrice)}</span>
                   ` : ''}
                 </div>
               ` : ''}
@@ -90,15 +98,18 @@ export class ImageModal {
     `;
 
     this._isOpen = true;
-    lockBodyScroll();
+    registerOpenModal('image-modal', () => this.close());
 
-    // Gắn sự kiện đóng modal
+    const panelEl = typeof container.querySelector === 'function' ? container.querySelector('#image-modal-panel') : null;
+    this._releaseFocusTrap = trapFocusInModal(panelEl || container);
+
     const closeBtn = document.getElementById('image-modal-close-btn');
     const backdrop = document.getElementById('image-modal-backdrop');
     const actionBtn = document.getElementById('image-modal-action-btn');
 
     const handleClose = () => this.close();
     closeBtn?.addEventListener('click', handleClose);
+
     if (backdrop) {
       let isMouseDownOnBackdrop = false;
 
@@ -118,13 +129,6 @@ export class ImageModal {
       });
     }
 
-    this._escHandler = (e) => {
-      if (e.key === 'Escape') handleClose();
-    };
-    if (typeof document !== 'undefined') {
-      document.addEventListener('keydown', this._escHandler);
-    }
-
     if (actionBtn && onAction) {
       actionBtn.addEventListener('click', () => {
         this.close();
@@ -134,14 +138,14 @@ export class ImageModal {
   }
 
   close() {
+    if (this._releaseFocusTrap) {
+      this._releaseFocusTrap();
+      this._releaseFocusTrap = null;
+    }
     if (!this._isOpen) return;
     this._isOpen = false;
     const container = document.getElementById(this.containerId);
     if (container) container.innerHTML = '';
-    unlockBodyScroll();
-    if (this._escHandler && typeof document !== 'undefined') {
-      document.removeEventListener('keydown', this._escHandler);
-      this._escHandler = null;
-    }
+    unregisterOpenModal('image-modal');
   }
 }
