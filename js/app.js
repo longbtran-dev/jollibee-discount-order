@@ -1,11 +1,11 @@
 /**
  * Khởi tạo và điều phối giao diện ứng dụng chính
  */
-import { Cart } from './cart.js';
-import { ComboModal } from './components/combo-modal.js';
-import { CartDrawer } from './components/cart-drawer.js';
-import { ImageModal } from './components/image-modal.js';
-import { showToast, showUndoToast } from './components/ui-feedback.js';
+import { Cart } from './cart.js?v=1.5';
+import { ComboModal } from './components/combo-modal.js?v=1.5';
+import { CartDrawer } from './components/cart-drawer.js?v=1.5';
+import { ImageModal } from './components/image-modal.js?v=1.5';
+import { showToast, showUndoToast } from './components/ui-feedback.js?v=1.5';
 import { formatCurrency } from './order-message.js';
 import {
   escapeHtml,
