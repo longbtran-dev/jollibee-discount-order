@@ -6,7 +6,7 @@
  * - Kích thước vùng chạm >= 36px (chuẩn Mobile A11y) & độ tương phản WCAG AA
  * - Hỗ trợ nút "Đổi món" cho Combo ngay trong giỏ & Gợi ý "Món Bù Đủ Mốc 1 Chạm"
  */
-import { formatOrderText, generateZaloUrl, generateMessengerUrl, formatCurrency } from '../order-message.js';
+import { formatOrderText, formatCurrency } from '../order-message.js';
 import {
   copyToClipboard,
   escapeHtml,
@@ -39,9 +39,7 @@ import {
   IconCheckCircle,
   IconAlertTriangle,
   IconArrowRight,
-  IconCopy,
-  IconZalo,
-  IconMessenger
+  IconCopy
 } from '../icons.js';
 
 export const CUSTOMER_STORAGE_KEY = 'jb_customer_info';
@@ -733,18 +731,8 @@ export class CartDrawer {
               <span>Đơn chưa đạt tối thiểu 100.000đ để đặt hộ</span>
             </div>
           ` : ''}
-          <div class="grid grid-cols-2 gap-2">
-            <button type="button" id="btn-send-zalo" class="w-full ${pricing.originalTotal < 100000 ? 'bg-blue-400 opacity-80' : 'bg-[#0068ff] hover:bg-[#0058d8]'} text-white font-extrabold py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap truncate">
-              ${IconZalo('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
-              <span class="truncate">Gửi Qua Zalo</span>
-            </button>
-            <button type="button" id="btn-send-messenger" class="w-full ${pricing.originalTotal < 100000 ? 'bg-sky-400 opacity-80' : 'bg-[#0084ff] hover:bg-[#0074e0]'} text-white font-extrabold py-2.5 sm:py-3 px-2 sm:px-3 rounded-xl shadow-md flex items-center justify-center gap-1.5 sm:gap-2 active:scale-95 transition text-xs sm:text-sm whitespace-nowrap truncate">
-              ${IconMessenger('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
-              <span class="truncate">Gửi Messenger</span>
-            </button>
-          </div>
-          <button type="button" id="btn-copy-order" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition text-xs whitespace-nowrap truncate">
-            ${IconCopy('w-4 h-4 flex-shrink-0')}
+          <button type="button" id="btn-copy-order" class="w-full ${pricing.originalTotal < 100000 ? 'bg-red-400 opacity-85' : 'bg-[#d71920] hover:bg-[#b81218]'} text-white font-extrabold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition text-sm whitespace-nowrap truncate">
+            ${IconCopy('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
             <span class="truncate">Sao Chép Nội Dung Đơn Hàng</span>
           </button>
         </div>
@@ -998,47 +986,7 @@ export class CartDrawer {
         return;
       }
 
-      // 8. Gửi đơn qua Zalo
-      if (target.closest('#btn-send-zalo')) {
-        this._saveFormInputs();
-        if (!this.validateForm()) return;
-
-        fireOrderCelebration();
-        const pricing = this.cart.getTotals(this.orderType, this.config);
-        const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
-        const zaloTarget = this.config.zaloLink || this.config.zaloPhone || '';
-        const url = generateZaloUrl(zaloTarget, orderText);
-
-        copyToClipboard(orderText).catch(err => console.warn('Clipboard copy warning:', err));
-        this.showToast('Đang chuyển hướng sang Zalo & đã sao chép đơn!', 'success');
-
-        setTimeout(() => {
-          if (typeof window !== 'undefined') window.location.href = url;
-        }, 100);
-        return;
-      }
-
-      // 9. Gửi đơn qua Messenger
-      if (target.closest('#btn-send-messenger')) {
-        this._saveFormInputs();
-        if (!this.validateForm()) return;
-
-        fireOrderCelebration();
-        const pricing = this.cart.getTotals(this.orderType, this.config);
-        const orderText = formatOrderText(this.customerInfo, this.cart.getItems(), pricing, this.orderType);
-        const messengerTarget = this.config.facebookMessengerUrl || 'https://m.me/';
-        const url = generateMessengerUrl(messengerTarget, orderText);
-
-        copyToClipboard(orderText).catch(err => console.warn('Clipboard copy warning:', err));
-        this.showToast('Đang chuyển hướng sang Messenger & đã sao chép đơn!', 'success');
-
-        setTimeout(() => {
-          if (typeof window !== 'undefined') window.location.href = url;
-        }, 100);
-        return;
-      }
-
-      // 10. Sao chép nội dung đơn hàng
+      // 8. Sao chép nội dung đơn hàng
       if (target.closest('#btn-copy-order')) {
         this._saveFormInputs();
         if (!this.validateForm()) return;
@@ -1049,7 +997,7 @@ export class CartDrawer {
 
         const success = await copyToClipboard(orderText);
         if (success) {
-          this.showToast('Đã sao chép nội dung đơn hàng! Bạn có thể dán vào khung chat Zalo/FB.', 'success');
+          this.showToast('Đã sao chép nội dung đơn hàng! Bạn có thể dán gửi cho shop.', 'success');
         } else {
           this.showCopyFallbackModal(orderText);
         }

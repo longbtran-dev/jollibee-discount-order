@@ -445,6 +445,9 @@ describe('Cart & Order Message Formatter', () => {
     assert.equal(getActiveModalCount(), 1);
     assert.ok(containers['cart-drawer-container'].innerHTML.includes('btn-cart-edit-combo'));
     assert.ok(containers['cart-drawer-container'].innerHTML.includes('Bánh Xoài Đào'));
+    assert.ok(containers['cart-drawer-container'].innerHTML.includes('btn-copy-order'));
+    assert.ok(!containers['cart-drawer-container'].innerHTML.includes('btn-send-zalo'));
+    assert.ok(!containers['cart-drawer-container'].innerHTML.includes('btn-send-messenger'));
 
     // Mở xem ảnh phóng to chồng lên trên giỏ hàng
     imageModal.open({ title: 'Combo Gà Giòn', image: '' });
