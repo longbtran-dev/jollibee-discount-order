@@ -174,7 +174,7 @@ export class CartDrawer {
     if (parent && errorText && typeof document !== 'undefined' && typeof document.createElement === 'function') {
       const errorEl = document.createElement('p');
       errorEl.setAttribute('role', 'alert');
-      errorEl.className = 'field-error-msg text-[11px] font-bold text-red-600 mt-1 flex items-center gap-1 animate-toast-in';
+      errorEl.className = 'field-error-msg text-[11px] font-bold text-red-600 mt-1 flex items-center gap-1';
       errorEl.innerHTML = `${IconAlertTriangle('w-3.5 h-3.5 flex-shrink-0')} <span>${escapeHtml(errorText)}</span>`;
       parent.appendChild(errorEl);
     }
@@ -303,7 +303,7 @@ export class CartDrawer {
         const imgUrl = safeImageUrl(p.image);
         return `
           <div class="flex-shrink-0 w-44 bg-white/95 border border-amber-200 rounded-xl p-2 flex items-center gap-2 shadow-sm">
-            <img src="${imgUrl}" alt="${safeName}" width="36" height="36" loading="lazy" decoding="async"
+            <img src="${imgUrl}" alt="${safeName}" width="36" height="36" loading="lazy" decoding="async" draggable="false"
               class="w-9 h-9 rounded-lg object-contain bg-amber-50/60 p-0.5 flex-shrink-0"
               onerror="this.onerror=null; this.src='${FALLBACK_FOOD_IMAGE}'">
             <div class="min-w-0 flex-1">
@@ -327,7 +327,7 @@ export class CartDrawer {
         <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 mb-1.5 flex items-center gap-1">
           <span>⚡ Gợi ý thêm nhanh cho đủ mốc:</span>
         </div>
-        <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        <div class="upsell-scroll flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
           ${chips}
         </div>
       </div>
@@ -794,6 +794,9 @@ export class CartDrawer {
       newScrollEl.scrollTop = prevScrollTop;
     }
 
+    const upsellRow = container.querySelector('.upsell-scroll');
+    if (upsellRow) this._bindUpsellDrag(upsellRow);
+
     // Khôi phục tiêu điểm bàn phím cho nút vừa bấm (VD: nhấn liên tiếp Enter trên nút +)
     if (focusRestoreInfo && panel && typeof panel.querySelectorAll === 'function') {
       const candidates = Array.from(panel.querySelectorAll(focusRestoreInfo.btnClass));
@@ -801,6 +804,40 @@ export class CartDrawer {
       if (matched && typeof matched.focus === 'function') {
         matched.focus();
       }
+    }
+  }
+
+  _bindUpsellDrag(row) {
+    let drag = null;
+
+    row.addEventListener('pointerdown', (e) => {
+      if (e.pointerType !== 'mouse' || e.button !== 0 || row.scrollWidth <= row.clientWidth) return;
+      drag = { pointerId: e.pointerId, startX: e.clientX, scrollLeft: row.scrollLeft, active: false };
+    });
+
+    row.addEventListener('pointermove', (e) => {
+      if (drag?.pointerId !== e.pointerId) return;
+      const distance = e.clientX - drag.startX;
+
+      if (!drag.active) {
+        if (Math.abs(distance) < 5) return;
+        // Chỉ giữ con trỏ sau khi kéo để lượt nhấp thường vẫn đến nút Thêm.
+        row.setPointerCapture(e.pointerId);
+        row.classList.add('is-dragging');
+        drag.active = true;
+      }
+
+      row.scrollLeft = drag.scrollLeft - distance;
+    });
+
+    const endDrag = (e) => {
+      if (drag?.pointerId !== e.pointerId) return;
+      drag = null;
+      row.classList.remove('is-dragging');
+    };
+
+    for (const event of ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture']) {
+      row.addEventListener(event, endDrag);
     }
   }
 
