@@ -3,10 +3,11 @@
  */
 import { Cart } from './cart.js?v=1.5';
 import { ComboModal } from './components/combo-modal.js?v=1.5';
-import { CartDrawer } from './components/cart-drawer.js?v=1.6';
+import { CartDrawer } from './components/cart-drawer.js?v=1.8';
 import { ImageModal } from './components/image-modal.js?v=1.5';
 import { showToast, showUndoToast } from './components/ui-feedback.js?v=1.5';
 import { formatCurrency } from './order-message.js';
+import { bindMouseDragScroll } from './mouse-drag-scroll.js';
 import {
   escapeHtml,
   safeImageUrl,
@@ -760,7 +761,9 @@ export class JollibeeApp {
     });
 
     // 3. Ủy quyền sự kiện (Event Delegation) cho thanh Category Tabs
-    document.getElementById('category-tabs')?.addEventListener('click', e => {
+    const categoryTabs = document.getElementById('category-tabs');
+    bindMouseDragScroll(categoryTabs);
+    categoryTabs?.addEventListener('click', e => {
       const tabBtn = e.target?.closest?.('.category-tab-btn');
       if (tabBtn && tabBtn.dataset.slug) {
         this.scrollToCategory(tabBtn.dataset.slug);

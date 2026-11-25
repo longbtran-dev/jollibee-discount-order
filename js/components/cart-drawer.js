@@ -7,6 +7,7 @@
  * - Hỗ trợ nút "Đổi món" cho Combo ngay trong giỏ & Gợi ý "Món Bù Đủ Mốc 1 Chạm"
  */
 import { formatOrderText, formatCurrency } from '../order-message.js';
+import { bindMouseDragScroll } from '../mouse-drag-scroll.js';
 import {
   copyToClipboard,
   escapeHtml,
@@ -327,7 +328,7 @@ export class CartDrawer {
         <div class="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 mb-1.5 flex items-center gap-1">
           <span>⚡ Gợi ý thêm nhanh cho đủ mốc:</span>
         </div>
-        <div class="upsell-scroll flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        <div class="mouse-drag-scroll flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
           ${chips}
         </div>
       </div>
@@ -794,8 +795,7 @@ export class CartDrawer {
       newScrollEl.scrollTop = prevScrollTop;
     }
 
-    const upsellRow = container.querySelector('.upsell-scroll');
-    if (upsellRow) this._bindUpsellDrag(upsellRow);
+    bindMouseDragScroll(container.querySelector('.mouse-drag-scroll'));
 
     // Khôi phục tiêu điểm bàn phím cho nút vừa bấm (VD: nhấn liên tiếp Enter trên nút +)
     if (focusRestoreInfo && panel && typeof panel.querySelectorAll === 'function') {
@@ -804,40 +804,6 @@ export class CartDrawer {
       if (matched && typeof matched.focus === 'function') {
         matched.focus();
       }
-    }
-  }
-
-  _bindUpsellDrag(row) {
-    let drag = null;
-
-    row.addEventListener('pointerdown', (e) => {
-      if (e.pointerType !== 'mouse' || e.button !== 0 || row.scrollWidth <= row.clientWidth) return;
-      drag = { pointerId: e.pointerId, startX: e.clientX, scrollLeft: row.scrollLeft, active: false };
-    });
-
-    row.addEventListener('pointermove', (e) => {
-      if (drag?.pointerId !== e.pointerId) return;
-      const distance = e.clientX - drag.startX;
-
-      if (!drag.active) {
-        if (Math.abs(distance) < 5) return;
-        // Chỉ giữ con trỏ sau khi kéo để lượt nhấp thường vẫn đến nút Thêm.
-        row.setPointerCapture(e.pointerId);
-        row.classList.add('is-dragging');
-        drag.active = true;
-      }
-
-      row.scrollLeft = drag.scrollLeft - distance;
-    });
-
-    const endDrag = (e) => {
-      if (drag?.pointerId !== e.pointerId) return;
-      drag = null;
-      row.classList.remove('is-dragging');
-    };
-
-    for (const event of ['pointerup', 'pointercancel', 'pointerleave', 'lostpointercapture']) {
-      row.addEventListener(event, endDrag);
     }
   }
 
