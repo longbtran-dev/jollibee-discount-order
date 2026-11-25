@@ -49,6 +49,7 @@ export class JollibeeApp {
     this.activeCategorySlug = null;
     this.isProgrammaticScrolling = false;
     this.scrollLockTimer = null;
+    this._scrollSpyFrame = null;
     this._menuAbortController = null;
     this._globalEventsBound = false;
   }
@@ -235,8 +236,14 @@ export class JollibeeApp {
       if (isMatch) {
         btn.className =
           'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab';
-        if (typeof btn.scrollIntoView === 'function') {
-          btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        const tabs = btn.parentElement;
+        if (typeof tabs?.scrollTo === 'function' && tabs.scrollWidth > tabs.clientWidth) {
+          const tabRect = btn.getBoundingClientRect();
+          const rowLeft = tabs.getBoundingClientRect().left;
+          tabs.scrollTo({
+            left: tabs.scrollLeft + tabRect.left - rowLeft + (tabRect.width - tabs.clientWidth) / 2,
+            behavior: 'smooth'
+          });
         }
       } else {
         btn.className =
@@ -245,96 +252,80 @@ export class JollibeeApp {
     });
   }
 
-  _getStickyBarOffset() {
-    if (typeof document === 'undefined') return 104;
+  _getCategoryScrollOffset() {
     const stickyEl = document.getElementById('sticky-nav-bar') || document.querySelector('header');
-    return stickyEl && stickyEl.offsetHeight ? stickyEl.offsetHeight : 104;
+    return (stickyEl?.offsetHeight || 104) + 10;
   }
 
   scrollToCategory(slug) {
+    const targetSection = document.getElementById(`section-${slug}`);
+    if (!targetSection) return;
+
     this.isProgrammaticScrolling = true;
     this.updateActiveTab(slug);
+    clearTimeout(this.scrollLockTimer);
+    this.scrollLockTimer = setTimeout(() => this._finishCategoryScroll(), 900);
 
-    if (this.scrollLockTimer) {
-      clearTimeout(this.scrollLockTimer);
-    }
+    window.scrollTo({
+      top: window.scrollY + targetSection.getBoundingClientRect().top - this._getCategoryScrollOffset(),
+      behavior: 'smooth'
+    });
+  }
 
-    const unlock = () => {
-      this.isProgrammaticScrolling = false;
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('scrollend', unlock);
+  _finishCategoryScroll() {
+    if (!this.isProgrammaticScrolling) return;
+    this.isProgrammaticScrolling = false;
+    clearTimeout(this.scrollLockTimer);
+    this.scrollLockTimer = null;
+    this._scheduleActiveCategoryUpdate();
+  }
+
+  _scheduleActiveCategoryUpdate() {
+    if (this.isProgrammaticScrolling || this._scrollSpyFrame !== null) return;
+
+    this._scrollSpyFrame = window.requestAnimationFrame(() => {
+      this._scrollSpyFrame = null;
+      if (this.isProgrammaticScrolling) return;
+
+      const sections = document.querySelectorAll('#menu-sections-container > section');
+      if (!sections.length) return;
+
+      const scrollRoot = document.scrollingElement;
+      const atBottom = scrollRoot && scrollRoot.scrollTop > 0 &&
+        scrollRoot.scrollTop + scrollRoot.clientHeight >= scrollRoot.scrollHeight - 1;
+      let activeSection = sections[sections.length - 1];
+
+      if (!atBottom) {
+        // Dùng cùng điểm dừng với khi bấm tab, chừa 1px để bù làm tròn vị trí cuộn.
+        const anchor = this._getCategoryScrollOffset() + 1;
+        activeSection = sections[0];
+        for (const section of sections) {
+          if (section.getBoundingClientRect().top > anchor) break;
+          activeSection = section;
+        }
       }
-      if (this.scrollLockTimer) {
-        clearTimeout(this.scrollLockTimer);
-        this.scrollLockTimer = null;
-      }
-    };
 
-    if (typeof window !== 'undefined' && 'onscrollend' in window) {
-      window.addEventListener('scrollend', unlock, { once: true });
-    }
-    this.scrollLockTimer = setTimeout(unlock, 900);
-
-    const targetSection = document.getElementById(`section-${slug}`);
-    if (targetSection && typeof window !== 'undefined') {
-      const headerOffset = this._getStickyBarOffset() + 10;
-      const elementPosition = targetSection.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-    }
+      const slug = activeSection.id.slice('section-'.length);
+      if (slug !== this.activeCategorySlug) this.updateActiveTab(slug);
+    });
   }
 
   setupScrollSpy() {
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') return;
 
-    if (this._scrollObserver) {
-      this._scrollObserver.disconnect();
+    if (!this._scrollSpyBound) {
+      this._scrollSpyBound = true;
+      const update = () => this._scheduleActiveCategoryUpdate();
+      const finish = () => this._finishCategoryScroll();
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      window.addEventListener('scrollend', finish);
+      window.addEventListener('wheel', finish, { passive: true });
+      window.addEventListener('touchstart', finish, { passive: true });
     }
 
-    if (!this._userScrollListenerBound) {
-      this._userScrollListenerBound = true;
-      const handleUserScroll = () => {
-        if (this.isProgrammaticScrolling) {
-          this.isProgrammaticScrolling = false;
-          if (this.scrollLockTimer) {
-            clearTimeout(this.scrollLockTimer);
-            this.scrollLockTimer = null;
-          }
-        }
-      };
-      window.addEventListener('wheel', handleUserScroll, { passive: true });
-      window.addEventListener('touchstart', handleUserScroll, { passive: true });
-    }
-
-    const stickyHeight = this._getStickyBarOffset();
-
-    this._scrollObserver = new IntersectionObserver(
-      entries => {
-        if (this.isProgrammaticScrolling) return;
-
-        const visible = entries.filter(e => e.isIntersecting);
-        if (visible.length > 0) {
-          visible.sort(
-            (a, b) =>
-              Math.abs(a.boundingClientRect.top - stickyHeight) -
-              Math.abs(b.boundingClientRect.top - stickyHeight)
-          );
-          const activeId = visible[0].target.id.replace('section-', '');
-          this.updateActiveTab(activeId);
-        }
-      },
-      {
-        rootMargin: `-${stickyHeight}px 0px -40% 0px`,
-        threshold: [0, 0.2, 0.5]
-      }
-    );
-
-    document.querySelectorAll('#menu-sections-container > section').forEach(section => {
-      this._scrollObserver.observe(section);
-    });
+    this._finishCategoryScroll();
+    this._scheduleActiveCategoryUpdate();
   }
 
   /**
@@ -615,10 +606,9 @@ export class JollibeeApp {
           </button>
         </div>
       `;
-      return;
+    } else {
+      container.innerHTML = html;
     }
-
-    container.innerHTML = html;
     this.setupScrollSpy();
   }
 
