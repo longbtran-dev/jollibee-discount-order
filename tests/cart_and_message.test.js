@@ -446,6 +446,13 @@ describe('Cart & Order Message Formatter', () => {
     drawer.open();
     assert.equal(getActiveModalCount(), 1);
     assert.ok(containers['cart-drawer-container'].innerHTML.includes('btn-cart-edit-combo'));
+    assert.ok(containers['cart-drawer-container'].innerHTML.includes('Tùy chỉnh combo'));
+    assert.ok(!containers['cart-drawer-container'].innerHTML.includes('<span>Đổi món</span>'));
+    assert.ok(containers['cart-drawer-container'].innerHTML.includes('Sắp nhận ưu đãi'));
+    assert.ok(!containers['cart-drawer-container'].innerHTML.includes('Báo lỗi'));
+    assert.ok(containers['cart-drawer-container'].innerHTML.includes('Giỏ Hàng & Ưu Đãi'));
+    assert.ok(containers['cart-drawer-container'].innerHTML.includes('Chi Tiết Ưu Đãi Đơn Hàng'));
+    assert.ok(containers['cart-drawer-container'].innerHTML.includes('Sao Chép Đơn & Gửi Shop Đặt Ngay'));
     assert.ok(containers['cart-drawer-container'].innerHTML.includes('Bánh Xoài Đào'));
     assert.ok(containers['cart-drawer-container'].innerHTML.includes('btn-copy-order'));
     assert.ok(!containers['cart-drawer-container'].innerHTML.includes('btn-send-zalo'));
@@ -498,6 +505,7 @@ describe('Cart & Order Message Formatter', () => {
     };
 
     const cart = new Cart();
+    cart.clear();
     cart.addItem({ id: '158', name: 'Cặp Đôi Ăn Ý', price: 145000 });
     const drawer = new CartDrawer(cart, {});
     let toastMsg = '';
@@ -512,9 +520,11 @@ describe('Cart & Order Message Formatter', () => {
     assert.equal(drawer.validateForm(), false);
     assert.ok(toastMsg.includes('Giao Tận Nơi') || toastMsg.includes('Ăn Tại Quán'));
 
-    // 3. Khi chọn Giao Tận Nơi -> hiện form địa chỉ giao hàng
+    // 3. Khi chọn Giao Tận Nơi -> hiện form địa chỉ giao hàng & thông điệp Freeship tận nơi (không phải toàn quốc)
     drawer.setOrderType('delivery');
     assert.ok(mockInner.innerHTML.includes('id="customer-name"'));
+    assert.ok(mockInner.innerHTML.includes('FREESHIP tận nơi'));
+    assert.ok(!mockInner.innerHTML.includes('toàn quốc'));
 
     // 4. Khi chọn Ăn Tại Quán -> ẩn form địa chỉ và cho phép chốt đơn ngay
     drawer.setOrderType('dinein');

@@ -88,7 +88,7 @@ export class ImageModal {
 
             ${onAction ? `
               <button type="button" id="image-modal-action-btn" class="${isCombo ? 'bg-[#ffc72c] hover:bg-[#ffbf1a] text-gray-950 border border-amber-300' : 'bg-[#d71920] hover:bg-[#b81218] text-white'} font-extrabold text-xs sm:text-sm py-2.5 px-4 rounded-xl shadow-md active:scale-95 transition flex items-center gap-1.5 flex-shrink-0 whitespace-nowrap">
-                ${isCombo ? `${IconSliders('w-3.5 h-3.5')}<span>Tùy Chọn Món</span>` : `${IconPlus('w-3.5 h-3.5')}<span>Thêm Món</span>`}
+                ${isCombo ? `${IconSliders('w-3.5 h-3.5')}<span>Tùy Chỉnh Combo</span>` : `${IconPlus('w-3.5 h-3.5')}<span>Thêm Ngay</span>`}
               </button>
             ` : ''}
           </div>

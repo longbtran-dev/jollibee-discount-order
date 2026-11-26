@@ -198,9 +198,20 @@ describe('ComboModal Component', () => {
     };
 
     const modal = new ComboModal();
-    modal.open(specialCombo, null, { initialSelectedOptions: preselected, submitLabel: 'Lưu Thay Đổi' });
+    modal.open(specialCombo, null, { initialSelectedOptions: preselected, submitLabel: 'Lưu Tùy Chỉnh' });
     assert.ok(mockContainer.innerHTML.includes('aria-expanded="true"'));
-    assert.ok(mockContainer.innerHTML.includes('Lưu Thay Đổi'));
+    assert.ok(mockContainer.innerHTML.includes('Lưu Tùy Chỉnh'));
+    modal.close();
+
+    // Combo >= 100k hiển thị thông điệp giảm ngay khi chốt đơn
+    modal.open({
+      id: 'c_145',
+      name: 'Cặp Đôi Ăn Ý',
+      base_price: 145000,
+      price: 145000,
+      option_groups: []
+    });
+    assert.ok(mockContainer.innerHTML.includes('Combo này được giảm ngay'));
     modal.close();
   });
 });

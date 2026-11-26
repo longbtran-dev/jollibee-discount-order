@@ -97,7 +97,7 @@ describe('Image Modal Lightbox Component', () => {
     });
 
     assert.ok(mockContainer.innerHTML.includes('image-modal-action-btn'));
-    assert.ok(mockContainer.innerHTML.includes('Tùy Chọn Món'));
+    assert.ok(mockContainer.innerHTML.includes('Tùy Chỉnh Combo'));
 
     // Trigger action click
     if (eventListeners['actionClick']) {

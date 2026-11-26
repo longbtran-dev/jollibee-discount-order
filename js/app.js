@@ -389,7 +389,7 @@ export class JollibeeApp {
           data-id="${safeId}"
           data-is-combo="true">
           ${IconSliders('w-3.5 h-3.5')}
-          <span>Tùy Chọn Món${qtyInCart > 0 ? ` (${qtyInCart})` : ''}</span>
+          <span>Tùy Chỉnh Combo${qtyInCart > 0 ? ` (${qtyInCart})` : ''}</span>
         </button>
       `;
     }
@@ -416,7 +416,7 @@ export class JollibeeApp {
         data-id="${safeId}"
         data-is-combo="false">
         ${IconPlus('w-3.5 h-3.5')}
-        <span>Thêm Món</span>
+        <span>Thêm Ngay</span>
       </button>
     `;
   }
@@ -492,11 +492,11 @@ export class JollibeeApp {
         this.updateFloatingCart();
         this.syncProductCardControls();
         this.cartDrawer.render();
-        showToast(`Đã cập nhật tùy chọn cho "${configuredProduct.name}"!`, 'success');
+        showToast(`Đã lưu tùy chỉnh cho "${configuredProduct.name}"!`, 'success');
       },
       {
         initialSelectedOptions: cartItem.selectedOptions || [],
-        submitLabel: 'Lưu Thay Đổi'
+        submitLabel: 'Lưu Tùy Chỉnh'
       }
     );
   }
@@ -567,7 +567,7 @@ export class JollibeeApp {
               </div>
               <div class="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
                 <div class="flex items-baseline gap-1">
-                  <span class="text-xs font-extrabold text-[#d71920] whitespace-nowrap">Giá sau giảm:</span>
+                  <span class="text-xs font-extrabold text-[#d71920] whitespace-nowrap">Chỉ còn:</span>
                   <span class="text-base sm:text-lg font-black text-red-600 whitespace-nowrap">${formatCurrency(discountedPrice)}</span>
                 </div>
                 <span class="text-[10px] font-black text-green-800 bg-green-50 px-1.5 py-0.5 rounded-md border border-green-200 whitespace-nowrap">
@@ -581,11 +581,11 @@ export class JollibeeApp {
             <div class="mt-2 space-y-1">
               <div class="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
                 <div class="flex items-baseline gap-1">
-                  <span class="text-xs font-bold text-gray-700 whitespace-nowrap">Đơn giá:</span>
+                  <span class="text-xs font-bold text-gray-700 whitespace-nowrap">Giá món:</span>
                   <span class="text-base sm:text-lg font-black text-gray-900 whitespace-nowrap">${formatCurrency(originalPrice)}</span>
                 </div>
                 <span class="text-[10px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200 whitespace-nowrap">
-                  Đơn ≥100k giảm 15k/100k
+                  Đơn từ 100k giảm ngay 15k
                 </span>
               </div>
             </div>
@@ -631,7 +631,7 @@ export class JollibeeApp {
 
             <div class="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2">
               <span class="text-[11px] text-gray-600 font-medium flex items-center gap-1 truncate min-w-0">
-                ${isCombo ? `${IconSliders('w-3.5 h-3.5 text-amber-600 flex-shrink-0')} <span class="truncate">Đổi vị, upsize</span>` : `${IconClock('w-3.5 h-3.5 text-green-700 flex-shrink-0')} <span class="truncate">Chuẩn bị nhanh</span>`}
+                ${isCombo ? `${IconSliders('w-3.5 h-3.5 text-amber-600 flex-shrink-0')} <span class="truncate">Chọn vị gà & nước</span>` : `${IconClock('w-3.5 h-3.5 text-green-700 flex-shrink-0')} <span class="truncate">Nóng giòn chuẩn vị</span>`}
               </span>
               <div data-action-slot-id="${safeProductId}" class="ml-auto flex-shrink-0">
                 ${this._buildProductActionHtml(product)}

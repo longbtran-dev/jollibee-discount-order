@@ -155,6 +155,14 @@ export class ComboModal {
     unregisterOpenModal('combo-modal');
   }
 
+  _getComboDiscountNoteHtml(price) {
+    if (price >= 100000) {
+      const disc = Math.floor(price / 100000) * 15000;
+      return `<span class="text-green-700">🔥 Combo này được giảm ngay ${formatCurrency(disc)} khi chốt đơn!</span>`;
+    }
+    return `<span class="text-amber-800">Đơn từ 100k giảm ngay 15.000đ</span>`;
+  }
+
   render() {
     const container = this.getContainer();
 
@@ -190,7 +198,7 @@ export class ComboModal {
               ${iconHtml}
               <div class="flex flex-col min-w-0">
                 <span class="text-sm sm:text-base text-gray-800 break-words ${isNone ? 'font-semibold text-gray-700' : ''}">${escapeHtml(opt.name)}</span>
-                ${isNone ? `<span class="text-[11px] text-gray-500">Không chọn thêm món phụ cho phần này</span>` : ''}
+                ${isNone ? `<span class="text-[11px] text-gray-500">Giữ nguyên theo combo chuẩn (không gọi thêm)</span>` : ''}
               </div>
             </div>
             <div class="flex items-center gap-3 flex-shrink-0">
@@ -260,15 +268,15 @@ export class ComboModal {
           <div class="p-3 sm:p-4 bg-white border-t border-gray-100 shadow-lg flex items-center justify-between gap-3">
             <div class="flex-shrink-0">
               <div class="text-[10px] sm:text-[11px] text-gray-600">
-                <span>Đơn giá combo:</span>
+                <span>Giá combo đã chọn:</span>
               </div>
               <div class="flex items-baseline gap-1 mt-0.5">
                 <span class="text-base sm:text-xl font-black text-red-600" id="combo-modal-price">
                   ${formatCurrency(currentPrice)}
                 </span>
               </div>
-              <div class="text-[10px] text-amber-800 font-bold" id="combo-modal-discount-note">
-                (Gộp đơn ≥100k giảm 15k/100k)
+              <div class="text-[10px] font-bold" id="combo-modal-discount-note">
+                ${this._getComboDiscountNoteHtml(currentPrice)}
               </div>
             </div>
             <button type="button" id="combo-modal-confirm-btn" class="flex-1 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold py-3 px-4 sm:px-6 rounded-xl shadow-md active:scale-95 transition flex items-center justify-center gap-1.5 text-xs sm:text-sm whitespace-nowrap">
@@ -324,6 +332,8 @@ export class ComboModal {
             if (priceEl) priceEl.innerText = formatCurrency(price);
             const topPriceEl = document.getElementById('combo-modal-top-price');
             if (topPriceEl) topPriceEl.innerText = formatCurrency(price);
+            const noteEl = document.getElementById('combo-modal-discount-note');
+            if (noteEl) noteEl.innerHTML = this._getComboDiscountNoteHtml(price);
 
             // Truy vấn badge an toàn qua dataset (không bao giờ ném DOMException kể cả khi group_id có ký tự đặc biệt)
             const badgeEl = Array.from(container.querySelectorAll('[data-badge-for]')).find(

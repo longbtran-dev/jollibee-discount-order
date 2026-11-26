@@ -31,7 +31,7 @@ import {
   IconMinus,
   IconPlus,
   IconTrash,
-  IconEdit,
+  IconSliders,
   IconBike,
   IconUtensils,
   IconFileText,
@@ -410,7 +410,7 @@ export class CartDrawer {
           </div>
           <p class="text-xs text-gray-800 leading-snug">
             ${isDelivery
-              ? `Mua thêm chỉ <b>${formatCurrency(needed)}</b> ➔ <b>Giảm thêm 15k (Tổng giảm 30k)</b> + <b>FREESHIP</b> toàn quốc! 🎁 <span class="text-green-700 font-bold block mt-0.5">(Tiết kiệm thêm 25.000đ so với hiện tại)</span>`
+              ? `Mua thêm chỉ <b>${formatCurrency(needed)}</b> ➔ <b>Giảm thêm 15k (Tổng giảm 30k)</b> + <b>FREESHIP tận nơi</b>! 🎁 <span class="text-green-700 font-bold block mt-0.5">(Tiết kiệm thêm 25.000đ so với hiện tại)</span>`
               : `Mua thêm chỉ <b>${formatCurrency(needed)}</b> ➔ <b>Giảm thêm 15.000đ (Tổng giảm 30.000đ)</b>! Đặt càng nhiều càng rẻ! 🔥`
             }
           </p>
@@ -575,9 +575,9 @@ export class CartDrawer {
                   <h4 class="font-extrabold text-sm text-gray-900 leading-snug break-words">${escapedItemName}</h4>
                   ${item.isCombo ? `
                     <button type="button" class="btn-cart-edit-combo mt-1 inline-flex items-center gap-1 text-[11px] font-extrabold text-amber-950 bg-amber-100 hover:bg-amber-200 border border-amber-300 px-2.5 py-1 rounded-lg transition active:scale-95"
-                      data-id="${escapedCartItemId}" aria-label="Đổi tùy chọn cho ${escapedItemName}">
-                      ${IconEdit('w-3 h-3')}
-                      <span>Đổi món</span>
+                      data-id="${escapedCartItemId}" aria-label="Tùy chỉnh vị và thức uống trong ${escapedItemName}">
+                      ${IconSliders('w-3 h-3')}
+                      <span>Tùy chỉnh combo</span>
                     </button>
                   ` : ''}
                 </div>
@@ -751,7 +751,7 @@ export class CartDrawer {
             <div class="text-xs font-extrabold text-gray-700 uppercase tracking-wider flex items-center justify-between pb-1 border-b border-gray-100">
               <span class="flex items-center gap-1.5">
                 <span class="text-gray-600">${IconReceipt('w-4 h-4')}</span>
-                <span>Bảng So Sánh Giá</span>
+                <span>Chi Tiết Ưu Đãi Đơn Hàng</span>
               </span>
               ${pricing.discountAmount > 0 ? `
                 <span class="text-green-800 bg-green-50 px-2 py-0.5 rounded-full font-black text-[10px] border border-green-200">
@@ -792,20 +792,20 @@ export class CartDrawer {
           </div>
 
           ${pricing.originalTotal < 100000 ? `
-            <div id="min-order-notice-card" class="p-3.5 bg-red-50 border-2 border-red-200 rounded-2xl text-xs text-red-950 flex items-start gap-3 shadow-sm transition-all duration-300">
-              <div class="w-8 h-8 rounded-lg bg-red-100 text-red-700 flex items-center justify-center flex-shrink-0 mt-0.5">
-                ${IconAlertTriangle('w-4 h-4')}
+            <div id="min-order-notice-card" class="p-3.5 bg-amber-50 border-2 border-amber-300 rounded-2xl text-xs text-amber-950 flex items-start gap-3 shadow-sm transition-all duration-300">
+              <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center flex-shrink-0 mt-0.5">
+                ${IconSparkles('w-4 h-4')}
               </div>
               <div class="flex-1">
-                <div class="font-black text-red-700 text-sm flex items-center justify-between">
-                  <span>Chưa đạt đơn tối thiểu 100.000đ</span>
-                  <span class="bg-red-200/80 text-red-800 px-1.5 py-0.5 rounded text-[10px] font-extrabold">Báo lỗi</span>
+                <div class="font-black text-[#d71920] text-sm flex items-center justify-between gap-2">
+                  <span>Chọn thêm ${formatCurrency(100000 - pricing.originalTotal)} để mở khóa giảm 15.000đ!</span>
+                  <span class="bg-amber-200/80 text-amber-900 px-1.5 py-0.5 rounded text-[10px] font-extrabold flex-shrink-0">Sắp nhận ưu đãi</span>
                 </div>
                 <div class="mt-1 leading-relaxed text-gray-700">
-                  Shop chỉ nhận đặt hộ với đơn từ <b>100.000đ</b> trở lên (cứ mỗi 100k giảm 15k).
+                  Ưu đãi đặt hộ giảm <b>15.000đ</b> áp dụng cho đơn từ <b>100.000đ</b> trở lên.
                   <div class="mt-1.5 text-red-700 font-extrabold flex items-center gap-1.5">
                     <span class="text-red-700 flex items-center">${IconArrowRight('w-3.5 h-3.5')}</span>
-                    <span>Vui lòng chọn thêm <b>${formatCurrency(100000 - pricing.originalTotal)}</b> nữa để gửi đơn nhé!</span>
+                    <span>Gợi ý: Thêm 1 món ăn kèm hoặc nước ngọt là nhận giá hời ngay!</span>
                   </div>
                 </div>
               </div>
@@ -829,9 +829,9 @@ export class CartDrawer {
       ${items.length > 0 ? `
         <div class="p-4 bg-white border-t border-gray-200 shadow-xl space-y-2 flex-shrink-0">
           ${pricing.originalTotal < 100000 ? `
-            <div class="p-2.5 bg-red-50 border border-red-200 rounded-xl text-center text-xs text-red-700 font-extrabold flex items-center justify-center gap-1.5 shadow-sm">
-              ${IconAlertTriangle('w-4 h-4 text-red-600')}
-              <span>Đơn chưa đạt tối thiểu 100.000đ để đặt hộ</span>
+            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-center text-xs text-amber-950 font-extrabold flex items-center justify-center gap-1.5 shadow-sm">
+              ${IconSparkles('w-4 h-4 text-amber-600')}
+              <span>Chọn thêm ${formatCurrency(100000 - pricing.originalTotal)} để mở khóa giảm 15.000đ</span>
             </div>
           ` : !this.orderType ? `
             <div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-center text-[11px] text-amber-950 font-extrabold flex items-center justify-center gap-1.5">
@@ -840,7 +840,7 @@ export class CartDrawer {
           ` : ''}
           <button type="button" id="btn-copy-order" class="w-full ${pricing.originalTotal < 100000 ? 'bg-red-400 opacity-85' : 'bg-[#d71920] hover:bg-[#b81218]'} text-white font-extrabold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition text-sm whitespace-nowrap truncate">
             ${IconCopy('w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0')}
-            <span class="truncate">Sao Chép Nội Dung Đơn Hàng</span>
+            <span class="truncate">Sao Chép Đơn & Gửi Shop Đặt Ngay</span>
           </button>
         </div>
       ` : ''}
@@ -857,7 +857,7 @@ export class CartDrawer {
             <div class="flex items-center justify-between p-3.5 sm:p-4 bg-[#d71920] text-white flex-shrink-0">
               <div class="flex items-center gap-2 min-w-0 pr-2">
                 <span class="flex-shrink-0">${IconShoppingBag('w-5 h-5')}</span>
-                <h3 id="cart-drawer-title" class="font-extrabold text-base sm:text-lg truncate">Giỏ Hàng & Báo Giá</h3>
+                <h3 id="cart-drawer-title" class="font-extrabold text-base sm:text-lg truncate">Giỏ Hàng & Ưu Đãi</h3>
               </div>
               <button type="button" id="cart-drawer-close-btn" class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition flex-shrink-0 active:scale-95" aria-label="Đóng giỏ hàng">${IconX('w-4 h-4')}</button>
             </div>

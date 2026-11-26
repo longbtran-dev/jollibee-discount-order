@@ -227,6 +227,12 @@ describe('End-to-End System Integration Flow', () => {
     app.renderMenuSections('');
     assert.ok(menuContainer.innerHTML.includes('Bán chạy #1'));
     assert.ok(menuContainer.innerHTML.includes('Khách hay gọi'));
+    assert.ok(menuContainer.innerHTML.includes('Chỉ còn:'));
+    assert.ok(menuContainer.innerHTML.includes('Đơn từ 100k giảm ngay 15k'));
+    assert.ok(menuContainer.innerHTML.includes('Chọn vị gà & nước'));
+    assert.ok(menuContainer.innerHTML.includes('Tùy Chỉnh Combo'));
+    assert.ok(menuContainer.innerHTML.includes('Nóng giòn chuẩn vị'));
+    assert.ok(menuContainer.innerHTML.includes('Thêm Ngay'));
     const idxCapDoi = menuContainer.innerHTML.indexOf('Cặp Đôi Ăn Ý');
     const idxMotMinh = menuContainer.innerHTML.indexOf('Một Mình Ăn Ngon');
     assert.ok(idxCapDoi !== -1 && idxMotMinh !== -1 && idxCapDoi < idxMotMinh);
@@ -235,10 +241,12 @@ describe('End-to-End System Integration Flow', () => {
     app.renderMenuSections('ban chay');
     assert.ok(menuContainer.innerHTML.includes('Cặp Đôi Ăn Ý'));
 
-    // Ứng dụng khởi tạo chưa chọn mặc định orderType và index.html đã gỡ bỏ nút chuyển đổi trên Header
+    // Ứng dụng khởi tạo chưa chọn mặc định orderType và index.html đã gỡ bỏ nút chuyển đổi trên Header + nâng cấp copy
     assert.equal(app.orderType, null);
     const indexHtml = fs.readFileSync('index.html', 'utf8');
     assert.ok(!indexHtml.includes('top-btn-delivery'), 'Header không còn nút Giao Tận Nơi gây rối mắt');
     assert.ok(!indexHtml.includes('top-btn-dinein'), 'Header không còn nút Ăn Tại Quán gây rối mắt');
+    assert.ok(indexHtml.includes('Ăn Ngon Jollibee Rẻ Hơn Tới 15%'));
+    assert.ok(indexHtml.includes('&amp; Chốt Đơn') || indexHtml.includes('& Chốt Đơn'));
   });
 });
