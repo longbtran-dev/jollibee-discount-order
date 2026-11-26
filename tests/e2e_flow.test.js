@@ -208,5 +208,31 @@ describe('End-to-End System Integration Flow', () => {
     app.openProductImagePreview({ id: 'c_145', name: 'Combo 145k', price: 145000, image: '', is_combo: true });
     assert.equal(previewPayload.price, 130000);
     assert.equal(previewPayload.originalPrice, 145000);
+
+    // Cấu hình động từ config.js (priorityProductIds, productBadges, categoryTitleOverrides) tự sắp xếp & gắn nhãn
+    app.config = {
+      categoryTitleOverrides: { 'mon-moi-mon-ngon': 'Combo Bán Chạy Nhất' },
+      priorityProductIds: ['158', '680', '143', '679', '36'],
+      productBadges: { '158': 'Bán chạy #1', '680': 'Khách hay gọi' }
+    };
+    const tabsEl = { innerHTML: '' };
+    global.document.getElementById = (id) => {
+      if (id === 'category-tabs') return tabsEl;
+      if (id === 'menu-sections-container') return menuContainer;
+      return null;
+    };
+    app.renderCategoryTabs();
+    assert.ok(tabsEl.innerHTML.includes('Combo Bán Chạy Nhất'));
+
+    app.renderMenuSections('');
+    assert.ok(menuContainer.innerHTML.includes('Bán chạy #1'));
+    assert.ok(menuContainer.innerHTML.includes('Khách hay gọi'));
+    const idxCapDoi = menuContainer.innerHTML.indexOf('Cặp Đôi Ăn Ý');
+    const idxMotMinh = menuContainer.innerHTML.indexOf('Một Mình Ăn Ngon');
+    assert.ok(idxCapDoi !== -1 && idxMotMinh !== -1 && idxCapDoi < idxMotMinh);
+
+    // Tìm kiếm "ban chay" cũng lọc ra đúng các món có gắn nhãn Bán chạy
+    app.renderMenuSections('ban chay');
+    assert.ok(menuContainer.innerHTML.includes('Cặp Đôi Ăn Ý'));
   });
 });

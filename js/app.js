@@ -16,7 +16,7 @@ import {
   formatDescriptionHtml,
   debounce
 } from './utils.js';
-import { IconSliders, IconClock, IconPlus, IconMinus, IconSearch, IconZoomIn } from './icons.js';
+import { IconSliders, IconClock, IconPlus, IconMinus, IconSearch, IconZoomIn, IconFlame } from './icons.js';
 import { flyToCart, bounceCartBadge, fireFreeshipMilestone } from './effects.js';
 
 export class JollibeeApp {
@@ -203,6 +203,41 @@ export class JollibeeApp {
     }
   }
 
+  _getCategoryDisplayName(cat) {
+    if (!cat) return '';
+    const overrides = this.config?.categoryTitleOverrides;
+    if (overrides && typeof overrides === 'object' && overrides[cat.slug]) {
+      return String(overrides[cat.slug]);
+    }
+    return cat.name || '';
+  }
+
+  _getProductBadge(product) {
+    if (!product) return '';
+    const pid = String(product.id);
+    const badgesMap = this.config?.productBadges;
+    if (badgesMap && typeof badgesMap === 'object' && Object.prototype.hasOwnProperty.call(badgesMap, pid)) {
+      return badgesMap[pid] ? String(badgesMap[pid]).trim() : '';
+    }
+    return product.badge ? String(product.badge).trim() : '';
+  }
+
+  _getSortedCategoryProducts(products = []) {
+    const priorityList = Array.isArray(this.config?.priorityProductIds)
+      ? this.config.priorityProductIds.map(id => String(id))
+      : [];
+    if (priorityList.length === 0) return [...products];
+
+    const rankMap = new Map();
+    priorityList.forEach((id, idx) => rankMap.set(id, idx));
+
+    return [...products].sort((a, b) => {
+      const rankA = rankMap.has(String(a.id)) ? rankMap.get(String(a.id)) : priorityList.length;
+      const rankB = rankMap.has(String(b.id)) ? rankMap.get(String(b.id)) : priorityList.length;
+      return rankA - rankB;
+    });
+  }
+
   renderCategoryTabs() {
     const tabsContainer = document.getElementById('category-tabs');
     if (!tabsContainer || !this.menuData) return;
@@ -212,14 +247,16 @@ export class JollibeeApp {
       const isFirst = index === 0;
       if (isFirst) this.activeCategorySlug = cat.slug;
       const safeSlug = escapeHtml(cat.slug);
-      const safeName = escapeHtml(cat.name);
+      const safeName = escapeHtml(this._getCategoryDisplayName(cat));
       const count = Array.isArray(cat.products) ? cat.products.length : 0;
+      const leadingIcon = isFirst ? `<span class="flex items-center flex-shrink-0 text-[#d71920] group-[.active-tab]:text-amber-300">${IconFlame('w-3.5 h-3.5')}</span>` : '';
 
       html += `
         <button type="button" 
-          class="category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 ${isFirst ? 'bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'}"
+          class="category-tab-btn group px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 ${isFirst ? 'bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'}"
           aria-current="${isFirst ? 'true' : 'false'}"
           data-slug="${safeSlug}">
+          ${leadingIcon}
           <span>${safeName}</span>
           <span class="text-[10px] opacity-85">(${count})</span>
         </button>
@@ -236,7 +273,7 @@ export class JollibeeApp {
       btn.setAttribute('aria-current', isMatch ? 'true' : 'false');
       if (isMatch) {
         btn.className =
-          'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab';
+          'category-tab-btn group px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab';
         const tabs = btn.parentElement;
         if (typeof tabs?.scrollTo === 'function' && tabs.scrollWidth > tabs.clientWidth) {
           const tabRect = btn.getBoundingClientRect();
@@ -248,7 +285,7 @@ export class JollibeeApp {
         }
       } else {
         btn.className =
-          'category-tab-btn px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
+          'category-tab-btn group px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
       }
     });
   }
@@ -501,10 +538,12 @@ export class JollibeeApp {
     let globalCardIndex = 0;
     let html = '';
 
-    this.menuData.categories.forEach(cat => {
-      const matchedProducts = (cat.products || []).filter(p => {
+    this.menuData.categories.forEach((cat, catIdx) => {
+      const orderedProducts = this._getSortedCategoryProducts(cat.products || []);
+      const matchedProducts = orderedProducts.filter(p => {
         if (!normKeyword) return true;
-        const haystack = normalizeVietnamese(`${p.name || ''} ${p.description || ''}`);
+        const badgeText = this._getProductBadge(p);
+        const haystack = normalizeVietnamese(`${p.name || ''} ${p.description || ''} ${badgeText}`);
         return haystack.includes(normKeyword);
       });
 
@@ -517,6 +556,23 @@ export class JollibeeApp {
         const safeProductId = escapeHtml(product.id);
         const safeProductName = escapeHtml(product.name);
         const safeImg = safeImageUrl(product.image);
+        const badgeText = this._getProductBadge(product);
+        const isTopRank = badgeText.includes('#1');
+
+        const badgeHtml = badgeText
+          ? `
+            <div class="mb-1">
+              <span class="inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                isTopRank
+                  ? 'bg-gradient-to-r from-[#d71920] to-orange-500 text-white shadow-sm'
+                  : 'bg-amber-100 text-red-800 border border-amber-300'
+              }">
+                ${IconFlame('w-3 h-3 flex-shrink-0')}
+                <span>${escapeHtml(badgeText)}</span>
+              </span>
+            </div>
+          `
+          : '';
 
         // Ưu tiên tải sớm 4 ảnh đầu tiên (Above-the-fold) tối ưu LCP, lazy-load từ món thứ 5 trở đi
         const isAboveFold = globalCardIndex < 4;
@@ -564,8 +620,12 @@ export class JollibeeApp {
           `;
         }
 
+        const cardBorderClass = isTopRank
+          ? 'border-amber-300 ring-1 ring-amber-200/80'
+          : 'border-gray-200/90';
+
         cardsHtml += `
-          <div class="product-card bg-white rounded-2xl border border-gray-200/90 shadow-sm hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3 sm:p-4">
+          <div class="product-card bg-white rounded-2xl border ${cardBorderClass} shadow-sm hover:shadow-md transition overflow-hidden flex flex-col justify-between p-3 sm:p-4">
             <div class="flex gap-2.5 sm:gap-3.5 items-start">
               <button type="button" 
                 class="btn-preview-image text-left focus:outline-none relative w-20 h-20 sm:w-28 sm:h-28 rounded-xl bg-amber-50/50 p-1 border border-amber-100 flex-shrink-0 overflow-hidden flex items-center justify-center self-start cursor-zoom-in group active:scale-95 transition"
@@ -590,6 +650,7 @@ export class JollibeeApp {
               </button>
 
               <div class="flex-1 min-w-0">
+                ${badgeHtml}
                 <h4 class="font-extrabold text-sm sm:text-base text-gray-900 leading-snug break-words">${safeProductName}</h4>
                 ${formatDescriptionHtml(product.description)}
                 ${priceDisplayHtml}
@@ -609,13 +670,17 @@ export class JollibeeApp {
       });
 
       const safeCatSlug = escapeHtml(cat.slug);
-      const safeCatName = escapeHtml(cat.name);
+      const safeCatName = escapeHtml(this._getCategoryDisplayName(cat));
+      const sectionDotHtml =
+        catIdx === 0
+          ? `<span class="text-[#d71920] flex items-center flex-shrink-0">${IconFlame('w-4 h-4 sm:w-5 sm:h-5')}</span>`
+          : `<span class="w-3 h-3 rounded-full bg-[#d71920] flex-shrink-0" aria-hidden="true"></span>`;
 
       html += `
         <section id="section-${safeCatSlug}" class="space-y-3 scroll-mt-28">
           <div class="flex items-center justify-between pb-1.5 border-b-2 border-amber-200">
             <h3 class="font-black text-base sm:text-lg text-gray-900 uppercase tracking-tight flex items-center gap-2">
-              <span class="w-3 h-3 rounded-full bg-[#d71920]" aria-hidden="true"></span>
+              ${sectionDotHtml}
               <span>${safeCatName}</span>
             </h3>
             <span class="text-xs font-bold text-gray-600">${matchedProducts.length} món</span>

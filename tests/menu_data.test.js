@@ -66,5 +66,18 @@ describe('Menu Data Schema', () => {
     assert.ok(content.includes('discountPerStep'));
     assert.ok(content.includes('freeshipThreshold'));
     assert.ok(content.includes('standardShippingFee'));
+    assert.ok(content.includes('categoryTitleOverrides'));
+    assert.ok(content.includes('priorityProductIds'));
+    assert.ok(content.includes('productBadges'));
+  });
+
+  it('danh mục đầu trang là Combo Bán Chạy Nhất và xếp Cặp Đôi Ăn Ý lên đầu, các combo Một Mình xuống dưới', () => {
+    const raw = fs.readFileSync('data/menu.json', 'utf8');
+    const data = JSON.parse(raw);
+    const firstCat = data.categories[0];
+    assert.equal(firstCat.name, 'Combo Bán Chạy Nhất');
+    const ids = firstCat.products.map(p => String(p.id));
+    assert.deepEqual(ids, ['158', '680', '143', '679', '36']);
+    assert.equal(firstCat.products[0].badge, 'Bán chạy #1');
   });
 });

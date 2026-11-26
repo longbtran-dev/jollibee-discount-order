@@ -116,16 +116,37 @@ def main():
             if c_slug in category_products_map:
                 category_products_map[c_slug].append(prod_obj)
 
+    # Cấu hình mặc định cho danh mục bán chạy đầu trang
+    category_title_overrides = {
+        "mon-moi-mon-ngon": "Combo Bán Chạy Nhất"
+    }
+    priority_product_ids = ["158", "680", "143", "679", "36"]
+    default_product_badges = {
+        "158": "Bán chạy #1",
+        "680": "Khách hay gọi",
+        "143": "Khách hay gọi"
+    }
+
     # Build final categories array
     categories = []
     for cat in raw_data.get("categories", []):
         cat_slug = cat.get("slug")
-        cat_name = cat.get("name")
+        cat_name = category_title_overrides.get(cat_slug, cat.get("name"))
+        prods = list(category_products_map.get(cat_slug, []))
+        for item in prods:
+            badge_txt = default_product_badges.get(str(item.get("id")))
+            if badge_txt:
+                item["badge"] = badge_txt
+        prods.sort(
+            key=lambda x: priority_product_ids.index(str(x.get("id")))
+            if str(x.get("id")) in priority_product_ids
+            else len(priority_product_ids)
+        )
         categories.append({
             "id": cat_slug,
             "slug": cat_slug,
             "name": cat_name,
-            "products": category_products_map.get(cat_slug, [])
+            "products": prods
         })
 
     output_data = {
