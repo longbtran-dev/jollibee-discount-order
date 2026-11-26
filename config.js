@@ -7,10 +7,10 @@ window.JOLLIBEE_CONFIG = {
   // 1. Thông tin cửa hàng & kênh liên hệ
   shopName: "longbtran.shop - Đặt Hộ Jollibee Giá Rẻ",
   shopSubtitle: "Chiết khấu cao - Đặt nhanh qua Zalo & Facebook",
-  zaloPhone: "0900000000",
-  zaloLink: "https://zalo.me/0900000000",
+  zaloPhone: "0985194873",
+  zaloLink: "https://zalo.me/0985194873",
   facebookMessengerUrl: "https://m.me/",
-  hotline: "0900.000.000",
+  hotline: "0985194873",
 
   // 2. Chính sách giảm giá & phí giao hàng
   discountStep: 100000,

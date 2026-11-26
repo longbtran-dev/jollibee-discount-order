@@ -34,6 +34,7 @@ import {
   IconSliders,
   IconBike,
   IconUtensils,
+  IconClock,
   IconFileText,
   IconReceipt,
   IconSparkles,
@@ -66,6 +67,8 @@ export class CartDrawer {
       name: '',
       phone: '',
       address: '',
+      pickupTime: '',
+      branchAddress: '',
       note: ''
     };
 
@@ -87,6 +90,8 @@ export class CartDrawer {
             name: typeof parsed.name === 'string' ? parsed.name : '',
             phone: typeof parsed.phone === 'string' ? parsed.phone : '',
             address: typeof parsed.address === 'string' ? parsed.address : '',
+            pickupTime: typeof parsed.pickupTime === 'string' ? parsed.pickupTime : '',
+            branchAddress: typeof parsed.branchAddress === 'string' ? parsed.branchAddress : '',
             note: typeof parsed.note === 'string' ? parsed.note : ''
           };
         }
@@ -240,13 +245,8 @@ export class CartDrawer {
       return false;
     }
 
-    if (this.orderType === 'dinein') {
-      this.lastValidationError = null;
-      return true;
-    }
-
     if (!this.customerInfo.name || !this.customerInfo.name.trim()) {
-      const msg = 'Vui lòng nhập Họ và Tên của bạn để nhận hàng!';
+      const msg = 'Vui lòng nhập Họ và Tên của bạn!';
       this.lastValidationError = msg;
       this.showToast(msg, 'warning');
       if (typeof document !== 'undefined') {
@@ -261,7 +261,7 @@ export class CartDrawer {
     }
 
     if (!this.customerInfo.phone || !this.customerInfo.phone.trim()) {
-      const msg = 'Vui lòng nhập Số điện thoại nhận hàng!';
+      const msg = 'Vui lòng nhập Số điện thoại liên hệ!';
       this.lastValidationError = msg;
       this.showToast(msg, 'warning');
       if (typeof document !== 'undefined') {
@@ -276,7 +276,7 @@ export class CartDrawer {
     }
 
     if (!isValidVietnamesePhone(this.customerInfo.phone)) {
-      const msg = 'Số điện thoại nhận hàng không hợp lệ (cần 10 chữ số, VD: 0912345678)!';
+      const msg = 'Số điện thoại không hợp lệ (cần 10 chữ số, VD: 0912345678)!';
       this.lastValidationError = msg;
       this.showToast(msg, 'warning');
       if (typeof document !== 'undefined') {
@@ -297,6 +297,36 @@ export class CartDrawer {
         this.showToast(msg, 'warning');
         if (typeof document !== 'undefined') {
           const input = document.getElementById('customer-address');
+          if (input) {
+            if (typeof input.scrollIntoView === 'function') input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => input.focus?.(), 250);
+            this._highlightFieldError(input, msg);
+          }
+        }
+        return false;
+      }
+    } else if (this.orderType === 'dinein') {
+      if (!this.customerInfo.pickupTime || !this.customerInfo.pickupTime.trim()) {
+        const msg = 'Vui lòng nhập Thời gian nhận món hôm nay (lúc mấy giờ)!';
+        this.lastValidationError = msg;
+        this.showToast(msg, 'warning');
+        if (typeof document !== 'undefined') {
+          const input = document.getElementById('customer-pickup-time');
+          if (input) {
+            if (typeof input.scrollIntoView === 'function') input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setTimeout(() => input.focus?.(), 250);
+            this._highlightFieldError(input, msg);
+          }
+        }
+        return false;
+      }
+
+      if (!this.customerInfo.branchAddress || !this.customerInfo.branchAddress.trim()) {
+        const msg = 'Vui lòng nhập Địa chỉ hoặc khu vực chi nhánh bạn muốn ăn!';
+        this.lastValidationError = msg;
+        this.showToast(msg, 'warning');
+        if (typeof document !== 'undefined') {
+          const input = document.getElementById('customer-branch-address');
           if (input) {
             if (typeof input.scrollIntoView === 'function') input.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setTimeout(() => input.focus?.(), 250);
@@ -715,6 +745,10 @@ export class CartDrawer {
                 <span class="text-amber-700">${IconFileText('w-4 h-4')}</span>
                 <span>Thông Tin Giao Hàng</span>
               </div>
+              <div class="p-2.5 bg-amber-100/80 border border-amber-300 rounded-xl text-[11px] sm:text-xs text-amber-950 flex items-start gap-2 leading-snug">
+                <span class="text-[#d71920] flex-shrink-0 mt-0.5">${IconClock('w-4 h-4')}</span>
+                <span><b>Lưu ý:</b> Thời gian chuẩn bị đơn hàng <b>ít nhất 30 phút</b> tính từ lúc đặt hàng thành công.</span>
+              </div>
               <div>
                 <label for="customer-name" class="block text-[11px] font-bold text-gray-700 mb-1">Họ và tên của bạn *</label>
                 <input type="text" id="customer-name" value="${escapeHtml(this.customerInfo.name)}" placeholder="VD: Nguyễn Văn A *" autocomplete="name"
@@ -737,11 +771,43 @@ export class CartDrawer {
               </div>
             </div>
           ` : isDinein ? `
-            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs text-amber-950 flex items-start gap-2.5 shadow-sm">
-              <span class="text-amber-700 flex-shrink-0 mt-0.5">${IconUtensils('w-4 h-4')}</span>
-              <div class="leading-snug">
-                <span class="font-extrabold">Ăn tại quán / Tới quầy nhận trực tiếp</span>
-                <span class="block text-[11px] text-gray-600 mt-0.5">Miễn 100% phí ship • Không cần điền địa chỉ nhận hàng.</span>
+            <div class="bg-amber-50/50 rounded-2xl border border-amber-200/90 p-3.5 shadow-sm space-y-3">
+              <div class="flex items-center justify-between gap-2">
+                <div class="text-xs font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
+                  <span class="text-amber-700">${IconUtensils('w-4 h-4')}</span>
+                  <span>Thông Tin Ăn Tại Quán / Tới Lấy</span>
+                </div>
+                <span class="text-[10px] font-black bg-green-100 text-green-800 px-2 py-0.5 rounded-full">0đ phí ship</span>
+              </div>
+              <div class="p-2.5 bg-amber-100/80 border border-amber-300 rounded-xl text-[11px] sm:text-xs text-amber-950 flex items-start gap-2 leading-snug">
+                <span class="text-[#d71920] flex-shrink-0 mt-0.5">${IconClock('w-4 h-4')}</span>
+                <span><b>Lưu ý quan trọng:</b> Thời gian chuẩn bị đơn hàng <b>ít nhất 30 phút</b> tính từ lúc đặt hàng thành công.</span>
+              </div>
+              <div>
+                <label for="customer-name" class="block text-[11px] font-bold text-gray-700 mb-1">Họ và tên của bạn *</label>
+                <input type="text" id="customer-name" value="${escapeHtml(this.customerInfo.name)}" placeholder="VD: Nguyễn Văn A *" autocomplete="name"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+              </div>
+              <div>
+                <label for="customer-phone" class="block text-[11px] font-bold text-gray-700 mb-1">Số điện thoại liên hệ *</label>
+                <input type="tel" id="customer-phone" value="${escapeHtml(this.customerInfo.phone)}" placeholder="VD: 0912345678 *" autocomplete="tel"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+              </div>
+              <div>
+                <label for="customer-pickup-time" class="block text-[11px] font-bold text-gray-700 mb-1">Thời gian nhận hôm nay (lúc mấy giờ) *</label>
+                <input type="text" id="customer-pickup-time" value="${escapeHtml(this.customerInfo.pickupTime)}" placeholder="VD: 12h15 hôm nay, 18h30 tối nay... *"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+              </div>
+              <div>
+                <label for="customer-branch-address" class="block text-[11px] font-bold text-gray-700 mb-1">Địa chỉ / Khu vực chi nhánh muốn ăn *</label>
+                <input type="text" id="customer-branch-address" value="${escapeHtml(this.customerInfo.branchAddress)}" placeholder="VD: Jollibee Cầu Giấy, hoặc địa chỉ khu vực của bạn *"
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+                <p class="text-[11px] text-gray-600 mt-1 leading-snug">Điền địa chỉ hoặc khu vực để shop hỏi lại & chốt đúng chi nhánh Jollibee bạn muốn ăn nhé!</p>
+              </div>
+              <div>
+                <label for="customer-note" class="block text-[11px] font-bold text-gray-700 mb-1">Ghi chú thêm (nếu có)</label>
+                <input type="text" id="customer-note" value="${escapeHtml(this.customerInfo.note)}" placeholder="Ví dụ: Ăn tại chỗ hay đóng gói mang về..." 
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
               </div>
             </div>
           ` : ''}
@@ -928,6 +994,12 @@ export class CartDrawer {
     const addrEl = document.getElementById('customer-address');
     if (addrEl && addrEl.value !== undefined) this.customerInfo.address = addrEl.value;
 
+    const pickupEl = document.getElementById('customer-pickup-time');
+    if (pickupEl && pickupEl.value !== undefined) this.customerInfo.pickupTime = pickupEl.value;
+
+    const branchEl = document.getElementById('customer-branch-address');
+    if (branchEl && branchEl.value !== undefined) this.customerInfo.branchAddress = branchEl.value;
+
     const noteEl = document.getElementById('customer-note');
     if (noteEl && noteEl.value !== undefined) this.customerInfo.note = noteEl.value;
 
@@ -973,6 +1045,8 @@ export class CartDrawer {
       'customer-name': 'name',
       'customer-phone': 'phone',
       'customer-address': 'address',
+      'customer-pickup-time': 'pickupTime',
+      'customer-branch-address': 'branchAddress',
       'customer-note': 'note'
     };
 

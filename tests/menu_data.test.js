@@ -69,6 +69,8 @@ describe('Menu Data Schema', () => {
     assert.ok(content.includes('categoryTitleOverrides'));
     assert.ok(content.includes('priorityProductIds'));
     assert.ok(content.includes('productBadges'));
+    assert.ok(content.includes('0985194873'), 'Số điện thoại hotline/Zalo phải là 0985194873');
+    assert.ok(!content.includes('0900000000'), 'Không còn số điện thoại giả lập 0900000000');
   });
 
   it('danh mục đầu trang là Combo Bán Chạy Nhất và xếp Cặp Đôi Ăn Ý lên đầu, các combo Một Mình xuống dưới', () => {

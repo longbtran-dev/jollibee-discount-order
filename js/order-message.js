@@ -33,10 +33,10 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
       lines.push(`• Ghi chú: ${customer.note.trim()}`);
     }
   } else {
-    // Ăn tại quán: không yêu cầu thông tin khách hàng
-    if (customer.name && customer.name.trim()) {
-      lines.push(`• Khách hàng: ${customer.name.trim()}`);
-    }
+    lines.push(`• Khách hàng: ${customer.name || '(Chưa nhập)'}`);
+    lines.push(`• Số điện thoại: ${customer.phone || '(Chưa nhập)'}`);
+    lines.push(`• Thời gian nhận (hôm nay): ${customer.pickupTime || '(Chưa nhập)'}`);
+    lines.push(`• Địa chỉ / Chi nhánh muốn ăn: ${customer.branchAddress || customer.address || '(Chưa nhập)'}`);
     if (customer.note && customer.note.trim()) {
       lines.push(`• Ghi chú: ${customer.note.trim()}`);
     }
@@ -79,6 +79,7 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
   }
 
   lines.push(`=> TỔNG THANH TOÁN THỰC TẾ: ${formatCurrency(pricing.finalTotal)}`);
+  lines.push(`⏱ Lưu ý: Thời gian chuẩn bị đơn hàng ít nhất 30 phút tính từ lúc đặt hàng thành công.`);
   if (pricing.originalTotal < 100000) {
     lines.push(`(Lưu ý: Đơn hàng dưới 100k - Chưa áp dụng chính sách giảm giá)`);
   }
