@@ -1,11 +1,11 @@
 /**
  * Khởi tạo và điều phối giao diện ứng dụng chính
  */
-import { Cart } from './cart.js?v=1.5';
-import { ComboModal } from './components/combo-modal.js?v=1.5';
-import { CartDrawer } from './components/cart-drawer.js?v=1.8';
-import { ImageModal } from './components/image-modal.js?v=1.5';
-import { showToast, showUndoToast } from './components/ui-feedback.js?v=1.5';
+import { Cart } from './cart.js';
+import { ComboModal } from './components/combo-modal.js';
+import { CartDrawer } from './components/cart-drawer.js';
+import { ImageModal } from './components/image-modal.js';
+import { showToast, showUndoToast } from './components/ui-feedback.js';
 import { formatCurrency } from './order-message.js';
 import { bindMouseDragScroll } from './mouse-drag-scroll.js';
 import {
@@ -254,35 +254,57 @@ export class JollibeeApp {
   }
 
   _getCategoryScrollOffset() {
+    if (typeof document === 'undefined') return 114;
     const stickyEl = document.getElementById('sticky-nav-bar') || document.querySelector('header');
     return (stickyEl?.offsetHeight || 104) + 10;
   }
 
+  _armProgrammaticScrollUnlock(delayMs = 220) {
+    clearTimeout(this.scrollLockTimer);
+    this.scrollLockTimer = setTimeout(() => this._finishCategoryScroll({ resync: false }), delayMs);
+  }
+
   scrollToCategory(slug) {
-    const targetSection = document.getElementById(`section-${slug}`);
+    let targetSection = document.getElementById(`section-${slug}`);
+
+    // Nếu đang có từ khóa tìm kiếm khiến danh mục này bị ẩn -> tự động xóa bộ lọc để hiển thị đầy đủ
+    if (!targetSection) {
+      const searchInput = document.getElementById('menu-search-input');
+      if (searchInput && searchInput.value && searchInput.value.trim() !== '') {
+        searchInput.value = '';
+        document.getElementById('clear-search-btn')?.classList.add('hidden');
+        this.renderMenuSections('');
+        targetSection = document.getElementById(`section-${slug}`);
+      }
+    }
+
     if (!targetSection) return;
 
     this.isProgrammaticScrolling = true;
     this.updateActiveTab(slug);
-    clearTimeout(this.scrollLockTimer);
-    this.scrollLockTimer = setTimeout(() => this._finishCategoryScroll(), 900);
+    this._armProgrammaticScrollUnlock(320);
 
-    window.scrollTo({
-      top: window.scrollY + targetSection.getBoundingClientRect().top - this._getCategoryScrollOffset(),
-      behavior: 'smooth'
-    });
+    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      window.scrollTo({
+        top: (window.scrollY || 0) + targetSection.getBoundingClientRect().top - this._getCategoryScrollOffset(),
+        behavior: 'smooth'
+      });
+    }
   }
 
-  _finishCategoryScroll() {
+  _finishCategoryScroll({ resync = false } = {}) {
     if (!this.isProgrammaticScrolling) return;
     this.isProgrammaticScrolling = false;
     clearTimeout(this.scrollLockTimer);
     this.scrollLockTimer = null;
-    this._scheduleActiveCategoryUpdate();
+    if (resync) {
+      this._scheduleActiveCategoryUpdate();
+    }
   }
 
   _scheduleActiveCategoryUpdate() {
     if (this.isProgrammaticScrolling || this._scrollSpyFrame !== null) return;
+    if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') return;
 
     this._scrollSpyFrame = window.requestAnimationFrame(() => {
       this._scrollSpyFrame = null;
@@ -292,13 +314,14 @@ export class JollibeeApp {
       if (!sections.length) return;
 
       const scrollRoot = document.scrollingElement;
-      const atBottom = scrollRoot && scrollRoot.scrollTop > 0 &&
-        scrollRoot.scrollTop + scrollRoot.clientHeight >= scrollRoot.scrollHeight - 1;
+      const atBottom =
+        scrollRoot &&
+        scrollRoot.scrollTop > 0 &&
+        scrollRoot.scrollTop + scrollRoot.clientHeight >= scrollRoot.scrollHeight - 2;
       let activeSection = sections[sections.length - 1];
 
       if (!atBottom) {
-        // Dùng cùng điểm dừng với khi bấm tab, chừa 1px để bù làm tròn vị trí cuộn.
-        const anchor = this._getCategoryScrollOffset() + 1;
+        const anchor = this._getCategoryScrollOffset() + 2;
         activeSection = sections[0];
         for (const section of sections) {
           if (section.getBoundingClientRect().top > anchor) break;
@@ -316,16 +339,25 @@ export class JollibeeApp {
 
     if (!this._scrollSpyBound) {
       this._scrollSpyBound = true;
-      const update = () => this._scheduleActiveCategoryUpdate();
-      const finish = () => this._finishCategoryScroll();
-      window.addEventListener('scroll', update, { passive: true });
-      window.addEventListener('resize', update);
-      window.addEventListener('scrollend', finish);
-      window.addEventListener('wheel', finish, { passive: true });
-      window.addEventListener('touchstart', finish, { passive: true });
+      const onScroll = () => {
+        if (this.isProgrammaticScrolling) {
+          // Gia hạn khóa cho tới khi cuộn mượt dừng hẳn (kể cả hành trình dài > 1 giây)
+          this._armProgrammaticScrollUnlock(180);
+          return;
+        }
+        this._scheduleActiveCategoryUpdate();
+      };
+      const onNaturalEnd = () => this._finishCategoryScroll({ resync: false });
+      const onUserInterrupt = () => this._finishCategoryScroll({ resync: true });
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', () => this._scheduleActiveCategoryUpdate());
+      window.addEventListener('scrollend', onNaturalEnd);
+      window.addEventListener('wheel', onUserInterrupt, { passive: true });
+      window.addEventListener('touchmove', onUserInterrupt, { passive: true });
     }
 
-    this._finishCategoryScroll();
+    this._finishCategoryScroll({ resync: false });
     this._scheduleActiveCategoryUpdate();
   }
 
@@ -401,12 +433,13 @@ export class JollibeeApp {
     if (!this.menuData || !Array.isArray(this.menuData.categories) || neededAmount <= 0) return [];
     const seen = new Set();
     const candidates = [];
+    const minCandidatePrice = neededAmount <= 3000 ? 1000 : 5000;
 
     this.menuData.categories.forEach(cat => {
       (cat.products || []).forEach(p => {
         const pid = String(p.id);
         const price = Number(p.price) || 0;
-        if (!p.is_combo && price >= 5000 && price <= 65000 && !seen.has(pid)) {
+        if (!p.is_combo && price >= minCandidatePrice && price <= 65000 && !seen.has(pid)) {
           seen.add(pid);
           candidates.push(p);
         }
@@ -524,7 +557,7 @@ export class JollibeeApp {
                   <span class="text-base sm:text-lg font-black text-gray-900 whitespace-nowrap">${formatCurrency(originalPrice)}</span>
                 </div>
                 <span class="text-[10px] font-bold text-amber-900 bg-amber-50 px-1.5 py-0.5 rounded-md border border-amber-200 whitespace-nowrap">
-                  Gộp đơn ≥100k giảm 15%
+                  Đơn ≥100k giảm 15k/100k
                 </span>
               </div>
             </div>
@@ -617,11 +650,13 @@ export class JollibeeApp {
     if (!product) return;
     const isCombo = Boolean(product.is_combo);
     const originalPrice = Number(product.price) || 0;
+    const discount = originalPrice >= 100000 ? Math.floor(originalPrice / 100000) * 15000 : 0;
+    const displayPrice = originalPrice - discount;
 
     this.imageModal.open({
       title: product.name,
       image: product.image,
-      price: originalPrice,
+      price: displayPrice,
       originalPrice: originalPrice,
       isCombo: isCombo,
       onAction: () => {

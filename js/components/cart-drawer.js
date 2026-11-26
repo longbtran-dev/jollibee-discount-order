@@ -106,6 +106,9 @@ export class CartDrawer {
   }
 
   setOrderType(type) {
+    if (this._isOpen) {
+      this._saveFormInputs();
+    }
     this.orderType = type;
     const container = typeof document !== 'undefined' ? document.getElementById(this.containerId) : null;
     if (this._isOpen || (container && container.innerHTML && container.innerHTML.trim())) {
@@ -795,7 +798,11 @@ export class CartDrawer {
       newScrollEl.scrollTop = prevScrollTop;
     }
 
-    bindMouseDragScroll(container.querySelector('.mouse-drag-scroll'));
+    if (typeof container.querySelectorAll === 'function') {
+      container.querySelectorAll('.mouse-drag-scroll').forEach(el => bindMouseDragScroll(el));
+    } else if (typeof container.querySelector === 'function') {
+      bindMouseDragScroll(container.querySelector('.mouse-drag-scroll'));
+    }
 
     // Khôi phục tiêu điểm bàn phím cho nút vừa bấm (VD: nhấn liên tiếp Enter trên nút +)
     if (focusRestoreInfo && panel && typeof panel.querySelectorAll === 'function') {

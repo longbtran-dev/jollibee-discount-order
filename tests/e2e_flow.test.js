@@ -176,5 +176,37 @@ describe('End-to-End System Integration Flow', () => {
     const suggestions = app.getUpsellSuggestions(20000);
     assert.ok(Array.isArray(suggestions) && suggestions.length > 0 && suggestions.length <= 3);
     suggestions.forEach(item => assert.equal(Boolean(item.is_combo), false));
+
+    // Khi đang lọc từ khóa chỉ còn 1 mục, bấm vào Tab danh mục khác phải tự xóa bộ lọc để cuộn tới mục đó
+    const searchEl = { value: 'burger', focus() {} };
+    const clearClasses = new Set();
+    const clearEl = { classList: { add: c => clearClasses.add(c), remove: c => clearClasses.delete(c) } };
+    const mockSection = { getBoundingClientRect: () => ({ top: 300 }) };
+    global.window.scrollY = 0;
+    global.window.scrollTo = () => {};
+    global.document.getElementById = (id) => {
+      if (id === 'menu-sections-container') return menuContainer;
+      if (id === 'menu-search-input') return searchEl;
+      if (id === 'clear-search-btn') return clearEl;
+      if (id === 'section-thuc-uong' && searchEl.value === '') return mockSection;
+      return null;
+    };
+
+    app.renderMenuSections('burger');
+    app.scrollToCategory('thuc-uong');
+    assert.equal(searchEl.value, '');
+    assert.ok(clearClasses.has('hidden'));
+    assert.equal(app.activeCategorySlug, 'thuc-uong');
+
+    // Khi kết thúc cuộn lập trình (_finishCategoryScroll), tab vừa bấm không bị ghi đè ngược sang mục cuối trang
+    app._finishCategoryScroll();
+    assert.equal(app.activeCategorySlug, 'thuc-uong');
+
+    // Mở xem ảnh món >= 100k hiển thị đúng giá sau chiết khấu và giá gốc gạch ngang
+    let previewPayload = null;
+    app.imageModal = { open: (opts) => { previewPayload = opts; } };
+    app.openProductImagePreview({ id: 'c_145', name: 'Combo 145k', price: 145000, image: '', is_combo: true });
+    assert.equal(previewPayload.price, 130000);
+    assert.equal(previewPayload.originalPrice, 145000);
   });
 });
