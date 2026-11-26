@@ -247,6 +247,8 @@ describe('End-to-End System Integration Flow', () => {
     assert.ok(!indexHtml.includes('top-btn-delivery'), 'Header không còn nút Giao Tận Nơi gây rối mắt');
     assert.ok(!indexHtml.includes('top-btn-dinein'), 'Header không còn nút Ăn Tại Quán gây rối mắt');
     assert.ok(indexHtml.includes('marquee-track'), 'Banner đầu trang có hiệu ứng chạy chữ liên tục từ phải sang trái');
+    const inputCss = fs.readFileSync('css/input.css', 'utf8');
+    assert.ok(!inputCss.includes('.marquee-viewport:hover'), 'Di chuột vào banner đầu trang vẫn chạy liên tục không bị dừng');
     assert.ok(indexHtml.includes('header-zalo-btn'), 'Header có nút liên hệ nhanh Zalo');
     assert.ok(indexHtml.includes('header-fb-btn'), 'Header có nút liên hệ nhanh Facebook');
     assert.ok(indexHtml.includes('https://www.facebook.com/trnblng'), 'Gắn sẵn link Facebook chủ shop');

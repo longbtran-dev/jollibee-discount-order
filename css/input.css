@@ -93,11 +93,6 @@ body {
   animation: marquee-scroll 30s linear infinite;
   will-change: transform;
 }
-.marquee-viewport:hover .marquee-track,
-.marquee-viewport:active .marquee-track,
-body.overflow-hidden .marquee-track {
-  animation-play-state: paused;
-}
 
 /* Hiệu ứng chuyển tab mượt mà 60fps (không chớp giật / reload) */
 @keyframes tab-fade-in {
