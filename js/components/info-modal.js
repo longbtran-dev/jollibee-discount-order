@@ -1,8 +1,8 @@
 /**
- * Thành phần Bảng Thông Tin Shop (InfoModal):
- * 1. Hướng dẫn đặt đơn & Khung phát Video thông minh (tự động nhận diện YouTube / Shorts / MP4)
- * 2. Đánh giá / Feedback thực tế từ khách hàng cũ
- * 3. Chính sách chiết khấu, chuẩn bị đơn & cam kết chính hãng
+ * Thành phần Bảng Thông Tin Shop (InfoModal) — Tối ưu hóa 60fps:
+ * - Không dùng backdrop-blur gây nghẽn GPU trên di động
+ * - Dựng sẵn 3 tab trong DOM & trượt thanh chọn (Segmented Sliding Pill) bằng GPU translate3d
+ * - Chuyển tab tức thì 0ms không reload modal, không chớp trắng, không mất trạng thái Video
  */
 import {
   escapeHtml,
@@ -23,6 +23,8 @@ import {
   IconCheckCircle
 } from '../icons.js';
 
+const TAB_ORDER = ['guide', 'reviews', 'policy'];
+
 /**
  * Phân tích URL video an toàn sang cấu hình nhúng (YouTube, YouTube Shorts, MP4 hoặc link ngoài)
  * @param {string} rawUrl
@@ -33,13 +35,11 @@ export function resolveVideoEmbed(rawUrl) {
   const trimmed = rawUrl.trim();
   if (!trimmed) return null;
 
-  // Chặn các giao thức nguy hiểm (javascript:, data:, vbscript:)
   if (/^(javascript|data|vbscript):/i.test(trimmed)) return null;
   if (!/^(https?:\/\/|videos\/|\.\/videos\/|\/videos\/)/i.test(trimmed) && !/\.(mp4|webm|ogg)(\?.*)?$/i.test(trimmed)) {
     return null;
   }
 
-  // 1. Nhận diện YouTube watch?v= / youtu.be/ / youtube.com/shorts/ / youtube.com/embed/
   const ytMatch = trimmed.match(
     /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{6,20})/i
   );
@@ -50,7 +50,6 @@ export function resolveVideoEmbed(rawUrl) {
     };
   }
 
-  // 2. Nhận diện file video trực tiếp (.mp4, .webm, .ogg)
   if (/\.(mp4|webm|ogg)(\?.*)?$/i.test(trimmed)) {
     return {
       type: 'video',
@@ -58,7 +57,6 @@ export function resolveVideoEmbed(rawUrl) {
     };
   }
 
-  // 3. Link ngoài hợp lệ khác (VD: link video TikTok / Facebook Reel)
   if (/^https?:\/\//i.test(trimmed)) {
     return {
       type: 'link',
@@ -76,6 +74,7 @@ export class InfoModal {
     this.activeTab = 'guide'; // 'guide' | 'reviews' | 'policy'
     this._isOpen = false;
     this._releaseFocusTrap = null;
+    this._renderedVideoUrl = null;
   }
 
   getContainer() {
@@ -89,7 +88,7 @@ export class InfoModal {
   }
 
   open(tab = 'guide') {
-    this.activeTab = ['guide', 'reviews', 'policy'].includes(tab) ? tab : 'guide';
+    this.activeTab = TAB_ORDER.includes(tab) ? tab : 'guide';
     if (!this._isOpen) {
       this._isOpen = true;
       registerOpenModal('info-modal', () => this.close());
@@ -98,10 +97,55 @@ export class InfoModal {
   }
 
   switchTab(tab) {
-    if (!['guide', 'reviews', 'policy'].includes(tab)) return;
+    if (!TAB_ORDER.includes(tab)) return;
+    if (this.activeTab === tab && this._renderedVideoUrl === (this.config?.guideVideoUrl || '')) return;
     this.activeTab = tab;
-    if (this._isOpen) {
+    if (!this._isOpen) return;
+
+    const container = this.getContainer();
+    const panel = typeof container.querySelector === 'function' ? container.querySelector('#info-modal-panel') : null;
+
+    // Nếu guideVideoUrl vừa thay đổi động hoặc môi trường test tối giản chưa giữ panel -> dựng lại 1 lần
+    if (!panel || this._renderedVideoUrl !== (this.config?.guideVideoUrl || '')) {
       this.render();
+      return;
+    }
+
+    this._syncActiveTabDOM(panel);
+  }
+
+  _syncActiveTabDOM(panel) {
+    const activeIdx = Math.max(0, TAB_ORDER.indexOf(this.activeTab));
+
+    const indicator = typeof panel.querySelector === 'function' ? panel.querySelector('#info-tab-indicator') : null;
+    if (indicator && indicator.style) {
+      indicator.style.transform = `translate3d(${activeIdx * 100}%, 0, 0)`;
+    }
+
+    if (typeof panel.querySelectorAll === 'function') {
+      panel.querySelectorAll('.info-modal-tab-btn').forEach(btn => {
+        const isMatch = btn.dataset?.tab === this.activeTab;
+        btn.setAttribute?.('aria-selected', isMatch ? 'true' : 'false');
+        btn.className = `info-modal-tab-btn relative z-10 py-2 px-2 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 select-none ${
+          isMatch ? 'text-white' : 'text-gray-700 hover:text-gray-950'
+        }`;
+      });
+
+      panel.querySelectorAll('[data-tab-panel]').forEach(tabPanel => {
+        const isMatch = tabPanel.dataset?.tabPanel === this.activeTab;
+        if (isMatch) {
+          tabPanel.classList.remove('hidden');
+          tabPanel.classList.add('block', 'animate-tab-fade');
+        } else {
+          tabPanel.classList.remove('block', 'animate-tab-fade');
+          tabPanel.classList.add('hidden');
+        }
+      });
+    }
+
+    const scrollBody = typeof panel.querySelector === 'function' ? panel.querySelector('.info-modal-scroll-body') : null;
+    if (scrollBody) {
+      scrollBody.scrollTop = 0;
     }
   }
 
@@ -112,6 +156,7 @@ export class InfoModal {
     }
     if (!this._isOpen) return;
     this._isOpen = false;
+    this._renderedVideoUrl = null;
     const container = typeof document !== 'undefined' ? document.getElementById(this.containerId) : null;
     if (container) container.innerHTML = '';
     unregisterOpenModal('info-modal');
@@ -325,24 +370,24 @@ export class InfoModal {
 
   render() {
     const container = this.getContainer();
+    const existingPanel = typeof container.querySelector === 'function' ? container.querySelector('#info-modal-panel') : null;
+
+    if (existingPanel && this._renderedVideoUrl === (this.config?.guideVideoUrl || '')) {
+      this._syncActiveTabDOM(existingPanel);
+      return;
+    }
+
+    this._renderedVideoUrl = this.config?.guideVideoUrl || '';
+    const activeIdx = Math.max(0, TAB_ORDER.indexOf(this.activeTab));
 
     const tabBtnClass = (tabKey) =>
-      `info-modal-tab-btn flex-1 py-2 px-2 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition active:scale-95 ${
-        this.activeTab === tabKey
-          ? 'bg-[#d71920] text-white shadow-sm'
-          : 'text-gray-700 hover:bg-gray-200/70'
+      `info-modal-tab-btn relative z-10 py-2 px-2 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-colors duration-150 select-none ${
+        this.activeTab === tabKey ? 'text-white' : 'text-gray-700 hover:text-gray-950'
       }`;
 
-    const bodyContentHtml =
-      this.activeTab === 'reviews'
-        ? this._buildReviewsTabHtml()
-        : this.activeTab === 'policy'
-          ? this._buildPolicyTabHtml()
-          : this._buildGuideTabHtml();
-
     container.innerHTML = `
-      <div id="info-modal-backdrop" class="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-backdrop" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
-        <div id="info-modal-panel" class="relative w-full max-w-lg max-h-[90vh] bg-gray-50 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-modal-panel border border-gray-100">
+      <div id="info-modal-backdrop" class="fixed inset-0 z-[120] bg-black/60 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-backdrop" role="dialog" aria-modal="true" aria-labelledby="info-modal-title">
+        <div id="info-modal-panel" class="relative w-full max-w-lg max-h-[88vh] bg-gray-50 rounded-t-3xl sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-modal-panel transform-gpu will-change-transform border border-gray-100">
           <!-- Header -->
           <div class="flex items-center justify-between px-4 py-3.5 bg-[#d71920] text-white flex-shrink-0">
             <h3 id="info-modal-title" class="font-extrabold text-sm sm:text-base truncate pr-2">
@@ -353,36 +398,58 @@ export class InfoModal {
             </button>
           </div>
 
-          <!-- Switchable 3-Tab Segmented Control -->
-          <div class="px-3.5 pt-3 pb-2 bg-white border-b border-gray-200 flex-shrink-0">
-            <div class="bg-gray-100 p-1 rounded-2xl flex items-center gap-1" role="tablist" aria-label="Chuyên mục thông tin">
+          <!-- Switchable 3-Tab Segmented Control (GPU Sliding Indicator) -->
+          <div class="px-3.5 pt-3 pb-2.5 bg-white border-b border-gray-200 flex-shrink-0">
+            <div class="relative bg-gray-100 p-1 rounded-2xl grid grid-cols-3" role="tablist" aria-label="Chuyên mục thông tin">
+              <div id="info-tab-indicator" aria-hidden="true"
+                class="pointer-events-none absolute top-1 bottom-1 left-1 w-[calc((100%-0.5rem)/3)] rounded-xl bg-[#d71920] shadow-sm transition-transform duration-200 ease-out will-change-transform"
+                style="transform: translate3d(${activeIdx * 100}%, 0, 0);"></div>
+
               <button type="button" role="tab" aria-selected="${this.activeTab === 'guide' ? 'true' : 'false'}" data-tab="guide" class="${tabBtnClass('guide')}">
-                ${IconPlayCircle('w-3.5 h-3.5')}
+                ${IconPlayCircle('w-3.5 h-3.5 flex-shrink-0')}
                 <span>Hướng dẫn</span>
               </button>
               <button type="button" role="tab" aria-selected="${this.activeTab === 'reviews' ? 'true' : 'false'}" data-tab="reviews" class="${tabBtnClass('reviews')}">
-                ${IconStar('w-3.5 h-3.5')}
+                ${IconStar('w-3.5 h-3.5 flex-shrink-0')}
                 <span>Feedback</span>
               </button>
               <button type="button" role="tab" aria-selected="${this.activeTab === 'policy' ? 'true' : 'false'}" data-tab="policy" class="${tabBtnClass('policy')}">
-                ${IconShieldCheck('w-3.5 h-3.5')}
+                ${IconShieldCheck('w-3.5 h-3.5 flex-shrink-0')}
                 <span>Chính sách</span>
               </button>
             </div>
           </div>
 
-          <!-- Scrollable Content -->
-          <div class="p-4 overflow-y-auto flex-1 overscroll-contain">
-            ${bodyContentHtml}
+          <!-- Pre-mounted 3 Tab Panels (Chuyển tab tức thì không reload DOM) -->
+          <div class="info-modal-scroll-body p-4 overflow-y-auto flex-1 overscroll-contain">
+            <div data-tab-panel="guide" class="${this.activeTab === 'guide' ? 'block' : 'hidden'}">
+              ${this._buildGuideTabHtml()}
+            </div>
+            <div data-tab-panel="reviews" class="${this.activeTab === 'reviews' ? 'block' : 'hidden'}">
+              ${this._buildReviewsTabHtml()}
+            </div>
+            <div data-tab-panel="policy" class="${this.activeTab === 'policy' ? 'block' : 'hidden'}">
+              ${this._buildPolicyTabHtml()}
+            </div>
           </div>
         </div>
       </div>
     `;
 
+    const panelEl = typeof container.querySelector === 'function' ? container.querySelector('#info-modal-panel') : null;
+    if (panelEl && typeof panelEl.addEventListener === 'function') {
+      panelEl.addEventListener(
+        'animationend',
+        () => {
+          panelEl.classList?.remove('animate-modal-panel');
+        },
+        { once: true }
+      );
+    }
+
     if (this._releaseFocusTrap) {
       this._releaseFocusTrap();
     }
-    const panelEl = typeof container.querySelector === 'function' ? container.querySelector('#info-modal-panel') : null;
     this._releaseFocusTrap = trapFocusInModal(panelEl || container);
 
     const closeBtn = typeof document.getElementById === 'function' ? document.getElementById('info-modal-close-btn') : null;

@@ -137,7 +137,7 @@ export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
 
   const modal = document.createElement('div');
   modal.id = 'time-picker-modal';
-  modal.className = 'fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-backdrop';
+  modal.className = 'fixed inset-0 z-[150] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 animate-backdrop';
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-labelledby', 'time-picker-title');

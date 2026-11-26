@@ -133,7 +133,7 @@ export function showConfirmDialog({ title, message, confirmText = 'Xác nhận x
 
   const dialog = document.createElement('div');
   dialog.id = 'app-confirm-dialog';
-  dialog.className = 'fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop';
+  dialog.className = 'fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 animate-backdrop';
   dialog.setAttribute('role', 'alertdialog');
   dialog.setAttribute('aria-modal', 'true');
   dialog.setAttribute('aria-labelledby', 'confirm-dialog-title');
@@ -209,7 +209,7 @@ export function showCopyFallbackModal(orderText, notifyFn = showToast) {
 
   const modal = document.createElement('div');
   modal.id = 'app-copy-modal';
-  modal.className = 'fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop';
+  modal.className = 'fixed inset-0 z-[150] flex items-center justify-center p-4 bg-black/60 animate-backdrop';
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-labelledby', 'copy-modal-title');
@@ -304,7 +304,7 @@ export function showOrderCopiedModal({ zaloLink = 'https://zalo.me/0985194873', 
 
   const modal = document.createElement('div');
   modal.id = 'app-order-copied-modal';
-  modal.className = 'fixed inset-0 z-[160] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop';
+  modal.className = 'fixed inset-0 z-[160] flex items-center justify-center p-4 bg-black/60 animate-backdrop';
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-labelledby', 'order-copied-title');
