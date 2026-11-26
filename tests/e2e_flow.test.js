@@ -246,7 +246,13 @@ describe('End-to-End System Integration Flow', () => {
     const indexHtml = fs.readFileSync('index.html', 'utf8');
     assert.ok(!indexHtml.includes('top-btn-delivery'), 'Header không còn nút Giao Tận Nơi gây rối mắt');
     assert.ok(!indexHtml.includes('top-btn-dinein'), 'Header không còn nút Ăn Tại Quán gây rối mắt');
-    assert.ok(indexHtml.includes('Ăn Ngon Jollibee Rẻ Hơn Tới 15%'));
+    assert.ok(indexHtml.includes('marquee-track'), 'Banner đầu trang có hiệu ứng chạy chữ liên tục từ phải sang trái');
+    assert.ok(indexHtml.includes('header-zalo-btn'), 'Header có nút liên hệ nhanh Zalo');
+    assert.ok(indexHtml.includes('header-fb-btn'), 'Header có nút liên hệ nhanh Facebook');
+    assert.ok(indexHtml.includes('https://www.facebook.com/trnblng'), 'Gắn sẵn link Facebook chủ shop');
+    assert.ok(indexHtml.includes('data-info-tab="guide"'), 'Có nút mở Hướng dẫn & Video');
+    assert.ok(indexHtml.includes('data-info-tab="reviews"'), 'Có nút mở Feedback khách hàng');
+    assert.ok(indexHtml.includes('data-info-tab="policy"'), 'Có nút mở Chính sách đặt hộ');
     assert.ok(indexHtml.includes('&amp; Chốt Đơn') || indexHtml.includes('& Chốt Đơn'));
   });
 

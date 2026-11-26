@@ -5,6 +5,7 @@ import { Cart } from './cart.js';
 import { ComboModal } from './components/combo-modal.js';
 import { CartDrawer } from './components/cart-drawer.js';
 import { ImageModal } from './components/image-modal.js';
+import { InfoModal } from './components/info-modal.js';
 import { showToast, showUndoToast } from './components/ui-feedback.js';
 import { formatCurrency } from './order-message.js';
 import { bindMouseDragScroll } from './mouse-drag-scroll.js';
@@ -30,6 +31,7 @@ export class JollibeeApp {
     this.lastOriginalTotal = this.cart.getTotals(this.orderType, this.config).originalTotal;
 
     this.imageModal = new ImageModal();
+    this.infoModal = new InfoModal(this.config);
     this.comboModal = new ComboModal('combo-modal-container', this.imageModal);
     this.cartDrawer = new CartDrawer(
       this.cart,
@@ -112,9 +114,39 @@ export class JollibeeApp {
       const subEl = document.getElementById('shop-subtitle');
       if (subEl) subEl.innerText = this.config.shopSubtitle;
     }
-    if (this.config.bannerNotice) {
+
+    const marqueeTrack = document.getElementById('banner-marquee-track');
+    const messages = Array.isArray(this.config.bannerMessages) && this.config.bannerMessages.length > 0
+      ? this.config.bannerMessages
+      : (this.config.bannerNotice ? [this.config.bannerNotice] : []);
+
+    if (marqueeTrack && messages.length > 0) {
+      const buildPass = (hidden = false) => `
+        <div class="inline-flex items-center"${hidden ? ' aria-hidden="true"' : ''}>
+          ${messages
+            .map(
+              msg => `
+                <span class="px-5 inline-flex items-center gap-1.5">${escapeHtml(msg)}</span>
+                <span class="text-amber-700/60" aria-hidden="true">•</span>
+              `
+            )
+            .join('')}
+        </div>
+      `;
+      marqueeTrack.innerHTML = buildPass(false) + buildPass(true);
+    } else if (this.config.bannerNotice) {
       const bannerEl = document.getElementById('banner-text');
       if (bannerEl) bannerEl.innerText = this.config.bannerNotice;
+    }
+
+    if (this.config.zaloLink) {
+      const zaloBtn = document.getElementById('header-zalo-btn');
+      if (zaloBtn) zaloBtn.href = this.config.zaloLink;
+    }
+    const fbLink = this.config.facebookUrl || this.config.facebookMessengerUrl;
+    if (fbLink) {
+      const fbBtn = document.getElementById('header-fb-btn');
+      if (fbBtn) fbBtn.href = fbLink;
     }
     if (this.config.hotline) {
       const hotlineBtn = document.getElementById('header-hotline-btn');
@@ -864,6 +896,14 @@ export class JollibeeApp {
     });
     document.getElementById('btn-scroll-top')?.addEventListener('click', () => {
       this.scrollToTop();
+    });
+
+    // 2. Mở bảng Thông tin Shop (Hướng dẫn Video • Feedback • Chính sách)
+    document.getElementById('info-hub-bar')?.addEventListener('click', e => {
+      const btn = e.target?.closest?.('[data-info-tab]');
+      if (btn && btn.dataset.infoTab) {
+        this.infoModal.open(btn.dataset.infoTab);
+      }
     });
 
     // 3. Ủy quyền sự kiện (Event Delegation) cho thanh Category Tabs

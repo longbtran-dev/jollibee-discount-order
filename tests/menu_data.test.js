@@ -71,6 +71,11 @@ describe('Menu Data Schema', () => {
     assert.ok(content.includes('productBadges'));
     assert.ok(content.includes('0985194873'), 'Số điện thoại hotline/Zalo phải là 0985194873');
     assert.ok(!content.includes('0900000000'), 'Không còn số điện thoại giả lập 0900000000');
+    assert.ok(content.includes('https://www.facebook.com/trnblng'), 'Phải cấu hình đúng link Facebook của chủ shop');
+    assert.ok(content.includes('bannerMessages'), 'Phải có danh sách dòng chữ chạy bannerMessages');
+    assert.ok(content.includes('guideVideoUrl'), 'Phải có trường cấu hình video hướng dẫn guideVideoUrl');
+    assert.ok(content.includes('customerReviews'), 'Phải có danh sách đánh giá khách hàng customerReviews');
+    assert.ok(content.includes('shopPolicies'), 'Phải có danh sách chính sách shopPolicies');
   });
 
   it('danh mục đầu trang là Combo Bán Chạy Nhất và xếp Cặp Đôi Ăn Ý lên đầu, các combo Một Mình xuống dưới', () => {

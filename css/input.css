@@ -76,6 +76,28 @@ body {
   animation: input-shake 0.35s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
+/* Hiệu ứng chữ chạy ngang liên tục (Marquee phải sang trái mượt 60fps) */
+@keyframes marquee-scroll {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(-50%, 0, 0); }
+}
+.marquee-viewport {
+  overflow: hidden;
+  white-space: nowrap;
+  position: relative;
+}
+.marquee-track {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  animation: marquee-scroll 30s linear infinite;
+  will-change: transform;
+}
+.marquee-viewport:hover .marquee-track,
+.marquee-viewport:active .marquee-track {
+  animation-play-state: paused;
+}
+
 /* Hiệu ứng lấp lánh (Shimmer) cho thanh ưu đãi */
 @keyframes shimmer-sweep {
   0% { transform: translateX(-100%); }
@@ -184,7 +206,8 @@ body {
     transition-duration: 0.01ms !important;
   }
   .shimmer-effect::after,
-  .has-items-glow::after {
+  .has-items-glow::after,
+  .marquee-track {
     animation: none !important;
   }
 }

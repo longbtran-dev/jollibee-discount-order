@@ -23,7 +23,8 @@ import { fireOrderCelebration } from '../effects.js';
 import {
   showToast as uiShowToast,
   showConfirmDialog as uiShowConfirmDialog,
-  showCopyFallbackModal as uiShowCopyFallbackModal
+  showCopyFallbackModal as uiShowCopyFallbackModal,
+  showOrderCopiedModal as uiShowOrderCopiedModal
 } from './ui-feedback.js';
 import { openTimeWheelPicker } from './time-picker.js';
 import {
@@ -1247,6 +1248,11 @@ export class CartDrawer {
         const success = await copyToClipboard(orderText);
         if (success) {
           this.showToast('Đã sao chép nội dung đơn hàng! Bạn có thể dán gửi cho shop.', 'success');
+          uiShowOrderCopiedModal({
+            zaloLink: this.config?.zaloLink || 'https://zalo.me/0985194873',
+            facebookUrl: this.config?.facebookUrl || 'https://www.facebook.com/trnblng',
+            hotline: this.config?.hotline || '0985194873'
+          });
         } else {
           this.showCopyFallbackModal(orderText);
         }

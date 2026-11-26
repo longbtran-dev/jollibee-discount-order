@@ -14,7 +14,9 @@ import {
   IconTrash,
   IconCopy,
   IconX,
-  IconRotateCcw
+  IconRotateCcw,
+  IconZalo,
+  IconFacebook
 } from '../icons.js';
 
 /**
@@ -285,5 +287,80 @@ export function showCopyFallbackModal(orderText, notifyFn = showToast) {
         if (typeof notifyFn === 'function') notifyFn('Vui lòng nhấn giữ nội dung và chọn Sao Chép', 'info');
       }
     }
+  });
+}
+
+/**
+ * Hộp thoại điều hướng nhanh sang Zalo / Facebook ngay sau khi khách sao chép đơn thành công
+ */
+export function showOrderCopiedModal({ zaloLink = 'https://zalo.me/0985194873', facebookUrl = 'https://www.facebook.com/trnblng', hotline = '0985194873' } = {}) {
+  if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
+
+  const existing = typeof document.getElementById === 'function' ? document.getElementById('app-order-copied-modal') : null;
+  if (existing) {
+    unregisterOpenModal('order-copied-modal');
+    existing.remove();
+  }
+
+  const modal = document.createElement('div');
+  modal.id = 'app-order-copied-modal';
+  modal.className = 'fixed inset-0 z-[160] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-backdrop';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-labelledby', 'order-copied-title');
+
+  modal.innerHTML = `
+    <div id="app-order-copied-panel" class="bg-white rounded-3xl max-w-sm w-full p-5 sm:p-6 text-center shadow-2xl space-y-4 border border-gray-100 animate-modal-panel">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-inner">
+        ${IconCheckCircle('w-8 h-8')}
+      </div>
+      <div class="space-y-1">
+        <h4 id="order-copied-title" class="text-base sm:text-lg font-black text-gray-900">Đã Sao Chép Đơn Thành Công!</h4>
+        <p class="text-xs text-gray-600 leading-relaxed">
+          Bấm mở <b>Zalo</b> hoặc <b>Facebook</b> của shop bên dưới, sau đó <b>Dán (Paste)</b> nội dung vừa sao chép để chốt đơn ngay nhé!
+        </p>
+      </div>
+      <div class="space-y-2.5 pt-1">
+        <a href="${escapeHtml(zaloLink)}" target="_blank" rel="noopener noreferrer"
+          class="w-full py-3 px-4 rounded-xl bg-[#0068FF] hover:bg-[#0057d9] text-white font-extrabold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition active:scale-95">
+          ${IconZalo('w-5 h-5')}
+          <span>Mở Zalo Shop (${escapeHtml(hotline)})</span>
+        </a>
+        <a href="${escapeHtml(facebookUrl)}" target="_blank" rel="noopener noreferrer"
+          class="w-full py-3 px-4 rounded-xl bg-[#1877F2] hover:bg-[#1464cc] text-white font-extrabold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition active:scale-95">
+          ${IconFacebook('w-4 h-4')}
+          <span>Mở Facebook Shop Gửi Đơn</span>
+        </a>
+        <button type="button" id="btn-close-order-copied" class="w-full py-2 px-4 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-gray-100 font-bold text-xs transition">
+          Đóng lại
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  const panelEl = modal.querySelector('#app-order-copied-panel');
+  const releaseFocusTrap = trapFocusInModal(panelEl || modal);
+
+  let isClosed = false;
+  const close = () => {
+    if (isClosed) return;
+    isClosed = true;
+    unregisterOpenModal('order-copied-modal');
+    releaseFocusTrap();
+    modal.classList.add('opacity-0', 'transition-opacity', 'duration-150');
+    setTimeout(() => modal.remove(), 150);
+  };
+
+  registerOpenModal('order-copied-modal', close);
+
+  modal.querySelector('#btn-close-order-copied')?.addEventListener('click', close);
+
+  let isDownOnBackdrop = false;
+  modal.addEventListener('mousedown', (e) => { isDownOnBackdrop = e.target === modal; });
+  modal.addEventListener('touchstart', (e) => { isDownOnBackdrop = e.target === modal; }, { passive: true });
+  modal.addEventListener('click', (e) => {
+    if (isDownOnBackdrop && e.target === modal) close();
+    isDownOnBackdrop = false;
   });
 }
