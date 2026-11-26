@@ -56,7 +56,7 @@ export class CartDrawer {
     this.getUpsellSuggestions = extraOptions.getUpsellSuggestions || null;
     this.onQuickAddUpsell = extraOptions.onQuickAddUpsell || null;
 
-    this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
+    this.orderType = null; // Khách chủ động chọn 'delivery' hoặc 'dinein' khi mở giỏ hàng
     this.containerId = 'cart-drawer-container';
     this._isOpen = false;
     this._releaseFocusTrap = null;
@@ -215,6 +215,26 @@ export class CartDrawer {
           warningEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
           warningEl.classList.add('animate-shake');
           setTimeout(() => warningEl.classList.remove('animate-shake'), 400);
+        }
+      }
+      return false;
+    }
+
+    if (!this.orderType) {
+      const msg = 'Vui lòng chọn "Giao Tận Nơi" hoặc "Ăn Tại Quán" để tiếp tục!';
+      this.lastValidationError = msg;
+      this.showToast(msg, 'warning');
+
+      if (typeof document !== 'undefined') {
+        const selectorCard = document.getElementById('order-type-selector-card');
+        if (selectorCard) {
+          if (typeof selectorCard.scrollIntoView === 'function') {
+            selectorCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+          selectorCard.classList?.add('animate-shake', 'ring-2', 'ring-red-400', 'border-red-400');
+          setTimeout(() => {
+            selectorCard.classList?.remove('animate-shake', 'ring-2', 'ring-red-400', 'border-red-400');
+          }, 800);
         }
       }
       return false;
@@ -592,21 +612,92 @@ export class CartDrawer {
       });
     }
 
+    const isDelivery = this.orderType === 'delivery';
+    const isDinein = this.orderType === 'dinein';
+    const freeshipThreshold = this.config?.freeshipThreshold || 200000;
+    const deliveryFeeHint =
+      pricing.originalTotal >= freeshipThreshold ? 'Miễn phí ship (0đ)' : 'Ship 10k • ≥200k Freeship';
+
+    const orderTypeSelectorHtml = items.length > 0 ? `
+      <div id="order-type-selector-card" class="rounded-2xl border-2 p-3.5 shadow-sm transition-all duration-300 ${
+        !this.orderType
+          ? 'bg-amber-50/70 border-amber-300'
+          : 'bg-white border-gray-200'
+      }" role="group" aria-label="Chọn hình thức nhận đơn">
+        <div class="flex items-center justify-between gap-2 mb-2.5">
+          <span class="text-xs font-extrabold text-gray-900 uppercase tracking-wide">
+            ${!this.orderType ? 'Bạn muốn nhận đơn theo cách nào?' : 'Hình thức nhận đơn'}
+          </span>
+          <span class="text-[10px] font-black px-2 py-0.5 rounded-full flex-shrink-0 ${
+            !this.orderType
+              ? 'bg-red-100 text-[#d71920]'
+              : 'bg-green-100 text-green-800'
+          }">
+            ${!this.orderType ? 'Bắt buộc chọn *' : 'Đã chọn'}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5">
+          <button type="button" id="btn-type-delivery" aria-pressed="${isDelivery ? 'true' : 'false'}"
+            class="relative rounded-xl border-2 p-3 text-left transition active:scale-95 flex flex-col gap-1.5 ${
+              isDelivery
+                ? 'border-[#d71920] bg-red-50/70 ring-2 ring-red-200/70 shadow-sm'
+                : 'border-gray-200 bg-white hover:border-red-300 hover:bg-red-50/20'
+            }">
+            <div class="flex items-center justify-between w-full">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center ${
+                isDelivery ? 'bg-[#d71920] text-white' : 'bg-red-50 text-[#d71920]'
+              }">
+                ${IconBike('w-4 h-4')}
+              </span>
+              ${isDelivery ? `<span class="text-[#d71920]">${IconCheckCircle('w-4 h-4')}</span>` : ''}
+            </div>
+            <div>
+              <div class="font-black text-xs sm:text-sm text-gray-900 leading-tight">Giao Tận Nơi</div>
+              <div class="text-[10px] font-bold mt-0.5 ${
+                pricing.originalTotal >= freeshipThreshold ? 'text-green-700' : 'text-gray-600'
+              }">${deliveryFeeHint}</div>
+            </div>
+          </button>
+
+          <button type="button" id="btn-type-dinein" aria-pressed="${isDinein ? 'true' : 'false'}"
+            class="relative rounded-xl border-2 p-3 text-left transition active:scale-95 flex flex-col gap-1.5 ${
+              isDinein
+                ? 'border-amber-500 bg-amber-50 ring-2 ring-amber-200/80 shadow-sm'
+                : 'border-gray-200 bg-white hover:border-amber-300 hover:bg-amber-50/30'
+            }">
+            <div class="flex items-center justify-between w-full">
+              <span class="w-8 h-8 rounded-lg flex items-center justify-center ${
+                isDinein ? 'bg-[#ffc72c] text-gray-950' : 'bg-amber-50 text-amber-800'
+              }">
+                ${IconUtensils('w-4 h-4')}
+              </span>
+              ${isDinein ? `<span class="text-amber-700">${IconCheckCircle('w-4 h-4')}</span>` : ''}
+            </div>
+            <div>
+              <div class="font-black text-xs sm:text-sm text-gray-900 leading-tight">Ăn Tại Quán</div>
+              <div class="text-[10px] font-bold text-green-700 mt-0.5">0đ phí ship • Tới quầy lấy</div>
+            </div>
+          </button>
+        </div>
+      </div>
+    ` : '';
+
+    let shippingRowText = 'Chọn hình thức nhận ở trên';
+    let shippingRowClass = 'text-amber-800';
+    if (isDinein) {
+      shippingRowText = '0đ (Ăn tại quán)';
+      shippingRowClass = 'text-green-700';
+    } else if (isDelivery) {
+      shippingRowText = pricing.shippingFee === 0 ? 'Miễn phí (Freeship)' : formatCurrency(pricing.shippingFee);
+      shippingRowClass = pricing.shippingFee === 0 ? 'text-green-700' : 'text-gray-800';
+    }
+
     const innerContentHtml = `
       <!-- Drawer Body Scrollable -->
       <div class="drawer-scroll-body flex-1 overflow-y-auto p-4 space-y-4 overscroll-contain">
         
-        <!-- Type Selector: Delivery vs Dine-in -->
-        <div class="bg-gray-100 p-1 rounded-xl flex items-center gap-1 border border-gray-200" role="group" aria-label="Chọn hình thức nhận đơn">
-          <button type="button" id="btn-type-delivery" aria-pressed="${this.orderType === 'delivery' ? 'true' : 'false'}" class="flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-95 ${this.orderType === 'delivery' ? 'bg-[#d71920] text-white shadow-sm' : 'text-gray-700 hover:text-gray-950'}">
-            ${IconBike('w-4 h-4')}
-            <span>Giao Tận Nơi</span>
-          </button>
-          <button type="button" id="btn-type-dinein" aria-pressed="${this.orderType === 'dinein' ? 'true' : 'false'}" class="flex-1 py-2.5 rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition active:scale-95 ${this.orderType === 'dinein' ? 'bg-[#ffc72c] text-gray-950 shadow-sm' : 'text-gray-700 hover:text-gray-950'}">
-            ${IconUtensils('w-4 h-4')}
-            <span>Ăn Tại Quán / Tới Lấy</span>
-          </button>
-        </div>
+        ${orderTypeSelectorHtml}
 
         <!-- Items List -->
         <div class="bg-white rounded-2xl border border-gray-200 p-3.5 shadow-sm">
@@ -618,7 +709,7 @@ export class CartDrawer {
         </div>
 
         ${items.length > 0 ? `
-          ${this.orderType === 'delivery' ? `
+          ${isDelivery ? `
             <div class="bg-amber-50/40 rounded-2xl border border-amber-200/80 p-3.5 shadow-sm space-y-3">
               <div class="text-xs font-extrabold text-gray-800 uppercase tracking-wider flex items-center gap-1.5">
                 <span class="text-amber-700">${IconFileText('w-4 h-4')}</span>
@@ -643,6 +734,14 @@ export class CartDrawer {
                 <label for="customer-note" class="block text-[11px] font-bold text-gray-700 mb-1">Ghi chú cho shipper (nếu có)</label>
                 <input type="text" id="customer-note" value="${escapeHtml(this.customerInfo.note)}" placeholder="Ví dụ: Gọi trước khi giao, gửi bảo vệ..." 
                   class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+              </div>
+            </div>
+          ` : isDinein ? `
+            <div class="p-3 bg-amber-50/70 border border-amber-200 rounded-2xl text-xs text-amber-950 flex items-start gap-2.5 shadow-sm">
+              <span class="text-amber-700 flex-shrink-0 mt-0.5">${IconUtensils('w-4 h-4')}</span>
+              <div class="leading-snug">
+                <span class="font-extrabold">Ăn tại quán / Tới quầy nhận trực tiếp</span>
+                <span class="block text-[11px] text-gray-600 mt-0.5">Miễn 100% phí ship • Không cần điền địa chỉ nhận hàng.</span>
               </div>
             </div>
           ` : ''}
@@ -673,8 +772,8 @@ export class CartDrawer {
 
             <div class="flex justify-between text-xs sm:text-sm text-gray-700">
               <span>Phí giao hàng:</span>
-              <span class="font-bold ${pricing.shippingFee === 0 ? 'text-green-700' : 'text-gray-800'}">
-                ${this.orderType === 'dinein' ? '0đ (Ăn tại quán)' : (pricing.shippingFee === 0 ? 'Miễn phí (Freeship)' : formatCurrency(pricing.shippingFee))}
+              <span class="font-bold ${shippingRowClass}">
+                ${shippingRowText}
               </span>
             </div>
 
@@ -685,8 +784,8 @@ export class CartDrawer {
 
             <div class="pt-2 border-t border-gray-200 flex justify-between items-baseline">
               <div>
-                <span class="font-extrabold text-sm text-gray-900">Khách thực trả:</span>
-                <p class="text-[10px] text-gray-500">Cam kết không phát sinh phụ phí</p>
+                <span class="font-extrabold text-sm text-gray-900">${this.orderType ? 'Khách thực trả:' : 'Tạm tính sau giảm:'}</span>
+                <p class="text-[10px] text-gray-500">${this.orderType ? 'Cam kết không phát sinh phụ phí' : 'Chưa tính phí ship (nếu giao hàng < 200k)'}</p>
               </div>
               <span class="font-black text-2xl text-red-600">${formatCurrency(pricing.finalTotal)}</span>
             </div>
@@ -715,7 +814,7 @@ export class CartDrawer {
             <div class="p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl text-xs text-green-900 flex items-start gap-2.5 shadow-sm">
               <span class="text-green-600 flex-shrink-0 mt-0.5">${IconCheckCircle('w-4 h-4')}</span>
               <div class="flex-1 leading-snug">
-                <span class="font-extrabold text-green-800">Đã kích hoạt đặt hộ & giảm ngay -${formatCurrency(pricing.discountAmount)}${pricing.shippingFee === 0 && this.orderType === 'delivery' ? ' (Freeship)' : ''}!</span>
+                <span class="font-extrabold text-green-800">Đã kích hoạt đặt hộ & giảm ngay -${formatCurrency(pricing.discountAmount)}${pricing.shippingFee === 0 && isDelivery ? ' (Freeship)' : ''}!</span>
                 <span class="text-green-700 block text-[11px] mt-0.5">
                   💡 <b>Mẹo tiết kiệm</b>: Thêm <b>${formatCurrency(((Math.floor(pricing.originalTotal / 100000) + 1) * 100000) - pricing.originalTotal)}</b> nữa để được giảm thêm <b>15.000đ</b> (Tổng giảm ${formatCurrency((Math.floor(pricing.originalTotal / 100000) + 1) * 15000)})!
                 </span>
@@ -733,6 +832,10 @@ export class CartDrawer {
             <div class="p-2.5 bg-red-50 border border-red-200 rounded-xl text-center text-xs text-red-700 font-extrabold flex items-center justify-center gap-1.5 shadow-sm">
               ${IconAlertTriangle('w-4 h-4 text-red-600')}
               <span>Đơn chưa đạt tối thiểu 100.000đ để đặt hộ</span>
+            </div>
+          ` : !this.orderType ? `
+            <div class="p-2 bg-amber-50 border border-amber-200 rounded-xl text-center text-[11px] text-amber-950 font-extrabold flex items-center justify-center gap-1.5">
+              <span>👆 Chọn "Giao Tận Nơi" hoặc "Ăn Tại Quán" ở trên để chốt đơn</span>
             </div>
           ` : ''}
           <button type="button" id="btn-copy-order" class="w-full ${pricing.originalTotal < 100000 ? 'bg-red-400 opacity-85' : 'bg-[#d71920] hover:bg-[#b81218]'} text-white font-extrabold py-3 px-4 rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition text-sm whitespace-nowrap truncate">

@@ -128,6 +128,7 @@ describe('Cart & Order Message Formatter', () => {
     const cart = new Cart();
     cart.addItem({ id: 'c1', name: 'Combo 105k', price: 105000 });
     const drawer = new CartDrawer(cart, {});
+    drawer.orderType = 'delivery';
     drawer.showToast = (msg) => { toastOrAlertMsg = msg; };
     drawer.customerInfo = { name: 'Nguyễn Văn A', phone: '12345', address: '123 Cầu Giấy' };
     const isValid = drawer.validateForm();
@@ -141,6 +142,7 @@ describe('Cart & Order Message Formatter', () => {
     const cart = new Cart();
     cart.addItem({ id: 'c1', name: 'Combo 105k', price: 105000 });
     const drawer = new CartDrawer(cart, {});
+    drawer.orderType = 'delivery';
     drawer.showToast = (msg) => { toastOrAlertMsg = msg; };
     drawer.customerInfo = { name: 'Nguyễn Văn A', phone: '0987654321', address: '123 Cầu Giấy' };
     const isValid = drawer.validateForm();
@@ -182,11 +184,11 @@ describe('Cart & Order Message Formatter', () => {
     assert.equal(cart.getItems()[0].name, 'Gà Giòn');
   });
 
-  it('CartDrawer khởi tạo với debounced save và container chuẩn', () => {
+  it('CartDrawer khởi tạo chưa chọn mặc định hình thức nhận hàng (orderType = null)', () => {
     const cart = new Cart();
     const drawer = new CartDrawer(cart, {});
     assert.equal(typeof drawer._debouncedSaveStorage, 'function');
-    assert.equal(drawer.orderType, 'delivery');
+    assert.equal(drawer.orderType, null);
   });
 
   it('CartDrawer render lần đầu tạo modal shell và re-render giữ nguyên panel tránh chớp trắng', () => {
@@ -464,5 +466,61 @@ describe('Cart & Order Message Formatter', () => {
     drawer.close();
     assert.equal(getActiveModalCount(), 0);
     assert.equal(bodyClasses.has('overflow-hidden'), false);
+  });
+
+  it('bắt buộc khách chủ động chọn Giao Tận Nơi hoặc Ăn Tại Quán trong giỏ trước khi sao chép đơn', () => {
+    const mockInner = { innerHTML: '', querySelectorAll: () => [] };
+    const mockPanel = {
+      id: 'cart-drawer-panel',
+      classList: { remove: () => {} },
+      addEventListener: () => {},
+      querySelector: (sel) => (sel === '#cart-drawer-inner' ? mockInner : null),
+      querySelectorAll: () => []
+    };
+    let currentPanel = null;
+    const mockContainer = {
+      id: 'cart-drawer-container',
+      _html: '',
+      get innerHTML() { return this._html; },
+      set innerHTML(val) {
+        this._html = val;
+        currentPanel = val.includes('cart-drawer-panel') ? mockPanel : null;
+      },
+      querySelector: (sel) => (sel === '#cart-drawer-panel' ? currentPanel : null),
+      querySelectorAll: () => []
+    };
+
+    global.document = {
+      body: { classList: { add: () => {}, remove: () => {} }, appendChild: () => {} },
+      getElementById: (id) => (id === 'cart-drawer-container' ? mockContainer : null),
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    };
+
+    const cart = new Cart();
+    cart.addItem({ id: '158', name: 'Cặp Đôi Ăn Ý', price: 145000 });
+    const drawer = new CartDrawer(cart, {});
+    let toastMsg = '';
+    drawer.showToast = (msg) => { toastMsg = msg; };
+
+    drawer.open();
+    // 1. Chưa chọn hình thức nhận hàng -> hiện thẻ order-type-selector-card, ẩn form địa chỉ
+    assert.ok(mockContainer.innerHTML.includes('order-type-selector-card'));
+    assert.ok(!mockContainer.innerHTML.includes('id="customer-name"'));
+
+    // 2. Bấm sao chép đơn khi chưa chọn -> chặn và nhắc chọn hình thức nhận hàng
+    assert.equal(drawer.validateForm(), false);
+    assert.ok(toastMsg.includes('Giao Tận Nơi') || toastMsg.includes('Ăn Tại Quán'));
+
+    // 3. Khi chọn Giao Tận Nơi -> hiện form địa chỉ giao hàng
+    drawer.setOrderType('delivery');
+    assert.ok(mockInner.innerHTML.includes('id="customer-name"'));
+
+    // 4. Khi chọn Ăn Tại Quán -> ẩn form địa chỉ và cho phép chốt đơn ngay
+    drawer.setOrderType('dinein');
+    assert.ok(!mockInner.innerHTML.includes('id="customer-name"'));
+    assert.equal(drawer.validateForm(), true);
+
+    drawer.close();
   });
 });

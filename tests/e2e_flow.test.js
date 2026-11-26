@@ -234,5 +234,11 @@ describe('End-to-End System Integration Flow', () => {
     // Tìm kiếm "ban chay" cũng lọc ra đúng các món có gắn nhãn Bán chạy
     app.renderMenuSections('ban chay');
     assert.ok(menuContainer.innerHTML.includes('Cặp Đôi Ăn Ý'));
+
+    // Ứng dụng khởi tạo chưa chọn mặc định orderType và index.html đã gỡ bỏ nút chuyển đổi trên Header
+    assert.equal(app.orderType, null);
+    const indexHtml = fs.readFileSync('index.html', 'utf8');
+    assert.ok(!indexHtml.includes('top-btn-delivery'), 'Header không còn nút Giao Tận Nơi gây rối mắt');
+    assert.ok(!indexHtml.includes('top-btn-dinein'), 'Header không còn nút Ăn Tại Quán gây rối mắt');
   });
 });

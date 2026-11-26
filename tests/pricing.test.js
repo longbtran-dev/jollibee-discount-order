@@ -57,4 +57,14 @@ describe('Pricing Module', () => {
       finalTotal: 0
     });
   });
+
+  it('khi chưa chọn hình thức nhận hàng (orderType = null) thì tạm tính phí ship = 0đ', () => {
+    assert.equal(calculateShippingFee(145000, null), 0);
+    assert.deepEqual(calculateOrderPricing([{ price: 145000, quantity: 1 }], null), {
+      originalTotal: 145000,
+      discountAmount: 15000,
+      shippingFee: 0,
+      finalTotal: 130000
+    });
+  });
 });

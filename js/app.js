@@ -25,7 +25,7 @@ export class JollibeeApp {
     this.menuData = null;
     this.productMap = new Map();
     this.cart = new Cart();
-    this.orderType = 'delivery'; // 'delivery' hoặc 'dinein'
+    this.orderType = null; // null (chưa chọn), 'delivery' hoặc 'dinein'
     // Khởi tạo theo tổng giỏ hiện có từ localStorage để không nổ pháo hoa nhầm lúc mới tải trang / F5
     this.lastOriginalTotal = this.cart.getTotals(this.orderType, this.config).originalTotal;
 
@@ -57,38 +57,10 @@ export class JollibeeApp {
 
   setOrderType(type, updateDrawer = true) {
     this.orderType = type;
-    this.updateTopSwitcherUI();
     if (updateDrawer) {
       this.cartDrawer.setOrderType(type);
     }
     this.updateFloatingCart();
-  }
-
-  updateTopSwitcherUI() {
-    const btnDel = document.getElementById('top-btn-delivery');
-    const btnDin = document.getElementById('top-btn-dinein');
-    const iconDel = document.getElementById('top-icon-delivery');
-    const iconDin = document.getElementById('top-icon-dinein');
-    if (!btnDel || !btnDin) return;
-
-    const baseClass =
-      'w-full min-w-0 py-2 px-1.5 sm:px-3 rounded-lg font-black text-xs sm:text-sm flex items-center justify-center gap-1.5 transition active:scale-95';
-
-    if (this.orderType === 'delivery') {
-      btnDel.className = `${baseClass} bg-white text-gray-900 shadow-sm`;
-      btnDin.className = `${baseClass} text-white hover:bg-white/10`;
-      btnDel.setAttribute('aria-pressed', 'true');
-      btnDin.setAttribute('aria-pressed', 'false');
-      if (iconDel) iconDel.className = 'text-[#d71920] flex items-center flex-shrink-0';
-      if (iconDin) iconDin.className = 'text-amber-200/80 flex items-center flex-shrink-0';
-    } else {
-      btnDel.className = `${baseClass} text-white hover:bg-white/10`;
-      btnDin.className = `${baseClass} bg-[#ffc72c] text-gray-950 shadow-sm`;
-      btnDel.setAttribute('aria-pressed', 'false');
-      btnDin.setAttribute('aria-pressed', 'true');
-      if (iconDel) iconDel.className = 'text-white/80 flex items-center flex-shrink-0';
-      if (iconDin) iconDin.className = 'text-gray-950 flex items-center flex-shrink-0';
-    }
   }
 
   async init() {
@@ -781,7 +753,7 @@ export class JollibeeApp {
 
     // Chỉ bắn pháo hoa khi người dùng thực sự vừa chạm thêm món vượt qua mốc Freeship
     if (
-      this.orderType === 'delivery' &&
+      this.orderType !== 'dinein' &&
       this.lastOriginalTotal < freeshipThreshold &&
       totals.originalTotal >= freeshipThreshold
     ) {
@@ -790,6 +762,7 @@ export class JollibeeApp {
     this.lastOriginalTotal = totals.originalTotal;
 
     const badgeEl = document.getElementById('floating-cart-badge');
+    const labelEl = document.getElementById('floating-cart-price-label');
     const priceEl = document.getElementById('floating-cart-final-price');
     const hintEl = document.getElementById('floating-cart-discount-hint');
     const origWrapper = document.getElementById('floating-cart-original-wrapper');
@@ -805,6 +778,7 @@ export class JollibeeApp {
     }
 
     if (badgeEl) badgeEl.innerText = totalItems;
+    if (labelEl) labelEl.innerText = this.orderType ? 'Thực trả:' : 'Tạm tính:';
     if (priceEl) priceEl.innerText = formatCurrency(totals.finalTotal);
 
     if (totalItems > 0 && totals.originalTotal > 0) {
@@ -817,7 +791,11 @@ export class JollibeeApp {
     if (hintEl) {
       if (totalItems === 0) {
         hintEl.innerText =
-          this.orderType === 'dinein' ? '(Ăn tại quán • Chưa chọn món)' : '(Giao tận nơi • Chưa chọn món)';
+          this.orderType === 'dinein'
+            ? '(Ăn tại quán • Chưa chọn món)'
+            : this.orderType === 'delivery'
+              ? '(Giao tận nơi • Chưa chọn món)'
+              : '(Chưa chọn món • Giảm 15k mỗi 100k)';
         hintEl.className = 'text-[11px] text-gray-600 font-semibold truncate mt-0.5';
       } else if (totals.originalTotal < 100000) {
         const needed = 100000 - totals.originalTotal;
@@ -826,7 +804,7 @@ export class JollibeeApp {
         hintEl.className = 'text-[11px] text-red-700 font-extrabold truncate mt-0.5';
       } else if (totals.originalTotal < 200000) {
         const needed = 200000 - totals.originalTotal;
-        const perk = this.orderType === 'delivery' ? 'giảm 30k & Freeship!' : 'giảm 30k!';
+        const perk = this.orderType === 'dinein' ? 'giảm 30k!' : 'giảm 30k & Freeship!';
         hintEl.innerText = `Đã giảm 15k • Thêm ${formatCurrency(needed)} để ${perk}`;
         hintEl.className = 'text-[11px] text-green-700 font-extrabold truncate mt-0.5';
       } else {
@@ -844,15 +822,7 @@ export class JollibeeApp {
     if (this._globalEventsBound) return;
     this._globalEventsBound = true;
 
-    // 1. Chuyển hình thức giao hàng / ăn tại quán ở header
-    document.getElementById('top-btn-delivery')?.addEventListener('click', () => {
-      this.setOrderType('delivery');
-    });
-    document.getElementById('top-btn-dinein')?.addEventListener('click', () => {
-      this.setOrderType('dinein');
-    });
-
-    // 2. Mở drawer giỏ hàng ở footer
+    // 1. Mở drawer giỏ hàng ở footer
     document.getElementById('btn-open-cart-drawer')?.addEventListener('click', () => {
       this.cartDrawer.open();
     });

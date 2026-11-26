@@ -44,7 +44,7 @@ export function calculateShippingFee(
   freeshipThreshold = DEFAULT_PRICING_CONFIG.freeshipThreshold,
   standardFee = DEFAULT_PRICING_CONFIG.standardShippingFee
 ) {
-  if (orderType === 'dinein' || !originalTotal || originalTotal <= 0) {
+  if (orderType !== 'delivery' || !originalTotal || originalTotal <= 0) {
     return 0;
   }
   return originalTotal >= freeshipThreshold ? 0 : standardFee;
