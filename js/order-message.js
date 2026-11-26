@@ -10,9 +10,26 @@ export function formatCurrency(amount) {
   return `${val.toLocaleString('vi-VN')}đ`;
 }
 
+function appendCustomerNameLines(lines, customer = {}) {
+  const hasSplitName = Boolean(
+    (customer.lastName && String(customer.lastName).trim()) ||
+    (customer.firstName && String(customer.firstName).trim())
+  );
+
+  if (hasSplitName) {
+    lines.push(`• Họ: ${(customer.lastName || '').trim() || '(Chưa nhập)'}`);
+    lines.push(`• Tên: ${(customer.firstName || '').trim() || '(Chưa nhập)'}`);
+  } else if (customer.name && String(customer.name).trim()) {
+    lines.push(`• Khách hàng: ${String(customer.name).trim()}`);
+  } else {
+    lines.push(`• Họ: (Chưa nhập)`);
+    lines.push(`• Tên: (Chưa nhập)`);
+  }
+}
+
 /**
  * Tạo nội dung tin nhắn gửi đơn hàng chuẩn, đẹp mắt
- * @param {object} customer - Thông tin khách hàng { name, phone, address, note }
+ * @param {object} customer - Thông tin khách hàng { lastName, firstName, name, phone, address, pickupTime, note }
  * @param {Array} items - Danh sách món trong giỏ
  * @param {object} pricing - Kết quả tính giá { originalTotal, discountAmount, shippingFee, finalTotal }
  * @param {'delivery' | 'dinein'} orderType - Hình thức nhận hàng
@@ -26,17 +43,16 @@ export function formatOrderText(customer = {}, items = [], pricing = {}, orderTy
   ];
 
   if (orderType === 'delivery') {
-    lines.push(`• Khách hàng: ${customer.name || '(Chưa nhập)'}`);
+    appendCustomerNameLines(lines, customer);
     lines.push(`• Số điện thoại: ${customer.phone || '(Chưa nhập)'}`);
     lines.push(`• Địa chỉ giao hàng: ${customer.address || '(Chưa nhập)'}`);
     if (customer.note && customer.note.trim()) {
       lines.push(`• Ghi chú: ${customer.note.trim()}`);
     }
   } else {
-    lines.push(`• Khách hàng: ${customer.name || '(Chưa nhập)'}`);
+    appendCustomerNameLines(lines, customer);
     lines.push(`• Số điện thoại: ${customer.phone || '(Chưa nhập)'}`);
     lines.push(`• Thời gian nhận (hôm nay): ${customer.pickupTime || '(Chưa nhập)'}`);
-    lines.push(`• Địa chỉ / Chi nhánh muốn ăn: ${customer.branchAddress || customer.address || '(Chưa nhập)'}`);
     if (customer.note && customer.note.trim()) {
       lines.push(`• Ghi chú: ${customer.note.trim()}`);
     }

@@ -25,9 +25,11 @@ import {
   showConfirmDialog as uiShowConfirmDialog,
   showCopyFallbackModal as uiShowCopyFallbackModal
 } from './ui-feedback.js';
+import { openTimeWheelPicker } from './time-picker.js';
 import {
   IconShoppingBag,
   IconX,
+  IconChevronDown,
   IconMinus,
   IconPlus,
   IconTrash,
@@ -64,11 +66,11 @@ export class CartDrawer {
     this.lastValidationError = null;
 
     this.customerInfo = {
-      name: '',
+      lastName: '',
+      firstName: '',
       phone: '',
       address: '',
       pickupTime: '',
-      branchAddress: '',
       note: ''
     };
 
@@ -86,12 +88,26 @@ export class CartDrawer {
       if (data) {
         const parsed = JSON.parse(data);
         if (parsed && typeof parsed === 'object') {
+          let lastName = typeof parsed.lastName === 'string' ? parsed.lastName : '';
+          let firstName = typeof parsed.firstName === 'string' ? parsed.firstName : '';
+
+          // Tự động chuyển đổi dữ liệu cũ (name gộp) sang Họ + Tên tách rời
+          if (!lastName && !firstName && typeof parsed.name === 'string' && parsed.name.trim()) {
+            const parts = parsed.name.trim().split(/\s+/);
+            if (parts.length > 1) {
+              firstName = parts.pop();
+              lastName = parts.join(' ');
+            } else {
+              firstName = parts[0];
+            }
+          }
+
           this.customerInfo = {
-            name: typeof parsed.name === 'string' ? parsed.name : '',
+            lastName,
+            firstName,
             phone: typeof parsed.phone === 'string' ? parsed.phone : '',
             address: typeof parsed.address === 'string' ? parsed.address : '',
             pickupTime: typeof parsed.pickupTime === 'string' ? parsed.pickupTime : '',
-            branchAddress: typeof parsed.branchAddress === 'string' ? parsed.branchAddress : '',
             note: typeof parsed.note === 'string' ? parsed.note : ''
           };
         }
@@ -245,12 +261,27 @@ export class CartDrawer {
       return false;
     }
 
-    if (!this.customerInfo.name || !this.customerInfo.name.trim()) {
-      const msg = 'Vui lòng nhập Họ và Tên của bạn!';
+    if (!this.customerInfo.lastName || !this.customerInfo.lastName.trim()) {
+      const msg = 'Vui lòng nhập Họ của bạn!';
       this.lastValidationError = msg;
       this.showToast(msg, 'warning');
       if (typeof document !== 'undefined') {
-        const input = document.getElementById('customer-name');
+        const input = document.getElementById('customer-lastname');
+        if (input) {
+          if (typeof input.scrollIntoView === 'function') input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setTimeout(() => input.focus?.(), 250);
+          this._highlightFieldError(input, msg);
+        }
+      }
+      return false;
+    }
+
+    if (!this.customerInfo.firstName || !this.customerInfo.firstName.trim()) {
+      const msg = 'Vui lòng nhập Tên của bạn!';
+      this.lastValidationError = msg;
+      this.showToast(msg, 'warning');
+      if (typeof document !== 'undefined') {
+        const input = document.getElementById('customer-firstname');
         if (input) {
           if (typeof input.scrollIntoView === 'function') input.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setTimeout(() => input.focus?.(), 250);
@@ -307,29 +338,13 @@ export class CartDrawer {
       }
     } else if (this.orderType === 'dinein') {
       if (!this.customerInfo.pickupTime || !this.customerInfo.pickupTime.trim()) {
-        const msg = 'Vui lòng nhập Thời gian nhận món hôm nay (lúc mấy giờ)!';
+        const msg = 'Vui lòng chạm chọn Thời gian nhận món hôm nay!';
         this.lastValidationError = msg;
         this.showToast(msg, 'warning');
         if (typeof document !== 'undefined') {
           const input = document.getElementById('customer-pickup-time');
           if (input) {
             if (typeof input.scrollIntoView === 'function') input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => input.focus?.(), 250);
-            this._highlightFieldError(input, msg);
-          }
-        }
-        return false;
-      }
-
-      if (!this.customerInfo.branchAddress || !this.customerInfo.branchAddress.trim()) {
-        const msg = 'Vui lòng nhập Địa chỉ hoặc khu vực chi nhánh bạn muốn ăn!';
-        this.lastValidationError = msg;
-        this.showToast(msg, 'warning');
-        if (typeof document !== 'undefined') {
-          const input = document.getElementById('customer-branch-address');
-          if (input) {
-            if (typeof input.scrollIntoView === 'function') input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            setTimeout(() => input.focus?.(), 250);
             this._highlightFieldError(input, msg);
           }
         }
@@ -749,10 +764,17 @@ export class CartDrawer {
                 <span class="text-[#d71920] flex-shrink-0 mt-0.5">${IconClock('w-4 h-4')}</span>
                 <span><b>Lưu ý:</b> Thời gian chuẩn bị đơn hàng <b>ít nhất 30 phút</b> tính từ lúc đặt hàng thành công.</span>
               </div>
-              <div>
-                <label for="customer-name" class="block text-[11px] font-bold text-gray-700 mb-1">Họ và tên của bạn *</label>
-                <input type="text" id="customer-name" value="${escapeHtml(this.customerInfo.name)}" placeholder="VD: Nguyễn Văn A *" autocomplete="name"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label for="customer-lastname" class="block text-[11px] font-bold text-gray-700 mb-1">Họ *</label>
+                  <input type="text" id="customer-lastname" value="${escapeHtml(this.customerInfo.lastName)}" placeholder="VD: Nguyễn *" autocomplete="family-name"
+                    class="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+                </div>
+                <div>
+                  <label for="customer-firstname" class="block text-[11px] font-bold text-gray-700 mb-1">Tên *</label>
+                  <input type="text" id="customer-firstname" value="${escapeHtml(this.customerInfo.firstName)}" placeholder="VD: Văn A *" autocomplete="given-name"
+                    class="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+                </div>
               </div>
               <div>
                 <label for="customer-phone" class="block text-[11px] font-bold text-gray-700 mb-1">Số điện thoại nhận hàng *</label>
@@ -783,10 +805,17 @@ export class CartDrawer {
                 <span class="text-[#d71920] flex-shrink-0 mt-0.5">${IconClock('w-4 h-4')}</span>
                 <span><b>Lưu ý quan trọng:</b> Thời gian chuẩn bị đơn hàng <b>ít nhất 30 phút</b> tính từ lúc đặt hàng thành công.</span>
               </div>
-              <div>
-                <label for="customer-name" class="block text-[11px] font-bold text-gray-700 mb-1">Họ và tên của bạn *</label>
-                <input type="text" id="customer-name" value="${escapeHtml(this.customerInfo.name)}" placeholder="VD: Nguyễn Văn A *" autocomplete="name"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+              <div class="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label for="customer-lastname" class="block text-[11px] font-bold text-gray-700 mb-1">Họ *</label>
+                  <input type="text" id="customer-lastname" value="${escapeHtml(this.customerInfo.lastName)}" placeholder="VD: Nguyễn *" autocomplete="family-name"
+                    class="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+                </div>
+                <div>
+                  <label for="customer-firstname" class="block text-[11px] font-bold text-gray-700 mb-1">Tên *</label>
+                  <input type="text" id="customer-firstname" value="${escapeHtml(this.customerInfo.firstName)}" placeholder="VD: Văn A *" autocomplete="given-name"
+                    class="w-full px-3 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
+                </div>
               </div>
               <div>
                 <label for="customer-phone" class="block text-[11px] font-bold text-gray-700 mb-1">Số điện thoại liên hệ *</label>
@@ -795,14 +824,17 @@ export class CartDrawer {
               </div>
               <div>
                 <label for="customer-pickup-time" class="block text-[11px] font-bold text-gray-700 mb-1">Thời gian nhận hôm nay (lúc mấy giờ) *</label>
-                <input type="text" id="customer-pickup-time" value="${escapeHtml(this.customerInfo.pickupTime)}" placeholder="VD: 12h15 hôm nay, 18h30 tối nay... *"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
-              </div>
-              <div>
-                <label for="customer-branch-address" class="block text-[11px] font-bold text-gray-700 mb-1">Địa chỉ / Khu vực chi nhánh muốn ăn *</label>
-                <input type="text" id="customer-branch-address" value="${escapeHtml(this.customerInfo.branchAddress)}" placeholder="VD: Jollibee Cầu Giấy, hoặc địa chỉ khu vực của bạn *"
-                  class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 text-sm focus:ring-2 focus:ring-red-500 focus:outline-none bg-white transition">
-                <p class="text-[11px] text-gray-600 mt-1 leading-snug">Điền địa chỉ hoặc khu vực để shop hỏi lại & chốt đúng chi nhánh Jollibee bạn muốn ăn nhé!</p>
+                <div id="btn-open-time-picker" class="relative cursor-pointer group">
+                  <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#d71920] flex items-center">
+                    ${IconClock('w-4 h-4')}
+                  </span>
+                  <input type="text" id="customer-pickup-time" readonly value="${escapeHtml(this.customerInfo.pickupTime)}" placeholder="Chạm để cuộn chọn giờ nhận... *"
+                    class="w-full pl-10 pr-24 py-2.5 rounded-xl border border-gray-300 text-sm font-bold text-gray-900 placeholder-gray-400 placeholder:font-normal focus:ring-2 focus:ring-red-500 focus:outline-none bg-white cursor-pointer transition">
+                  <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 bg-amber-100 group-hover:bg-amber-200 text-amber-950 text-[11px] font-extrabold px-2.5 py-1 rounded-lg border border-amber-300 flex items-center gap-1 transition">
+                    <span>Chọn giờ</span>
+                    ${IconChevronDown('w-3 h-3')}
+                  </span>
+                </div>
               </div>
               <div>
                 <label for="customer-note" class="block text-[11px] font-bold text-gray-700 mb-1">Ghi chú thêm (nếu có)</label>
@@ -985,8 +1017,11 @@ export class CartDrawer {
 
   _saveFormInputs() {
     if (typeof document === 'undefined' || typeof document.getElementById !== 'function') return;
-    const nameEl = document.getElementById('customer-name');
-    if (nameEl && nameEl.value !== undefined) this.customerInfo.name = nameEl.value;
+    const lastEl = document.getElementById('customer-lastname');
+    if (lastEl && lastEl.value !== undefined) this.customerInfo.lastName = lastEl.value;
+
+    const firstEl = document.getElementById('customer-firstname');
+    if (firstEl && firstEl.value !== undefined) this.customerInfo.firstName = firstEl.value;
 
     const phoneEl = document.getElementById('customer-phone');
     if (phoneEl && phoneEl.value !== undefined) this.customerInfo.phone = phoneEl.value;
@@ -996,9 +1031,6 @@ export class CartDrawer {
 
     const pickupEl = document.getElementById('customer-pickup-time');
     if (pickupEl && pickupEl.value !== undefined) this.customerInfo.pickupTime = pickupEl.value;
-
-    const branchEl = document.getElementById('customer-branch-address');
-    if (branchEl && branchEl.value !== undefined) this.customerInfo.branchAddress = branchEl.value;
 
     const noteEl = document.getElementById('customer-note');
     if (noteEl && noteEl.value !== undefined) this.customerInfo.note = noteEl.value;
@@ -1042,13 +1074,38 @@ export class CartDrawer {
     if (!panel || typeof panel.addEventListener !== 'function') return;
 
     const inputMap = {
-      'customer-name': 'name',
+      'customer-lastname': 'lastName',
+      'customer-firstname': 'firstName',
       'customer-phone': 'phone',
       'customer-address': 'address',
       'customer-pickup-time': 'pickupTime',
-      'customer-branch-address': 'branchAddress',
       'customer-note': 'note'
     };
+
+    const triggerTimePicker = () => {
+      openTimeWheelPicker({
+        initialValue: this.customerInfo.pickupTime,
+        onSelect: (selectedTime) => {
+          this.customerInfo.pickupTime = selectedTime;
+          this._saveCustomerInfoToStorage();
+          const pickupInput = typeof document !== 'undefined' ? document.getElementById('customer-pickup-time') : null;
+          if (pickupInput) {
+            pickupInput.value = selectedTime;
+            pickupInput.classList?.remove('border-red-500', 'ring-2', 'ring-red-200', 'bg-red-50/50');
+            pickupInput.classList?.add('border-gray-300');
+            pickupInput.removeAttribute?.('aria-invalid');
+            pickupInput.parentElement?.querySelectorAll('.field-error-msg').forEach(el => el.remove());
+          }
+        }
+      });
+    };
+
+    panel.addEventListener('keydown', (e) => {
+      if (e.target && e.target.id === 'customer-pickup-time' && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        triggerTimePicker();
+      }
+    });
 
     panel.addEventListener('input', (e) => {
       const target = e.target;
@@ -1078,6 +1135,11 @@ export class CartDrawer {
         this.orderType = 'dinein';
         if (this.onOrderTypeChanged) this.onOrderTypeChanged('dinein');
         this.render();
+        return;
+      }
+
+      if (target.closest('#btn-open-time-picker') || target.closest('#customer-pickup-time')) {
+        triggerTimePicker();
         return;
       }
 

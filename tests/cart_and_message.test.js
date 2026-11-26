@@ -61,12 +61,12 @@ describe('Cart & Order Message Formatter', () => {
     assert.ok(msg.includes('110.000đ'));
   });
 
-  it('định dạng tin nhắn cho Ăn tại quán chứa đầy đủ Họ tên, SĐT, Thời gian nhận hôm nay, Chi nhánh & lưu ý 30 phút', () => {
+  it('định dạng tin nhắn cho Ăn tại quán tách riêng Họ, Tên, SĐT, Thời gian nhận hôm nay (không có trường chi nhánh) & lưu ý 30 phút', () => {
     const customer = {
-      name: 'Trần Minh Khoa',
+      lastName: 'Trần Minh',
+      firstName: 'Khoa',
       phone: '0985194873',
-      pickupTime: '18h30 hôm nay',
-      branchAddress: 'Gần Jollibee Cầu Giấy'
+      pickupTime: '18:30 hôm nay'
     };
     const items = [{
       name: 'Combo Gà Giòn Cay',
@@ -77,10 +77,11 @@ describe('Cart & Order Message Formatter', () => {
 
     const msg = formatOrderText(customer, items, pricing, 'dinein');
     assert.ok(msg.includes('ĂN TẠI QUÁN'));
-    assert.ok(msg.includes('Trần Minh Khoa'));
+    assert.ok(msg.includes('• Họ: Trần Minh'));
+    assert.ok(msg.includes('• Tên: Khoa'));
     assert.ok(msg.includes('0985194873'));
-    assert.ok(msg.includes('18h30 hôm nay'));
-    assert.ok(msg.includes('Gần Jollibee Cầu Giấy'));
+    assert.ok(msg.includes('18:30 hôm nay'));
+    assert.ok(!msg.includes('Chi nhánh'));
     assert.ok(msg.includes('ít nhất 30 phút'));
     assert.ok(msg.includes('Combo Gà Giòn Cay'));
     assert.ok(msg.includes('90.000đ'));
@@ -116,7 +117,7 @@ describe('Cart & Order Message Formatter', () => {
     assert.ok(toastMsg.includes('100.000đ') || (drawer.lastValidationError && drawer.lastValidationError.includes('100.000đ')));
   });
 
-  it('validateForm ở chế độ Ăn tại quán yêu cầu đủ Họ tên, SĐT, Thời gian nhận và Địa chỉ chi nhánh', () => {
+  it('validateForm ở chế độ Ăn tại quán yêu cầu đủ Họ, Tên, SĐT và Thời gian nhận (không bắt điền chi nhánh)', () => {
     let toastMsg = '';
     const cart = new Cart();
     cart.clear();
@@ -125,27 +126,26 @@ describe('Cart & Order Message Formatter', () => {
     drawer.showToast = (msg) => { toastMsg = msg; };
     drawer.orderType = 'dinein';
 
-    // Thiếu thông tin -> chặn
-    drawer.customerInfo = { name: '', phone: '', pickupTime: '', branchAddress: '' };
+    // Thiếu Họ -> chặn
+    drawer.customerInfo = { lastName: '', firstName: 'Bình', phone: '0985194873', pickupTime: '19:00 hôm nay' };
+    assert.equal(drawer.validateForm(), false);
+
+    // Thiếu Tên -> chặn
+    drawer.customerInfo = { lastName: 'Nguyễn', firstName: '', phone: '0985194873', pickupTime: '19:00 hôm nay' };
     assert.equal(drawer.validateForm(), false);
 
     // Thiếu thời gian nhận -> chặn
-    drawer.customerInfo = { name: 'Nguyễn Văn B', phone: '0985194873', pickupTime: '', branchAddress: 'Quận 1' };
+    drawer.customerInfo = { lastName: 'Nguyễn', firstName: 'Bình', phone: '0985194873', pickupTime: '' };
     assert.equal(drawer.validateForm(), false);
-    assert.ok(toastMsg.toLowerCase().includes('thời gian'));
+    assert.ok(toastMsg.toLowerCase().includes('thời gian') || toastMsg.toLowerCase().includes('giờ'));
 
-    // Thiếu địa chỉ / chi nhánh -> chặn
-    drawer.customerInfo = { name: 'Nguyễn Văn B', phone: '0985194873', pickupTime: '19h00 hôm nay', branchAddress: '' };
-    assert.equal(drawer.validateForm(), false);
-    assert.ok(toastMsg.toLowerCase().includes('địa chỉ') || toastMsg.toLowerCase().includes('chi nhánh'));
-
-    // Điền đầy đủ 4 trường -> hợp lệ
+    // Điền đầy đủ Họ, Tên, SĐT, Thời gian nhận (không cần chi nhánh) -> hợp lệ
     toastMsg = '';
     drawer.customerInfo = {
-      name: 'Nguyễn Văn B',
+      lastName: 'Nguyễn Văn',
+      firstName: 'Bình',
       phone: '0985194873',
-      pickupTime: '19h00 hôm nay',
-      branchAddress: 'Jollibee Lý Thường Kiệt, Quận 10'
+      pickupTime: '19:00 hôm nay'
     };
     const isValid = drawer.validateForm();
     assert.equal(isValid, true);
@@ -161,13 +161,13 @@ describe('Cart & Order Message Formatter', () => {
     const drawer = new CartDrawer(cart, {});
     drawer.orderType = 'delivery';
     drawer.showToast = (msg) => { toastOrAlertMsg = msg; };
-    drawer.customerInfo = { name: 'Nguyễn Văn A', phone: '12345', address: '123 Cầu Giấy' };
+    drawer.customerInfo = { lastName: 'Nguyễn', firstName: 'Văn A', phone: '12345', address: '123 Cầu Giấy' };
     const isValid = drawer.validateForm();
     assert.equal(isValid, false);
     assert.ok(toastOrAlertMsg.includes('Số điện thoại'));
   });
 
-  it('validateForm chấp nhận khi số điện thoại và địa chỉ giao hàng hợp lệ', () => {
+  it('validateForm chấp nhận khi Họ, Tên, số điện thoại và địa chỉ giao hàng hợp lệ', () => {
     let toastOrAlertMsg = '';
     global.alert = (msg) => { toastOrAlertMsg = msg; };
     const cart = new Cart();
@@ -175,7 +175,7 @@ describe('Cart & Order Message Formatter', () => {
     const drawer = new CartDrawer(cart, {});
     drawer.orderType = 'delivery';
     drawer.showToast = (msg) => { toastOrAlertMsg = msg; };
-    drawer.customerInfo = { name: 'Nguyễn Văn A', phone: '0987654321', address: '123 Cầu Giấy' };
+    drawer.customerInfo = { lastName: 'Nguyễn', firstName: 'Văn A', phone: '0987654321', address: '123 Cầu Giấy' };
     const isValid = drawer.validateForm();
     assert.equal(isValid, true);
     assert.equal(toastOrAlertMsg, '');
@@ -543,34 +543,37 @@ describe('Cart & Order Message Formatter', () => {
     drawer.showToast = (msg) => { toastMsg = msg; };
 
     drawer.open();
-    // 1. Chưa chọn hình thức nhận hàng -> hiện thẻ order-type-selector-card, ẩn form địa chỉ
+    // 1. Chưa chọn hình thức nhận hàng -> hiện thẻ order-type-selector-card, ẩn form thông tin
     assert.ok(mockContainer.innerHTML.includes('order-type-selector-card'));
-    assert.ok(!mockContainer.innerHTML.includes('id="customer-name"'));
+    assert.ok(!mockContainer.innerHTML.includes('id="customer-lastname"'));
 
     // 2. Bấm sao chép đơn khi chưa chọn -> chặn và nhắc chọn hình thức nhận hàng
     assert.equal(drawer.validateForm(), false);
     assert.ok(toastMsg.includes('Giao Tận Nơi') || toastMsg.includes('Ăn Tại Quán'));
 
-    // 3. Khi chọn Giao Tận Nơi -> hiện form địa chỉ giao hàng & thông điệp Freeship tận nơi (không phải toàn quốc)
+    // 3. Khi chọn Giao Tận Nơi -> hiện 2 ô Họ + Tên cùng 1 hàng, form địa chỉ giao hàng & Freeship tận nơi
     drawer.setOrderType('delivery');
-    assert.ok(mockInner.innerHTML.includes('id="customer-name"'));
+    assert.ok(mockInner.innerHTML.includes('id="customer-lastname"'));
+    assert.ok(mockInner.innerHTML.includes('id="customer-firstname"'));
+    assert.ok(mockInner.innerHTML.includes('id="customer-address"'));
     assert.ok(mockInner.innerHTML.includes('FREESHIP tận nơi'));
     assert.ok(!mockInner.innerHTML.includes('toàn quốc'));
 
-    // 4. Khi chọn Ăn Tại Quán -> hiện form Họ tên, SĐT, Thời gian nhận, Địa chỉ chi nhánh & lưu ý chuẩn bị 30 phút
+    // 4. Khi chọn Ăn Tại Quán -> hiện Họ, Tên, SĐT, ô chọn giờ cuộn (readonly), KHÔNG có ô chi nhánh/địa chỉ
     drawer.setOrderType('dinein');
-    assert.ok(mockInner.innerHTML.includes('id="customer-name"'));
+    assert.ok(mockInner.innerHTML.includes('id="customer-lastname"'));
+    assert.ok(mockInner.innerHTML.includes('id="customer-firstname"'));
     assert.ok(mockInner.innerHTML.includes('id="customer-phone"'));
     assert.ok(mockInner.innerHTML.includes('id="customer-pickup-time"'));
-    assert.ok(mockInner.innerHTML.includes('id="customer-branch-address"'));
+    assert.ok(!mockInner.innerHTML.includes('id="customer-branch-address"'));
     assert.ok(!mockInner.innerHTML.includes('id="customer-address"'));
     assert.ok(mockInner.innerHTML.includes('ít nhất 30 phút'));
     assert.ok(mockInner.innerHTML.includes('tính từ lúc đặt hàng thành công'));
     drawer.customerInfo = {
-      name: 'Lê Hoàng',
+      lastName: 'Lê',
+      firstName: 'Hoàng',
       phone: '0985194873',
-      pickupTime: '12h30 hôm nay',
-      branchAddress: 'Gần Jollibee Gò Vấp'
+      pickupTime: '12:30 hôm nay'
     };
     assert.equal(drawer.validateForm(), true);
 
