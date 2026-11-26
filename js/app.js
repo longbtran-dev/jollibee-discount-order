@@ -67,6 +67,7 @@ export class JollibeeApp {
     this.applyConfig();
     this.bindGlobalEvents();
     this.updateFloatingCart();
+    this.updateScrollTopButton();
 
     const loaded = await this.loadMenu();
     if (loaded) {
@@ -343,12 +344,43 @@ export class JollibeeApp {
     });
   }
 
+  updateScrollTopButton() {
+    if (typeof document === 'undefined') return;
+    const btn = document.getElementById('btn-scroll-top');
+    if (!btn) return;
+    const y = typeof window !== 'undefined' ? (window.scrollY || 0) : 0;
+    if (y >= 360) {
+      btn.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none');
+      btn.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+    } else {
+      btn.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none');
+      btn.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+    }
+  }
+
+  scrollToTop() {
+    const firstSlug = this.menuData?.categories?.[0]?.slug;
+    if (firstSlug) {
+      this.isProgrammaticScrolling = true;
+      this.updateActiveTab(firstSlug);
+      this._armProgrammaticScrollUnlock(320);
+    }
+    const tabs = typeof document !== 'undefined' ? document.getElementById('category-tabs') : null;
+    if (tabs && typeof tabs.scrollTo === 'function') {
+      tabs.scrollTo({ left: 0, behavior: 'smooth' });
+    }
+    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
   setupScrollSpy() {
     if (typeof window === 'undefined' || typeof window.requestAnimationFrame !== 'function') return;
 
     if (!this._scrollSpyBound) {
       this._scrollSpyBound = true;
       const onScroll = () => {
+        this.updateScrollTopButton();
         if (this.isProgrammaticScrolling) {
           // Gia hạn khóa cho tới khi cuộn mượt dừng hẳn (kể cả hành trình dài > 1 giây)
           this._armProgrammaticScrollUnlock(180);
@@ -366,6 +398,7 @@ export class JollibeeApp {
       window.addEventListener('touchmove', onUserInterrupt, { passive: true });
     }
 
+    this.updateScrollTopButton();
     this._finishCategoryScroll({ resync: false });
     this._scheduleActiveCategoryUpdate();
   }
@@ -822,12 +855,15 @@ export class JollibeeApp {
     if (this._globalEventsBound) return;
     this._globalEventsBound = true;
 
-    // 1. Mở drawer giỏ hàng ở footer
+    // 1. Mở drawer giỏ hàng ở footer & nút cuộn nhanh lên đầu trang
     document.getElementById('btn-open-cart-drawer')?.addEventListener('click', () => {
       this.cartDrawer.open();
     });
     document.getElementById('btn-open-cart-info')?.addEventListener('click', () => {
       this.cartDrawer.open();
+    });
+    document.getElementById('btn-scroll-top')?.addEventListener('click', () => {
+      this.scrollToTop();
     });
 
     // 3. Ủy quyền sự kiện (Event Delegation) cho thanh Category Tabs

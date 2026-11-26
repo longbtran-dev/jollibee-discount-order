@@ -249,4 +249,53 @@ describe('End-to-End System Integration Flow', () => {
     assert.ok(indexHtml.includes('Ăn Ngon Jollibee Rẻ Hơn Tới 15%'));
     assert.ok(indexHtml.includes('&amp; Chốt Đơn') || indexHtml.includes('& Chốt Đơn'));
   });
+
+  it('nút Cuộn lên đầu trang (#btn-scroll-top) ẩn khi ở trên cao, hiện khi cuộn xuống sâu và đưa về top=0 mượt mà', () => {
+    const indexHtml = fs.readFileSync('index.html', 'utf8');
+    assert.ok(indexHtml.includes('id="btn-scroll-top"'), 'index.html phải có nút #btn-scroll-top');
+
+    const btnClasses = new Set(['opacity-0', 'translate-y-3', 'pointer-events-none']);
+    const mockScrollTopBtn = {
+      classList: {
+        add: (...cls) => cls.forEach(c => btnClasses.add(c)),
+        remove: (...cls) => cls.forEach(c => btnClasses.delete(c)),
+        contains: (c) => btnClasses.has(c)
+      }
+    };
+
+    let lastScrollArgs = null;
+    global.window = {
+      JOLLIBEE_CONFIG: {},
+      scrollY: 120,
+      scrollTo: (opts) => { lastScrollArgs = opts; }
+    };
+    global.document = {
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      getElementById: (id) => (id === 'btn-scroll-top' ? mockScrollTopBtn : null),
+      querySelector: () => null,
+      querySelectorAll: () => []
+    };
+
+    const app = new JollibeeApp();
+    app.menuData = menuData;
+    app.activeCategorySlug = 'thuc-uong';
+
+    // Khi mới cuộn nhẹ 120px (< 360px) -> nút vẫn ẩn
+    app.updateScrollTopButton();
+    assert.equal(btnClasses.has('opacity-0'), true);
+    assert.equal(btnClasses.has('pointer-events-none'), true);
+
+    // Khi cuộn xuống sâu 520px (>= 360px) -> nút hiện lên rõ ràng
+    global.window.scrollY = 520;
+    app.updateScrollTopButton();
+    assert.equal(btnClasses.has('opacity-0'), false);
+    assert.equal(btnClasses.has('pointer-events-none'), false);
+    assert.equal(btnClasses.has('opacity-100'), true);
+
+    // Bấm nút lên đầu trang -> cuộn mượt về top: 0 và đặt lại tab đầu tiên
+    app.scrollToTop();
+    assert.deepEqual(lastScrollArgs, { top: 0, behavior: 'smooth' });
+    assert.equal(app.activeCategorySlug, menuData.categories[0].slug);
+  });
 });
