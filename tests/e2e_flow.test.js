@@ -250,6 +250,9 @@ describe('End-to-End System Integration Flow', () => {
     const inputCss = fs.readFileSync('css/input.css', 'utf8');
     assert.ok(!inputCss.includes('.marquee-viewport:hover'), 'Di chuột vào banner đầu trang vẫn chạy liên tục không bị dừng');
     assert.ok(indexHtml.includes('header-zalo-btn'), 'Header có nút liên hệ nhanh Zalo');
+    assert.ok(fs.existsSync('images/zalo-icon.svg'), 'Lưu sẵn file logo Zalo chuẩn chính thức');
+    assert.ok(indexHtml.includes('images/zalo-icon.svg') || indexHtml.includes('viewBox="0 0 50 50"'), 'Sử dụng đúng logo Zalo chuẩn chính thức thay cho icon vẽ tay cũ');
+    assert.ok(!indexHtml.includes('viewBox="0 0 48 48"'), 'Đã gỡ bỏ hoàn toàn icon chữ Z tự vẽ cũ');
     assert.ok(indexHtml.includes('header-fb-btn'), 'Header có nút liên hệ nhanh Facebook');
     assert.ok(indexHtml.includes('https://www.facebook.com/trnblng'), 'Gắn sẵn link Facebook chủ shop');
     assert.ok(indexHtml.includes('data-info-tab="guide"'), 'Có nút mở Hướng dẫn & Video');

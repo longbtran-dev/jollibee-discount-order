@@ -176,7 +176,7 @@ export class InfoModal {
         <div class="grid grid-cols-3 gap-2">
           <a href="${zaloHref}" target="_blank" rel="noopener noreferrer"
             class="py-2.5 px-2 rounded-xl bg-[#0068FF] hover:bg-[#0057d9] text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition">
-            ${IconZalo('w-4 h-4')}
+            ${IconZalo('w-5 h-5 flex-shrink-0 rounded-[5px] bg-white p-0.5')}
             <span>Chat Zalo</span>
           </a>
           <a href="${fbHref}" target="_blank" rel="noopener noreferrer"

@@ -323,7 +323,7 @@ export function showOrderCopiedModal({ zaloLink = 'https://zalo.me/0985194873', 
       <div class="space-y-2.5 pt-1">
         <a href="${escapeHtml(zaloLink)}" target="_blank" rel="noopener noreferrer"
           class="w-full py-3 px-4 rounded-xl bg-[#0068FF] hover:bg-[#0057d9] text-white font-extrabold text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 transition active:scale-95">
-          ${IconZalo('w-5 h-5')}
+          ${IconZalo('w-5 h-5 flex-shrink-0 rounded-[5px] bg-white p-0.5')}
           <span>Mở Zalo Shop (${escapeHtml(hotline)})</span>
         </a>
         <a href="${escapeHtml(facebookUrl)}" target="_blank" rel="noopener noreferrer"
