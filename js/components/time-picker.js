@@ -8,9 +8,12 @@
 import { registerOpenModal, unregisterOpenModal, trapFocusInModal } from '../utils.js';
 import { IconClock, IconX, IconCheck } from '../icons.js';
 
-export const STORE_HOURS = [
-  '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'
-];
+const OPEN_HOUR = 8;
+const LAST_PICKUP_HOUR = 21;
+const LAST_PICKUP_LABEL = `${LAST_PICKUP_HOUR}:00`;
+
+export const STORE_HOURS = Array.from({ length: LAST_PICKUP_HOUR - OPEN_HOUR + 1 },
+  (_, i) => String(OPEN_HOUR + i).padStart(2, '0'));
 
 export const STORE_MINUTES = [
   '00', '05', '10', '15', '20', '25', '30', '35', '40', '45', '50', '55'
@@ -80,8 +83,8 @@ export function getPickupDate(now = new Date()) {
 export function computeDefaultPickupTime(now = new Date(), addMinutes = MIN_PREP_MINUTES) {
   const [hour, minute] = storeClock.format(now).split(':').map(Number);
   const fraction = (now.getUTCSeconds() * 1000 + now.getUTCMilliseconds()) / 60000;
-  const target = Math.max(8 * 60 + 30, Math.ceil((hour * 60 + minute + addMinutes + fraction) / 5) * 5);
-  if (target >= 24 * 60) return null;
+  const target = Math.max(OPEN_HOUR * 60 + 30, Math.ceil((hour * 60 + minute + addMinutes + fraction) / 5) * 5);
+  if (target > LAST_PICKUP_HOUR * 60) return null;
 
   return {
     hour: String(Math.floor(target / 60)).padStart(2, '0'),
@@ -114,6 +117,7 @@ export function getAvailableTimeModel(now = new Date()) {
     hours,
     getMinutesForHour(hour) {
       if (!hours.includes(hour)) return [];
+      if (Number(hour) === LAST_PICKUP_HOUR) return ['00'];
       return hour === earliest.hour ? STORE_MINUTES.filter(minute => minute >= earliest.minute) : STORE_MINUTES;
     }
   };
@@ -210,7 +214,7 @@ export function openTimeWheelPicker({ initialValue = '', onSelect, nowProvider =
         </div>
 
         <p id="time-wheel-note" aria-live="polite" class="text-[11px] text-center text-amber-900 bg-amber-50 border border-amber-200/80 rounded-xl py-1.5 px-2.5 font-semibold">
-          ⏱ Đơn cần <b>ít nhất 30 phút</b> chuẩn bị tính từ lúc đặt thành công
+          ⏱ Nhận món đến <b>${LAST_PICKUP_LABEL}</b>. Đơn cần <b>ít nhất 30 phút</b> chuẩn bị tính từ lúc đặt thành công.
         </p>
 
         <!-- Confirm Button -->
@@ -270,7 +274,9 @@ export function openTimeWheelPicker({ initialValue = '', onSelect, nowProvider =
       btn.className = quickButtonClasses(selected);
       btn.setAttribute?.('aria-pressed', String(selected));
     });
-    if (!selection && note) note.textContent = 'Hôm nay không còn mốc nhận món đủ 30 phút chuẩn bị.';
+    if (!selection && note) {
+      note.textContent = `Hôm nay không còn giờ nhận món đủ 30 phút chuẩn bị trước mốc ${LAST_PICKUP_LABEL}.`;
+    }
   };
 
   const bindWheel = (wheel, select) => {

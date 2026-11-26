@@ -26,7 +26,7 @@ import {
   showCopyFallbackModal as uiShowCopyFallbackModal,
   showOrderCopiedModal as uiShowOrderCopiedModal
 } from './ui-feedback.js';
-import { getPickupDate, isPickupTimeValid, openTimeWheelPicker } from './time-picker.js?v=3.0';
+import { getPickupDate, isPickupTimeValid, openTimeWheelPicker } from './time-picker.js?v=3.1';
 import {
   IconShoppingBag,
   IconX,
