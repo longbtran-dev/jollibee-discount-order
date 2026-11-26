@@ -26,7 +26,7 @@ import {
   showCopyFallbackModal as uiShowCopyFallbackModal,
   showOrderCopiedModal as uiShowOrderCopiedModal
 } from './ui-feedback.js';
-import { openTimeWheelPicker } from './time-picker.js';
+import { getPickupDate, isPickupTimeValid, openTimeWheelPicker } from './time-picker.js?v=3.0';
 import {
   IconShoppingBag,
   IconX,
@@ -72,6 +72,7 @@ export class CartDrawer {
       phone: '',
       address: '',
       pickupTime: '',
+      pickupDate: '',
       note: ''
     };
 
@@ -108,7 +109,8 @@ export class CartDrawer {
             firstName,
             phone: typeof parsed.phone === 'string' ? parsed.phone : '',
             address: typeof parsed.address === 'string' ? parsed.address : '',
-            pickupTime: typeof parsed.pickupTime === 'string' ? parsed.pickupTime : '',
+            pickupTime: parsed.pickupDate === getPickupDate() && typeof parsed.pickupTime === 'string' ? parsed.pickupTime : '',
+            pickupDate: typeof parsed.pickupDate === 'string' ? parsed.pickupDate : '',
             note: typeof parsed.note === 'string' ? parsed.note : ''
           };
         }
@@ -221,7 +223,13 @@ export class CartDrawer {
     input.addEventListener('input', onInput);
   }
 
-  validateForm() {
+  _getUsablePickupTime(now = new Date()) {
+    const { pickupTime, pickupDate } = this.customerInfo;
+    if (pickupDate && pickupDate !== getPickupDate(now)) return '';
+    return isPickupTimeValid(pickupTime, now) ? pickupTime : '';
+  }
+
+  validateForm(now = new Date()) {
     const pricing = this.cart.getTotals(this.orderType, this.config);
     if (pricing.originalTotal < 100000) {
       const needed = 100000 - pricing.originalTotal;
@@ -338,8 +346,10 @@ export class CartDrawer {
         return false;
       }
     } else if (this.orderType === 'dinein') {
-      if (!this.customerInfo.pickupTime || !this.customerInfo.pickupTime.trim()) {
-        const msg = 'Vui lòng chạm chọn Thời gian nhận món hôm nay!';
+      if (!this._getUsablePickupTime(now)) {
+        const msg = this.customerInfo.pickupTime?.trim()
+          ? 'Giờ nhận đã chọn không còn khả dụng. Vui lòng chọn lại giờ còn ít nhất 30 phút chuẩn bị!'
+          : 'Vui lòng chạm chọn Thời gian nhận món hôm nay!';
         this.lastValidationError = msg;
         this.showToast(msg, 'warning');
         if (typeof document !== 'undefined') {
@@ -829,7 +839,7 @@ export class CartDrawer {
                   <span class="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[#d71920] flex items-center">
                     ${IconClock('w-4 h-4')}
                   </span>
-                  <input type="text" id="customer-pickup-time" readonly value="${escapeHtml(this.customerInfo.pickupTime)}" placeholder="Chạm để cuộn chọn giờ nhận... *"
+                  <input type="text" id="customer-pickup-time" readonly value="${escapeHtml(this._getUsablePickupTime())}" placeholder="Chạm để cuộn chọn giờ nhận... *"
                     class="w-full pl-10 pr-24 py-2.5 rounded-xl border border-gray-300 text-sm font-bold text-gray-900 placeholder-gray-400 placeholder:font-normal focus:ring-2 focus:ring-red-500 focus:outline-none bg-white cursor-pointer transition">
                   <span class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 bg-amber-100 group-hover:bg-amber-200 text-amber-950 text-[11px] font-extrabold px-2.5 py-1 rounded-lg border border-amber-300 flex items-center gap-1 transition">
                     <span>Chọn giờ</span>
@@ -1085,9 +1095,10 @@ export class CartDrawer {
 
     const triggerTimePicker = () => {
       openTimeWheelPicker({
-        initialValue: this.customerInfo.pickupTime,
-        onSelect: (selectedTime) => {
+        initialValue: this._getUsablePickupTime(),
+        onSelect: (selectedTime, pickupDate) => {
           this.customerInfo.pickupTime = selectedTime;
+          this.customerInfo.pickupDate = pickupDate;
           this._saveCustomerInfoToStorage();
           const pickupInput = typeof document !== 'undefined' ? document.getElementById('customer-pickup-time') : null;
           if (pickupInput) {

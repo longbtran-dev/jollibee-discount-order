@@ -5,11 +5,11 @@
  * - Nút chọn nhanh (+30 phút, +45 phút, +1 tiếng) đảm bảo chuẩn bị đơn ít nhất 30 phút
  * - Tích hợp ngăn xếp LIFO Modal Stack & Focus Trap an toàn
  */
-import { escapeHtml, registerOpenModal, unregisterOpenModal, trapFocusInModal } from '../utils.js';
+import { registerOpenModal, unregisterOpenModal, trapFocusInModal } from '../utils.js';
 import { IconClock, IconX, IconCheck } from '../icons.js';
 
 export const STORE_HOURS = [
-  '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22'
+  '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '21', '22', '23'
 ];
 
 export const STORE_MINUTES = [
@@ -17,6 +17,15 @@ export const STORE_MINUTES = [
 ];
 
 const ITEM_HEIGHT = 40;
+const MIN_PREP_MINUTES = 30;
+const TIME_ZONE = 'Asia/Ho_Chi_Minh';
+const storeClock = new Intl.DateTimeFormat('en-GB', {
+  timeZone: TIME_ZONE, hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+});
+const storeDate = new Intl.DateTimeFormat('en-GB', {
+  timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit'
+});
+const presets = [[30, '⚡ Sau 30 phút'], [45, '+45 phút'], [60, '+1 tiếng']];
 
 function bindVerticalWheelDrag(col) {
   if (!col || typeof col.addEventListener !== 'function') return;
@@ -35,6 +44,7 @@ function bindVerticalWheelDrag(col) {
       if (!dragging && Math.abs(dy) < 5) return;
       if (!dragging) {
         dragging = true;
+        col.setPointerCapture(ev.pointerId);
         if (col.style) col.style.scrollSnapType = 'none';
       }
       ev.preventDefault();
@@ -50,11 +60,7 @@ function bindVerticalWheelDrag(col) {
       if (dragging) {
         if (col.style) col.style.scrollSnapType = 'y mandatory';
         const nearestIdx = Math.round(col.scrollTop / ITEM_HEIGHT);
-        if (typeof col.scrollTo === 'function') {
-          col.scrollTo({ top: nearestIdx * ITEM_HEIGHT, behavior: 'smooth' });
-        } else {
-          col.scrollTop = nearestIdx * ITEM_HEIGHT;
-        }
+        col.scrollTop = nearestIdx * ITEM_HEIGHT;
       }
     };
 
@@ -66,32 +72,21 @@ function bindVerticalWheelDrag(col) {
   });
 }
 
-/**
- * Tính giờ nhận mặc định = Thời điểm hiện tại + minLeadMinutes (mặc định 30p), làm tròn lên bội số 5 phút
- * @param {Date} [now=new Date()]
- * @param {number} [addMinutes=30]
- * @returns {{ hour: string, minute: string }}
- */
-export function computeDefaultPickupTime(now = new Date(), addMinutes = 30) {
-  const target = new Date(now.getTime() + addMinutes * 60 * 1000);
-  let h = target.getHours();
-  let m = Math.ceil(target.getMinutes() / 5) * 5;
+export function getPickupDate(now = new Date()) {
+  return storeDate.format(now);
+}
 
-  if (m >= 60) {
-    h += 1;
-    m = 0;
-  }
-
-  if (h < 8 || (h === 8 && m < 30)) {
-    return { hour: '08', minute: '30' };
-  }
-  if (h > 22) {
-    return { hour: '22', minute: '00' };
-  }
+/** Tính mốc 5 phút đầu tiên đủ thời gian chuẩn bị trong ngày tại Việt Nam. */
+export function computeDefaultPickupTime(now = new Date(), addMinutes = MIN_PREP_MINUTES) {
+  const [hour, minute] = storeClock.format(now).split(':').map(Number);
+  const fraction = (now.getUTCSeconds() * 1000 + now.getUTCMilliseconds()) / 60000;
+  const target = Math.max(8 * 60 + 30, Math.ceil((hour * 60 + minute + addMinutes + fraction) / 5) * 5);
+  if (target >= 24 * 60) return null;
 
   return {
-    hour: String(h).padStart(2, '0'),
-    minute: String(m).padStart(2, '0')
+    hour: String(Math.floor(target / 60)).padStart(2, '0'),
+    minute: String(target % 60).padStart(2, '0'),
+    dayLabel: 'hôm nay'
   };
 }
 
@@ -102,25 +97,38 @@ export function computeDefaultPickupTime(now = new Date(), addMinutes = 30) {
  */
 export function parsePickupTime(value) {
   if (!value || typeof value !== 'string') return null;
-  const match = value.match(/(\d{1,2})\s*[:hH]\s*(\d{1,2})/);
+  const match = value.trim().match(/^(\d{1,2})\s*[:h]\s*(\d{1,2})(?:\s+hôm nay)?$/i);
   if (!match) return null;
+  const hour = match[1].padStart(2, '0');
+  const minute = match[2].padStart(2, '0');
+  if (!STORE_HOURS.includes(hour) || !STORE_MINUTES.includes(minute)) return null;
+  return { hour, minute };
+}
 
-  let h = Math.min(22, Math.max(8, parseInt(match[1], 10)));
-  let m = Math.round(parseInt(match[2], 10) / 5) * 5;
-  if (m >= 60) m = 55;
-  if (m < 0) m = 0;
+export function getAvailableTimeModel(now = new Date()) {
+  const earliest = computeDefaultPickupTime(now);
+  const hours = earliest ? STORE_HOURS.filter(hour => hour >= earliest.hour) : [];
 
   return {
-    hour: String(h).padStart(2, '0'),
-    minute: String(m).padStart(2, '0')
+    earliest,
+    hours,
+    getMinutesForHour(hour) {
+      if (!hours.includes(hour)) return [];
+      return hour === earliest.hour ? STORE_MINUTES.filter(minute => minute >= earliest.minute) : STORE_MINUTES;
+    }
   };
+}
+
+export function isPickupTimeValid(value, now = new Date()) {
+  const time = parsePickupTime(value);
+  return Boolean(time && getAvailableTimeModel(now).getMinutesForHour(time.hour).includes(time.minute));
 }
 
 /**
  * Mở Modal Vòng Cuộn Chọn Giờ Nhận Đơn Hôm Nay
- * @param {{ initialValue?: string, onSelect?: (formatted: string) => void }} options
+ * @param {{ initialValue?: string, nowProvider?: () => Date, onSelect?: (formatted: string, date: string) => void }} options
  */
-export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
+export function openTimeWheelPicker({ initialValue = '', onSelect, nowProvider = () => new Date() } = {}) {
   if (typeof document === 'undefined' || typeof document.createElement !== 'function') return;
 
   const existing = typeof document.getElementById === 'function' ? document.getElementById('time-picker-modal') : null;
@@ -129,11 +137,23 @@ export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
     existing.remove();
   }
 
-  const initial = parsePickupTime(initialValue) || computeDefaultPickupTime(new Date(), 30);
-  let currentHourIdx = Math.max(0, STORE_HOURS.indexOf(initial.hour));
-  let currentMinIdx = Math.max(0, STORE_MINUTES.indexOf(initial.minute));
+  let now = nowProvider();
+  let modelDate = getPickupDate(now);
+  let model = getAvailableTimeModel(now);
+  const hasSavedTime = isPickupTimeValid(initialValue, now);
+  let selection = hasSavedTime ? parsePickupTime(initialValue) : model.earliest;
+  let activePreset = hasSavedTime ? null : MIN_PREP_MINUTES;
+  const formatCurrentSelection = () => selection ? `${selection.hour}:${selection.minute} hôm nay` : '';
 
-  const formatCurrentSelection = () => `${STORE_HOURS[currentHourIdx]}:${STORE_MINUTES[currentMinIdx]} hôm nay`;
+  const wheelItemClasses = (type, selected) =>
+    `time-wheel-${type}-item w-full h-[40px] flex items-center justify-center transition select-none ${
+      selected ? 'text-xl font-black text-[#d71920]' : 'text-base font-bold text-gray-400 hover:text-gray-700'
+    }`;
+  const quickButtonClasses = (selected) =>
+    `btn-quick-time flex-1 py-1.5 px-2 rounded-xl border text-[11px] transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${
+      selected ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-950 font-extrabold' :
+        'bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-800 font-bold'
+    }`;
 
   const modal = document.createElement('div');
   modal.id = 'time-picker-modal';
@@ -141,24 +161,6 @@ export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
   modal.setAttribute('aria-labelledby', 'time-picker-title');
-
-  const hourItemsHtml = STORE_HOURS.map((h, idx) => `
-    <button type="button" data-idx="${idx}" style="scroll-snap-align: center;"
-      class="time-wheel-hour-item w-full h-10 flex items-center justify-center transition select-none ${
-        idx === currentHourIdx ? 'text-xl font-black text-[#d71920]' : 'text-base font-bold text-gray-400 hover:text-gray-700'
-      }">
-      ${h} giờ
-    </button>
-  `).join('');
-
-  const minItemsHtml = STORE_MINUTES.map((m, idx) => `
-    <button type="button" data-idx="${idx}" style="scroll-snap-align: center;"
-      class="time-wheel-min-item w-full h-10 flex items-center justify-center transition select-none ${
-        idx === currentMinIdx ? 'text-xl font-black text-[#d71920]' : 'text-base font-bold text-gray-400 hover:text-gray-700'
-      }">
-      ${m} phút
-    </button>
-  `).join('');
 
   modal.innerHTML = `
     <div id="time-picker-panel" class="bg-white rounded-t-3xl sm:rounded-3xl max-w-sm w-full overflow-hidden shadow-2xl border border-gray-100 animate-modal-panel">
@@ -176,15 +178,9 @@ export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
       <div class="p-4 space-y-3.5">
         <!-- Quick-pick presets -->
         <div class="flex items-center gap-2 justify-center">
-          <button type="button" data-quick-mins="30" class="btn-quick-time flex-1 py-1.5 px-2 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-950 font-extrabold text-[11px] transition active:scale-95">
-            ⚡ Sau 30 phút
-          </button>
-          <button type="button" data-quick-mins="45" class="btn-quick-time flex-1 py-1.5 px-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-[11px] transition active:scale-95">
-            +45 phút
-          </button>
-          <button type="button" data-quick-mins="60" class="btn-quick-time flex-1 py-1.5 px-2 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-800 font-bold text-[11px] transition active:scale-95">
-            +1 tiếng
-          </button>
+          ${presets.map(([mins, label]) => `
+            <button type="button" data-quick-mins="${mins}" class="${quickButtonClasses(false)}">${label}</button>
+          `).join('')}
         </div>
 
         <!-- Column Headers -->
@@ -196,7 +192,7 @@ export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
         <!-- 2-Column Scrollable Drum Wheel -->
         <div class="relative h-[200px] bg-gray-50/70 rounded-2xl border border-gray-200 overflow-hidden select-none">
           <!-- Center Active Highlight Bar -->
-          <div class="pointer-events-none absolute inset-x-3 top-1/2 -translate-y-1/2 h-10 rounded-xl bg-red-50/90 border-y-2 border-[#d71920]/30 flex items-center justify-center z-0">
+          <div class="pointer-events-none absolute inset-x-3 top-1/2 -translate-y-1/2 h-[40px] rounded-xl bg-red-50/90 border-y-2 border-[#d71920]/30 flex items-center justify-center z-0">
             <span class="font-black text-lg text-[#d71920]">:</span>
           </div>
 
@@ -206,29 +202,21 @@ export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
 
           <div class="relative z-20 grid grid-cols-2 h-full">
             <!-- Hours Wheel -->
-            <div id="time-wheel-hour" class="h-[200px] overflow-y-auto no-scrollbar overscroll-contain" style="scroll-snap-type: y mandatory;">
-              <div class="h-[80px] flex-shrink-0"></div>
-              ${hourItemsHtml}
-              <div class="h-[80px] flex-shrink-0"></div>
-            </div>
+            <div id="time-wheel-hour" class="h-[200px] overflow-y-auto no-scrollbar overscroll-contain" style="scroll-snap-type: y mandatory;"></div>
 
             <!-- Minutes Wheel -->
-            <div id="time-wheel-minute" class="h-[200px] overflow-y-auto no-scrollbar overscroll-contain" style="scroll-snap-type: y mandatory;">
-              <div class="h-[80px] flex-shrink-0"></div>
-              ${minItemsHtml}
-              <div class="h-[80px] flex-shrink-0"></div>
-            </div>
+            <div id="time-wheel-minute" class="h-[200px] overflow-y-auto no-scrollbar overscroll-contain" style="scroll-snap-type: y mandatory;"></div>
           </div>
         </div>
 
-        <p class="text-[11px] text-center text-amber-900 bg-amber-50 border border-amber-200/80 rounded-xl py-1.5 px-2.5 font-semibold">
+        <p id="time-wheel-note" aria-live="polite" class="text-[11px] text-center text-amber-900 bg-amber-50 border border-amber-200/80 rounded-xl py-1.5 px-2.5 font-semibold">
           ⏱ Đơn cần <b>ít nhất 30 phút</b> chuẩn bị tính từ lúc đặt thành công
         </p>
 
         <!-- Confirm Button -->
-        <button type="button" id="btn-time-wheel-confirm" class="w-full py-3 px-4 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition active:scale-95">
+        <button type="button" id="btn-time-wheel-confirm" class="w-full py-3 px-4 bg-[#d71920] hover:bg-[#b81218] text-white font-extrabold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-50">
           ${IconCheck('w-4 h-4')}
-          <span id="time-wheel-confirm-label">Xác nhận: ${escapeHtml(formatCurrentSelection())}</span>
+          <span id="time-wheel-confirm-label"></span>
         </button>
       </div>
     </div>
@@ -242,93 +230,90 @@ export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
   const hourCol = modal.querySelector('#time-wheel-hour');
   const minCol = modal.querySelector('#time-wheel-minute');
   const confirmLabelEl = modal.querySelector('#time-wheel-confirm-label');
+  const confirmButton = modal.querySelector('#btn-time-wheel-confirm');
+  const note = modal.querySelector('#time-wheel-note');
+  const quickButtons = Array.from(modal.querySelectorAll('.btn-quick-time'));
+  const spacer = '<div class="h-[80px]"></div>';
+  const hoursWheel = { col: hourCol, type: 'hour', unit: 'giờ', values: [] };
+  const minutesWheel = { col: minCol, type: 'min', unit: 'phút', values: [] };
 
-  const updateVisualHighlight = () => {
-    if (hourCol && typeof hourCol.querySelectorAll === 'function') {
-      hourCol.querySelectorAll('.time-wheel-hour-item').forEach((btn, idx) => {
-        btn.className = `time-wheel-hour-item w-full h-10 flex items-center justify-center transition select-none ${
-          idx === currentHourIdx ? 'text-xl font-black text-[#d71920]' : 'text-base font-bold text-gray-400 hover:text-gray-700'
-        }`;
-      });
+  const syncWheel = (wheel, values, selected, source) => {
+    const { col, type, unit } = wheel;
+    if (!col) return;
+    const changed = values.length !== wheel.values.length || values.some((value, i) => value !== wheel.values[i]);
+    if (changed) {
+      wheel.values = values;
+      col.innerHTML = spacer + values.map(value => `
+        <button type="button" data-value="${value}" style="scroll-snap-align: center;">${value} ${unit}</button>
+      `).join('') + spacer;
     }
-    if (minCol && typeof minCol.querySelectorAll === 'function') {
-      minCol.querySelectorAll('.time-wheel-min-item').forEach((btn, idx) => {
-        btn.className = `time-wheel-min-item w-full h-10 flex items-center justify-center transition select-none ${
-          idx === currentMinIdx ? 'text-xl font-black text-[#d71920]' : 'text-base font-bold text-gray-400 hover:text-gray-700'
-        }`;
-      });
-    }
-    if (confirmLabelEl) {
-      confirmLabelEl.textContent = `Xác nhận: ${formatCurrentSelection()}`;
-    }
-  };
-
-  const scrollToIndices = (hIdx, mIdx, behavior = 'auto') => {
-    currentHourIdx = Math.min(STORE_HOURS.length - 1, Math.max(0, hIdx));
-    currentMinIdx = Math.min(STORE_MINUTES.length - 1, Math.max(0, mIdx));
-    if (hourCol) {
-      if (typeof hourCol.scrollTo === 'function') {
-        hourCol.scrollTo({ top: currentHourIdx * ITEM_HEIGHT, behavior });
-      } else {
-        hourCol.scrollTop = currentHourIdx * ITEM_HEIGHT;
-      }
-    }
-    if (minCol) {
-      if (typeof minCol.scrollTo === 'function') {
-        minCol.scrollTo({ top: currentMinIdx * ITEM_HEIGHT, behavior });
-      } else {
-        minCol.scrollTop = currentMinIdx * ITEM_HEIGHT;
-      }
-    }
-    updateVisualHighlight();
-  };
-
-  // Đặt vị trí cuộn ban đầu đúng vào giờ/phút mặc định & hỗ trợ kéo chuột dọc trên Desktop
-  scrollToIndices(currentHourIdx, currentMinIdx, 'auto');
-  bindVerticalWheelDrag(hourCol);
-  bindVerticalWheelDrag(minCol);
-
-  hourCol?.addEventListener('scroll', () => {
-    const idx = Math.min(STORE_HOURS.length - 1, Math.max(0, Math.round(hourCol.scrollTop / ITEM_HEIGHT)));
-    if (idx !== currentHourIdx) {
-      currentHourIdx = idx;
-      updateVisualHighlight();
-    }
-  }, { passive: true });
-
-  minCol?.addEventListener('scroll', () => {
-    const idx = Math.min(STORE_MINUTES.length - 1, Math.max(0, Math.round(minCol.scrollTop / ITEM_HEIGHT)));
-    if (idx !== currentMinIdx) {
-      currentMinIdx = idx;
-      updateVisualHighlight();
-    }
-  }, { passive: true });
-
-  hourCol?.addEventListener('click', (e) => {
-    const btn = e.target?.closest?.('.time-wheel-hour-item');
-    if (btn && btn.dataset.idx !== undefined) {
-      scrollToIndices(Number(btn.dataset.idx), currentMinIdx, 'smooth');
-    }
-  });
-
-  minCol?.addEventListener('click', (e) => {
-    const btn = e.target?.closest?.('.time-wheel-min-item');
-    if (btn && btn.dataset.idx !== undefined) {
-      scrollToIndices(currentHourIdx, Number(btn.dataset.idx), 'smooth');
-    }
-  });
-
-  if (typeof modal.querySelectorAll === 'function') {
-    modal.querySelectorAll('.btn-quick-time').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const mins = Number(btn.dataset.quickMins) || 30;
-        const target = computeDefaultPickupTime(new Date(), mins);
-        const hIdx = Math.max(0, STORE_HOURS.indexOf(target.hour));
-        const mIdx = Math.max(0, STORE_MINUTES.indexOf(target.minute));
-        scrollToIndices(hIdx, mIdx, 'smooth');
-      });
+    col.querySelectorAll('button').forEach(btn => {
+      const isSelected = btn.dataset.value === selected;
+      btn.className = wheelItemClasses(type, isSelected);
+      btn.setAttribute('aria-pressed', String(isSelected));
     });
-  }
+    // Cuộn tức thì cho nút chọn. Chừa quyền cuộn tự nhiên cho cột khách đang kéo.
+    if (col !== source || changed) col.scrollTop = Math.max(0, values.indexOf(selected)) * ITEM_HEIGHT;
+  };
+
+  const syncSelection = (source) => {
+    syncWheel(hoursWheel, model.hours, selection?.hour, source);
+    syncWheel(minutesWheel, model.getMinutesForHour(selection?.hour), selection?.minute, source);
+    if (confirmButton) confirmButton.disabled = !selection;
+    if (confirmLabelEl) {
+      confirmLabelEl.textContent = selection ? `Xác nhận: ${formatCurrentSelection()}` : 'Hết giờ nhận hôm nay';
+    }
+    quickButtons.forEach(btn => {
+      const mins = Number(btn.dataset.quickMins);
+      btn.disabled = !computeDefaultPickupTime(now, mins);
+      const selected = !btn.disabled && mins === activePreset;
+      btn.className = quickButtonClasses(selected);
+      btn.setAttribute?.('aria-pressed', String(selected));
+    });
+    if (!selection && note) note.textContent = 'Hôm nay không còn mốc nhận món đủ 30 phút chuẩn bị.';
+  };
+
+  const bindWheel = (wheel, select) => {
+    const { col } = wheel;
+    bindVerticalWheelDrag(col);
+    col?.addEventListener('scroll', () => {
+      const index = Math.max(0, Math.min(wheel.values.length - 1, Math.round(col.scrollTop / ITEM_HEIGHT)));
+      select(wheel.values[index], col);
+    }, { passive: true });
+    col?.addEventListener('click', (e) => select(e.target?.closest?.('button')?.dataset.value));
+  };
+
+  syncSelection();
+  bindWheel(hoursWheel, (hour, source) => {
+    if (!hour || (source && hour === selection?.hour)) return;
+    const minutes = model.getMinutesForHour(hour);
+    const minute = minutes.includes(selection?.minute) ? selection.minute : minutes[0];
+    selection = { hour, minute };
+    activePreset = null;
+    syncSelection(source);
+  });
+  bindWheel(minutesWheel, (minute, source) => {
+    if (!minute || (source && minute === selection?.minute)) return;
+    selection = { hour: selection.hour, minute };
+    activePreset = null;
+    syncSelection(source);
+  });
+
+  const refreshModel = () => {
+    modelDate = getPickupDate(now);
+    model = getAvailableTimeModel(now);
+  };
+  quickButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      now = nowProvider();
+      refreshModel();
+      const mins = Number(btn.dataset.quickMins);
+      const target = computeDefaultPickupTime(now, mins);
+      selection = target ?? model.earliest;
+      activePreset = target ? mins : MIN_PREP_MINUTES;
+      syncSelection();
+    });
+  });
 
   let isClosed = false;
   const close = () => {
@@ -356,11 +341,20 @@ export function openTimeWheelPicker({ initialValue = '', onSelect } = {}) {
     isMouseDownOnBackdrop = false;
   });
 
-  modal.querySelector('#btn-time-wheel-confirm')?.addEventListener('click', () => {
+  confirmButton?.addEventListener('click', () => {
     const selectedStr = formatCurrentSelection();
+    now = nowProvider();
+    if (modelDate !== getPickupDate(now) || !isPickupTimeValid(selectedStr, now)) {
+      refreshModel();
+      selection = model.earliest;
+      activePreset = MIN_PREP_MINUTES;
+      if (note && selection) note.textContent = 'Giờ vừa chọn không còn khả dụng. Vui lòng kiểm tra lại giờ mới.';
+      syncSelection();
+      return;
+    }
     close();
     if (typeof onSelect === 'function') {
-      onSelect(selectedStr);
+      onSelect(selectedStr, modelDate);
     }
   });
 }

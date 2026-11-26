@@ -118,6 +118,7 @@ describe('Cart & Order Message Formatter', () => {
   });
 
   it('validateForm ở chế độ Ăn tại quán yêu cầu đủ Họ, Tên, SĐT và Thời gian nhận (không bắt điền chi nhánh)', () => {
+    const now = new Date('2026-11-26T11:15:00Z');
     let toastMsg = '';
     const cart = new Cart();
     cart.clear();
@@ -140,6 +141,9 @@ describe('Cart & Order Message Formatter', () => {
     assert.ok(toastMsg.toLowerCase().includes('thời gian') || toastMsg.toLowerCase().includes('giờ'));
 
     // Điền đầy đủ Họ, Tên, SĐT, Thời gian nhận (không cần chi nhánh) -> hợp lệ
+    drawer.customerInfo.pickupTime = '17:30 hôm nay';
+    assert.equal(drawer.validateForm(now), false);
+
     toastMsg = '';
     drawer.customerInfo = {
       lastName: 'Nguyễn Văn',
@@ -147,7 +151,7 @@ describe('Cart & Order Message Formatter', () => {
       phone: '0985194873',
       pickupTime: '19:00 hôm nay'
     };
-    const isValid = drawer.validateForm();
+    const isValid = drawer.validateForm(now);
     assert.equal(isValid, true);
     assert.equal(toastMsg, '');
     assert.equal(drawer.lastValidationError, null);
@@ -575,7 +579,7 @@ describe('Cart & Order Message Formatter', () => {
       phone: '0985194873',
       pickupTime: '12:30 hôm nay'
     };
-    assert.equal(drawer.validateForm(), true);
+    assert.equal(drawer.validateForm(new Date('2026-11-26T04:45:00Z')), true);
 
     drawer.close();
   });

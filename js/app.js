@@ -3,7 +3,7 @@
  */
 import { Cart } from './cart.js';
 import { ComboModal } from './components/combo-modal.js';
-import { CartDrawer } from './components/cart-drawer.js';
+import { CartDrawer } from './components/cart-drawer.js?v=3.0';
 import { ImageModal } from './components/image-modal.js';
 import { InfoModal } from './components/info-modal.js';
 import { showToast, showUndoToast } from './components/ui-feedback.js';
