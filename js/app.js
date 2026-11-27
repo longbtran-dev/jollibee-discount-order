@@ -247,52 +247,160 @@ export class JollibeeApp {
     const tabsContainer = document.getElementById('category-tabs');
     if (!tabsContainer || !this.menuData) return;
 
-    let html = '';
+    let html = `
+      <div id="category-tab-indicator" aria-hidden="true"
+        class="category-tab-indicator pointer-events-none absolute top-0 left-0 rounded-full bg-[#d71920] shadow-[0_3px_10px_rgba(215,25,32,0.28)]"></div>
+    `;
+
     this.menuData.categories.forEach((cat, index) => {
       const isFirst = index === 0;
       if (isFirst) this.activeCategorySlug = cat.slug;
       const safeSlug = escapeHtml(cat.slug);
       const safeName = escapeHtml(this._getCategoryDisplayName(cat));
       const count = Array.isArray(cat.products) ? cat.products.length : 0;
-      const leadingIcon = isFirst ? `<span class="flex items-center flex-shrink-0 text-[#d71920] group-[.active-tab]:text-amber-300">${IconFlame('w-3.5 h-3.5')}</span>` : '';
+      const leadingIcon = isFirst
+        ? `<span class="flex items-center flex-shrink-0 text-[#d71920] group-[.active-tab]:text-amber-300 transition-colors duration-200">${IconFlame('w-3.5 h-3.5')}</span>`
+        : '';
 
       html += `
         <button type="button" 
-          class="category-tab-btn group px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 ${isFirst ? 'bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab' : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200'}"
+          class="category-tab-btn group px-4 py-2 rounded-full border transition-colors duration-200 flex-shrink-0 flex items-center ${
+            isFirst
+              ? 'bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab'
+              : 'bg-gray-100/90 text-gray-700 border-gray-200/80 hover:bg-gray-200/75 hover:text-gray-900'
+          }"
           aria-current="${isFirst ? 'true' : 'false'}"
           data-slug="${safeSlug}">
-          ${leadingIcon}
-          <span>${safeName}</span>
-          <span class="text-[10px] opacity-85">(${count})</span>
+          <span class="relative z-10 flex items-center gap-1.5 transition-transform duration-150 group-active:scale-95">
+            ${leadingIcon}
+            <span>${safeName}</span>
+            <span class="text-[10px] opacity-85">(${count})</span>
+          </span>
         </button>
       `;
     });
 
+    tabsContainer.classList?.remove('has-tab-indicator');
     tabsContainer.innerHTML = html;
+
+    this.syncCategoryTabIndicator({ immediate: true });
+    if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(() => this.syncCategoryTabIndicator({ immediate: true }));
+    }
+    if (typeof document !== 'undefined' && document.fonts?.ready?.then) {
+      document.fonts.ready.then(() => this.syncCategoryTabIndicator({ immediate: true })).catch(() => {});
+    }
+  }
+
+  /**
+   * Đồng bộ vị trí & kích thước viên thuốc đỏ (#category-tab-indicator) trượt mượt 60fps giữa các nút danh mục
+   */
+  syncCategoryTabIndicator({ immediate = false } = {}) {
+    if (typeof document === 'undefined') return;
+    const tabs = document.getElementById('category-tabs');
+    const indicator = document.getElementById('category-tab-indicator');
+    if (!tabs || !indicator || typeof tabs.querySelector !== 'function') return;
+
+    const activeBtn =
+      tabs.querySelector(`.category-tab-btn[data-slug="${this.activeCategorySlug}"]`) ||
+      tabs.querySelector('.category-tab-btn.active-tab');
+    if (!activeBtn || !activeBtn.offsetWidth) return;
+
+    if (immediate) {
+      indicator.style.transition = 'none';
+    }
+
+    indicator.style.width = `${activeBtn.offsetWidth}px`;
+    indicator.style.height = `${activeBtn.offsetHeight}px`;
+    indicator.style.transform = `translate3d(${activeBtn.offsetLeft}px, ${activeBtn.offsetTop}px, 0)`;
+    tabs.classList?.add('has-tab-indicator');
+
+    if (immediate) {
+      void indicator.offsetWidth;
+      if (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function') {
+        window.requestAnimationFrame(() => {
+          indicator.style.transition = '';
+        });
+      } else {
+        indicator.style.transition = '';
+      }
+    }
+  }
+
+  /**
+   * Cuộn ngang thanh Category Tabs bằng rAF riêng biệt để KHÔNG xung đột/hủy window.scrollTo({ behavior: 'smooth' }) trên Chrome
+   */
+  _smoothScrollTabBarTo(tabs, targetLeft, duration = 280) {
+    if (!tabs) return;
+    const maxScroll = Math.max(0, (tabs.scrollWidth || 0) - (tabs.clientWidth || 0));
+    const clampedTarget = Math.min(maxScroll, Math.max(0, targetLeft));
+
+    if (tabs._tabScrollRaf && typeof cancelAnimationFrame === 'function') {
+      cancelAnimationFrame(tabs._tabScrollRaf);
+      tabs._tabScrollRaf = null;
+    }
+
+    const startLeft = tabs.scrollLeft || 0;
+    const distance = clampedTarget - startLeft;
+
+    if (typeof requestAnimationFrame !== 'function' || Math.abs(distance) < 1) {
+      if (typeof tabs.scrollTo === 'function') {
+        tabs.scrollTo({ left: clampedTarget, behavior: 'auto' });
+      } else {
+        tabs.scrollLeft = clampedTarget;
+      }
+      return;
+    }
+
+    let startTime = null;
+    const step = (timestamp) => {
+      if (tabs.classList?.contains('is-dragging')) {
+        tabs._tabScrollRaf = null;
+        return;
+      }
+      if (startTime === null) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+      tabs.scrollLeft = startLeft + distance * easeOut;
+
+      if (progress < 1) {
+        tabs._tabScrollRaf = requestAnimationFrame(step);
+      } else {
+        tabs.scrollLeft = clampedTarget;
+        tabs._tabScrollRaf = null;
+      }
+    };
+
+    tabs._tabScrollRaf = requestAnimationFrame(step);
   }
 
   updateActiveTab(slug) {
     this.activeCategorySlug = slug;
+    let matchedBtn = null;
+
     document.querySelectorAll('.category-tab-btn').forEach(btn => {
       const isMatch = btn.dataset.slug === slug;
       btn.setAttribute('aria-current', isMatch ? 'true' : 'false');
       if (isMatch) {
+        matchedBtn = btn;
         btn.className =
-          'category-tab-btn group px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab';
-        const tabs = btn.parentElement;
-        if (typeof tabs?.scrollTo === 'function' && tabs.scrollWidth > tabs.clientWidth) {
-          const tabRect = btn.getBoundingClientRect();
-          const rowLeft = tabs.getBoundingClientRect().left;
-          tabs.scrollTo({
-            left: tabs.scrollLeft + tabRect.left - rowLeft + (tabRect.width - tabs.clientWidth) / 2,
-            behavior: 'smooth'
-          });
-        }
+          'category-tab-btn group px-4 py-2 rounded-full border transition-colors duration-200 flex-shrink-0 flex items-center bg-[#d71920] text-white border-[#d71920] shadow-sm active-tab';
       } else {
         btn.className =
-          'category-tab-btn group px-4 py-2 rounded-full border transition flex-shrink-0 flex items-center gap-1.5 active:scale-95 bg-gray-100 text-gray-700 border-gray-200 hover:bg-gray-200';
+          'category-tab-btn group px-4 py-2 rounded-full border transition-colors duration-200 flex-shrink-0 flex items-center bg-gray-100/90 text-gray-700 border-gray-200/80 hover:bg-gray-200/75 hover:text-gray-900';
       }
     });
+
+    this.syncCategoryTabIndicator({ immediate: false });
+
+    if (matchedBtn) {
+      const tabs = matchedBtn.parentElement;
+      if (tabs && tabs.scrollWidth > tabs.clientWidth) {
+        const desiredLeft = matchedBtn.offsetLeft + (matchedBtn.offsetWidth - tabs.clientWidth) / 2;
+        this._smoothScrollTabBarTo(tabs, desiredLeft, 280);
+      }
+    }
   }
 
   _getCategoryScrollOffset() {
@@ -304,6 +412,66 @@ export class JollibeeApp {
   _armProgrammaticScrollUnlock(delayMs = 220) {
     clearTimeout(this.scrollLockTimer);
     this.scrollLockTimer = setTimeout(() => this._finishCategoryScroll({ resync: false }), delayMs);
+  }
+
+  /**
+   * Cuộn dọc trang mượt 60fps bằng rAF (hoạt động mượt kể cả trên máy Windows tắt hiệu ứng hệ điều hành)
+   */
+  _smoothScrollWindowTo(targetTop) {
+    if (typeof window === 'undefined' || typeof window.scrollTo !== 'function') return;
+
+    const docEl = typeof document !== 'undefined' ? document.documentElement : null;
+    const maxScroll = docEl
+      ? Math.max(0, (docEl.scrollHeight || 0) - (window.innerHeight || docEl.clientHeight || 0))
+      : Math.max(0, targetTop);
+    const clampedTop = maxScroll > 0 ? Math.min(maxScroll, Math.max(0, targetTop)) : Math.max(0, targetTop);
+
+    if (typeof window.requestAnimationFrame !== 'function') {
+      window.scrollTo({ top: clampedTop, behavior: 'smooth' });
+      return;
+    }
+
+    if (this._windowScrollRaf && typeof window.cancelAnimationFrame === 'function') {
+      window.cancelAnimationFrame(this._windowScrollRaf);
+      this._windowScrollRaf = null;
+    }
+
+    const startTop = window.scrollY || 0;
+    const distance = clampedTop - startTop;
+    if (Math.abs(distance) < 1) {
+      this._finishCategoryScroll({ resync: false });
+      return;
+    }
+
+    // Thời lượng thích ứng theo quãng đường (280ms..460ms) tạo cảm giác lướt tự nhiên
+    const duration = Math.min(460, Math.max(280, Math.round(Math.abs(distance) * 0.18)));
+    let startTime = null;
+    if (docEl?.style) docEl.style.scrollBehavior = 'auto';
+
+    const step = (timestamp) => {
+      if (!this.isProgrammaticScrolling) {
+        if (docEl?.style) docEl.style.scrollBehavior = '';
+        this._windowScrollRaf = null;
+        return;
+      }
+      if (startTime === null) startTime = timestamp;
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+
+      window.scrollTo(0, Math.round(startTop + distance * easeOut));
+
+      if (progress < 1) {
+        this._windowScrollRaf = window.requestAnimationFrame(step);
+      } else {
+        window.scrollTo(0, clampedTop);
+        if (docEl?.style) docEl.style.scrollBehavior = '';
+        this._windowScrollRaf = null;
+        this._finishCategoryScroll({ resync: false });
+      }
+    };
+
+    this._windowScrollRaf = window.requestAnimationFrame(step);
   }
 
   scrollToCategory(slug) {
@@ -324,17 +492,20 @@ export class JollibeeApp {
 
     this.isProgrammaticScrolling = true;
     this.updateActiveTab(slug);
-    this._armProgrammaticScrollUnlock(320);
+    this._armProgrammaticScrollUnlock(520);
 
-    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
-      window.scrollTo({
-        top: (window.scrollY || 0) + targetSection.getBoundingClientRect().top - this._getCategoryScrollOffset(),
-        behavior: 'smooth'
-      });
-    }
+    const destTop = (window.scrollY || 0) + targetSection.getBoundingClientRect().top - this._getCategoryScrollOffset();
+    this._smoothScrollWindowTo(destTop);
   }
 
   _finishCategoryScroll({ resync = false } = {}) {
+    if (this._windowScrollRaf && typeof window !== 'undefined' && typeof window.cancelAnimationFrame === 'function') {
+      window.cancelAnimationFrame(this._windowScrollRaf);
+      this._windowScrollRaf = null;
+    }
+    if (typeof document !== 'undefined' && document.documentElement?.style) {
+      document.documentElement.style.scrollBehavior = '';
+    }
     if (!this.isProgrammaticScrolling) return;
     this.isProgrammaticScrolling = false;
     clearTimeout(this.scrollLockTimer);
@@ -392,18 +563,17 @@ export class JollibeeApp {
 
   scrollToTop() {
     const firstSlug = this.menuData?.categories?.[0]?.slug;
+    this.isProgrammaticScrolling = true;
     if (firstSlug) {
-      this.isProgrammaticScrolling = true;
       this.updateActiveTab(firstSlug);
-      this._armProgrammaticScrollUnlock(320);
     }
+    this._armProgrammaticScrollUnlock(520);
+
     const tabs = typeof document !== 'undefined' ? document.getElementById('category-tabs') : null;
-    if (tabs && typeof tabs.scrollTo === 'function') {
-      tabs.scrollTo({ left: 0, behavior: 'smooth' });
+    if (tabs) {
+      this._smoothScrollTabBarTo(tabs, 0, 280);
     }
-    if (typeof window !== 'undefined' && typeof window.scrollTo === 'function') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    this._smoothScrollWindowTo(0);
   }
 
   setupScrollSpy() {
@@ -424,7 +594,10 @@ export class JollibeeApp {
       const onUserInterrupt = () => this._finishCategoryScroll({ resync: true });
 
       window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', () => this._scheduleActiveCategoryUpdate());
+      window.addEventListener('resize', () => {
+        this.syncCategoryTabIndicator({ immediate: true });
+        this._scheduleActiveCategoryUpdate();
+      });
       window.addEventListener('scrollend', onNaturalEnd);
       window.addEventListener('wheel', onUserInterrupt, { passive: true });
       window.addEventListener('touchmove', onUserInterrupt, { passive: true });

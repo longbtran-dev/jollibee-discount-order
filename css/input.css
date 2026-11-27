@@ -94,6 +94,26 @@ body {
   will-change: transform;
 }
 
+/* Thanh trượt pill đỏ mượt 60fps cho Category Tabs (không chớp giật khi chuyển mục) */
+.category-tab-indicator {
+  z-index: 5;
+  opacity: 0;
+  transition:
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.2s ease,
+    opacity 0.18s ease;
+  will-change: transform, width;
+}
+#category-tabs.has-tab-indicator .category-tab-indicator {
+  opacity: 1;
+}
+#category-tabs.has-tab-indicator .category-tab-btn.active-tab {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
 /* Hiệu ứng chuyển tab mượt mà 60fps (không chớp giật / reload) */
 @keyframes tab-fade-in {
   from {
@@ -207,19 +227,10 @@ body {
   will-change: opacity;
 }
 
-/* Tôn trọng cài đặt giảm chuyển động (prefers-reduced-motion) của hệ điều hành */
+/* Giảm hiệu ứng trang trí nền lặp vô hạn khi thiết bị bật tiết kiệm chuyển động, nhưng giữ mượt các chuyển động tương tác chính */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto !important;
-  }
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
   .shimmer-effect::after,
-  .has-items-glow::after,
-  .marquee-track {
+  .has-items-glow::after {
     animation: none !important;
   }
 }

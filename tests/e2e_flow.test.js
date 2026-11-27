@@ -223,6 +223,7 @@ describe('End-to-End System Integration Flow', () => {
     };
     app.renderCategoryTabs();
     assert.ok(tabsEl.innerHTML.includes('Combo Bán Chạy Nhất'));
+    assert.ok(tabsEl.innerHTML.includes('id="category-tab-indicator"'), 'Có viên thuốc trượt mượt #category-tab-indicator');
 
     app.renderMenuSections('');
     assert.ok(menuContainer.innerHTML.includes('Bán chạy #1'));
