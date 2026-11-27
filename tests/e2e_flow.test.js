@@ -264,6 +264,10 @@ describe('End-to-End System Integration Flow', () => {
   it('nút Cuộn lên đầu trang (#btn-scroll-top) ẩn khi ở trên cao, hiện khi cuộn xuống sâu và đưa về top=0 mượt mà', () => {
     const indexHtml = fs.readFileSync('index.html', 'utf8');
     assert.ok(indexHtml.includes('id="btn-scroll-top"'), 'index.html phải có nút #btn-scroll-top');
+    const cartBarIdx = indexHtml.indexOf('id="floating-cart-bar"');
+    const scrollBtnIdx = indexHtml.indexOf('id="btn-scroll-top"');
+    assert.ok(scrollBtnIdx > cartBarIdx, '#btn-scroll-top phải neo bên trong #floating-cart-bar để đồng bộ safe-area mobile');
+    assert.ok(indexHtml.includes('bottom-full'), '#btn-scroll-top phải dùng bottom-full để luôn cách đều mép trên thanh giỏ hàng');
 
     const btnClasses = new Set(['opacity-0', 'translate-y-3', 'pointer-events-none']);
     const mockScrollTopBtn = {

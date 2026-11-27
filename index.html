@@ -12,13 +12,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Static Pre-compiled Tailwind CSS (Siêu nhẹ, không chặn luồng vẽ trang) -->
-  <link rel="stylesheet" href="css/tailwind.min.css?v=3.2">
+  <link rel="stylesheet" href="css/tailwind.min.css?v=3.3">
 
   <!-- Non-blocking Deferred Scripts -->
   <script src="config.js?v=2.9" defer></script>
   <script src="js/confetti.js" defer></script>
 </head>
-<body class="bg-gray-50 text-gray-800 antialiased min-h-screen pb-36">
+<body class="bg-gray-50 text-gray-800 antialiased min-h-screen pb-[calc(9.5rem+env(safe-area-inset-bottom))] sm:pb-36">
 
   <!-- Top Announcement Marquee Banner (Chạy liên tục từ phải sang trái) -->
   <div id="top-banner" class="bg-[#ffc72c] text-gray-950 font-extrabold text-[11px] sm:text-xs py-1.5 border-b border-amber-300 shadow-sm marquee-viewport leading-snug" aria-label="Thông báo ưu đãi đặt hộ Jollibee">
@@ -162,14 +162,14 @@
     </div>
   </main>
 
-  <!-- Nút Cuộn Lên Đầu Trang (Tự hiện khi cuộn xuống dưới, nằm gọn phía trên thanh Giỏ hàng) -->
-  <button type="button" id="btn-scroll-top" aria-label="Cuộn lên đầu trang" title="Lên đầu trang"
-    class="fixed right-3 sm:right-5 bottom-[5.25rem] sm:bottom-24 z-30 w-11 h-11 rounded-full bg-white/95 hover:bg-red-50 text-[#d71920] border-2 border-red-200 shadow-lg flex items-center justify-center transition-all duration-200 active:scale-95 opacity-0 translate-y-3 pointer-events-none">
-    <svg aria-hidden="true" focusable="false" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
-  </button>
-
-  <!-- Floating Bottom Cart Bar (Sticky Footer) -->
+  <!-- Floating Bottom Cart Bar (Sticky Footer) — Neo cứng nút Lên đầu trang ngay mép trên (bottom-full) chống đè nhau trên iOS Safari/Chrome -->
   <div id="floating-cart-bar" class="fixed bottom-0 inset-x-0 z-40 bg-white border-t border-gray-200 shadow-[0_-8px_25px_rgba(0,0,0,0.08)] p-2.5 sm:p-3 pb-[max(0.625rem,env(safe-area-inset-bottom))]">
+    <!-- Nút Cuộn Lên Đầu Trang (Tự động trượt cùng khối với thanh Giỏ hàng khi thanh địa chỉ trình duyệt mobile ẩn/hiện) -->
+    <button type="button" id="btn-scroll-top" aria-label="Cuộn lên đầu trang" title="Lên đầu trang"
+      class="absolute right-3 sm:right-5 bottom-full mb-3 sm:mb-3.5 w-11 h-11 rounded-full bg-white/95 hover:bg-red-50 text-[#d71920] border-2 border-red-200 shadow-lg flex items-center justify-center transition-all duration-200 active:scale-95 opacity-0 translate-y-3 pointer-events-none">
+      <svg aria-hidden="true" focusable="false" class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+    </button>
+
     <div class="max-w-4xl mx-auto flex items-center justify-between gap-2.5 sm:gap-3">
       
       <!-- Cart Info Preview -->
