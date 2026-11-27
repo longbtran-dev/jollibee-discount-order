@@ -314,4 +314,74 @@ describe('End-to-End System Integration Flow', () => {
     assert.deepEqual(lastScrollArgs, { top: 0, behavior: 'smooth' });
     assert.equal(app.activeCategorySlug, menuData.categories[0].slug);
   });
+
+  it('scrollToCategory bằng rAF không bị sự kiện scrollend sớm cắt ngang giữa đường và cuộn trúng đích danh mục', () => {
+    const winListeners = {};
+    const rafQueue = [];
+    let nextRafId = 1;
+
+    global.window = {
+      JOLLIBEE_CONFIG: {},
+      scrollY: 0,
+      innerHeight: 800,
+      addEventListener: (ev, fn) => { winListeners[ev] = fn; },
+      requestAnimationFrame: (cb) => {
+        const id = nextRafId++;
+        rafQueue.push({ id, cb });
+        return id;
+      },
+      cancelAnimationFrame: (id) => {
+        const idx = rafQueue.findIndex(item => item.id === id);
+        if (idx !== -1) rafQueue.splice(idx, 1);
+      },
+      scrollTo: (_x, y) => {
+        global.window.scrollY = typeof _x === 'object' ? _x.top : y;
+      }
+    };
+
+    const sectionAbsoluteTop = 2400; // Ví dụ danh mục Burger & Cơm ở tọa độ 2400px
+    const mockTargetSection = {
+      getBoundingClientRect: () => ({ top: sectionAbsoluteTop - global.window.scrollY })
+    };
+    const mockStickyNav = { offsetHeight: 104 }; // offset = 104 + 10 = 114 -> đích chuẩn = 2400 - 114 = 2286
+
+    global.document = {
+      documentElement: { scrollHeight: 5000, clientHeight: 800, style: {} },
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      getElementById: (id) => {
+        if (id === 'section-burger-com') return mockTargetSection;
+        if (id === 'sticky-nav-bar') return mockStickyNav;
+        return null;
+      },
+      querySelector: () => null,
+      querySelectorAll: () => []
+    };
+
+    const app = new JollibeeApp();
+    app.menuData = menuData;
+    app.setupScrollSpy();
+    rafQueue.length = 0; // Xóa rAF khởi tạo của ScrollSpy để kiểm tra riêng rAF của scrollToCategory
+
+    app.scrollToCategory('burger-com');
+    assert.ok(rafQueue.length > 0, 'Phải khởi tạo vòng lặp rAF cuộn trang');
+
+    // Khung hình đầu tiên (t = 0ms) + giả lập Chrome bắn sự kiện scrollend sớm lúc mới cuộn 100ms!
+    const f1 = rafQueue.shift();
+    f1.cb(1000);
+    const f2 = rafQueue.shift();
+    f2.cb(1100);
+    assert.ok(global.window.scrollY > 0 && global.window.scrollY < 2286, 'Đang ở giữa hành trình cuộn');
+
+    // Chrome bắn scrollend sớm sau window.scrollTo(0, y) -> KHÔNG ĐƯỢC phép cắt ngang vòng lặp rAF!
+    winListeners['scrollend']?.();
+    assert.equal(app.isProgrammaticScrolling, true, 'scrollend sớm không được tắt khóa cuộn');
+    assert.ok(rafQueue.length > 0, 'Vòng lặp rAF vẫn phải tiếp tục chạy tới đích');
+
+    // Chạy khung hình kết thúc (t = 1600ms) -> phải đáp chuẩn xác tại 2286px!
+    const fEnd = rafQueue.shift();
+    fEnd.cb(1600);
+    assert.equal(global.window.scrollY, 2286, 'Phải cuộn tới đúng vị trí danh mục 2286px');
+    assert.equal(app.isProgrammaticScrolling, false, 'Giải phóng khóa ngay khi tới đích');
+  });
 });

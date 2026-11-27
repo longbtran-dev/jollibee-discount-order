@@ -415,19 +415,26 @@ export class JollibeeApp {
   }
 
   /**
-   * Cuộn dọc trang mượt 60fps bằng rAF (hoạt động mượt kể cả trên máy Windows tắt hiệu ứng hệ điều hành)
+   * Cuộn dọc trang mượt 60fps bằng rAF (hoạt động mượt kể cả trên máy Windows tắt hiệu ứng hệ điều hành).
+   * Lưu ý: Không để sự kiện 'scrollend' của trình duyệt hủy giữa chừng vì mỗi bước window.scrollTo(0, y) có thể kích hoạt scrollend sớm.
+   * @param {number | (() => number)} targetOrGetter
    */
-  _smoothScrollWindowTo(targetTop) {
+  _smoothScrollWindowTo(targetOrGetter) {
     if (typeof window === 'undefined' || typeof window.scrollTo !== 'function') return;
 
-    const docEl = typeof document !== 'undefined' ? document.documentElement : null;
-    const maxScroll = docEl
-      ? Math.max(0, (docEl.scrollHeight || 0) - (window.innerHeight || docEl.clientHeight || 0))
-      : Math.max(0, targetTop);
-    const clampedTop = maxScroll > 0 ? Math.min(maxScroll, Math.max(0, targetTop)) : Math.max(0, targetTop);
+    const resolveClampedTop = () => {
+      const rawTop = typeof targetOrGetter === 'function' ? targetOrGetter() : targetOrGetter;
+      const docEl = typeof document !== 'undefined' ? document.documentElement : null;
+      const maxScroll = docEl
+        ? Math.max(0, (docEl.scrollHeight || 0) - (window.innerHeight || docEl.clientHeight || 0))
+        : Math.max(0, rawTop);
+      return maxScroll > 0 ? Math.min(maxScroll, Math.max(0, rawTop)) : Math.max(0, rawTop);
+    };
+
+    const initialTarget = resolveClampedTop();
 
     if (typeof window.requestAnimationFrame !== 'function') {
-      window.scrollTo({ top: clampedTop, behavior: 'smooth' });
+      window.scrollTo({ top: initialTarget, behavior: 'smooth' });
       return;
     }
 
@@ -437,15 +444,19 @@ export class JollibeeApp {
     }
 
     const startTop = window.scrollY || 0;
-    const distance = clampedTop - startTop;
-    if (Math.abs(distance) < 1) {
+    const initialDistance = initialTarget - startTop;
+    if (Math.abs(initialDistance) < 1) {
+      window.scrollTo(0, Math.round(initialTarget));
       this._finishCategoryScroll({ resync: false });
       return;
     }
 
     // Thời lượng thích ứng theo quãng đường (280ms..460ms) tạo cảm giác lướt tự nhiên
-    const duration = Math.min(460, Math.max(280, Math.round(Math.abs(distance) * 0.18)));
+    const duration = Math.min(460, Math.max(280, Math.round(Math.abs(initialDistance) * 0.18)));
+    this._armProgrammaticScrollUnlock(duration + 180);
+
     let startTime = null;
+    const docEl = typeof document !== 'undefined' ? document.documentElement : null;
     if (docEl?.style) docEl.style.scrollBehavior = 'auto';
 
     const step = (timestamp) => {
@@ -458,13 +469,15 @@ export class JollibeeApp {
       const elapsed = timestamp - startTime;
       const progress = Math.min(1, elapsed / duration);
       const easeOut = 1 - Math.pow(1 - progress, 3);
+      const liveTarget = resolveClampedTop();
 
-      window.scrollTo(0, Math.round(startTop + distance * easeOut));
+      window.scrollTo(0, Math.round(startTop + (liveTarget - startTop) * easeOut));
 
       if (progress < 1) {
         this._windowScrollRaf = window.requestAnimationFrame(step);
       } else {
-        window.scrollTo(0, clampedTop);
+        const finalTarget = Math.ceil(resolveClampedTop());
+        window.scrollTo(0, finalTarget);
         if (docEl?.style) docEl.style.scrollBehavior = '';
         this._windowScrollRaf = null;
         this._finishCategoryScroll({ resync: false });
@@ -492,10 +505,11 @@ export class JollibeeApp {
 
     this.isProgrammaticScrolling = true;
     this.updateActiveTab(slug);
-    this._armProgrammaticScrollUnlock(520);
+    this._armProgrammaticScrollUnlock(650);
 
-    const destTop = (window.scrollY || 0) + targetSection.getBoundingClientRect().top - this._getCategoryScrollOffset();
-    this._smoothScrollWindowTo(destTop);
+    this._smoothScrollWindowTo(
+      () => (window.scrollY || 0) + targetSection.getBoundingClientRect().top - this._getCategoryScrollOffset()
+    );
   }
 
   _finishCategoryScroll({ resync = false } = {}) {
@@ -534,7 +548,7 @@ export class JollibeeApp {
       let activeSection = sections[sections.length - 1];
 
       if (!atBottom) {
-        const anchor = this._getCategoryScrollOffset() + 2;
+        const anchor = this._getCategoryScrollOffset() + 8;
         activeSection = sections[0];
         for (const section of sections) {
           if (section.getBoundingClientRect().top > anchor) break;
@@ -584,13 +598,19 @@ export class JollibeeApp {
       const onScroll = () => {
         this.updateScrollTopButton();
         if (this.isProgrammaticScrolling) {
-          // Gia hạn khóa cho tới khi cuộn mượt dừng hẳn (kể cả hành trình dài > 1 giây)
-          this._armProgrammaticScrollUnlock(180);
+          // Chỉ gia hạn khóa ngắn khi không dùng vòng lặp rAF chủ động (_windowScrollRaf tự giải phóng đúng khung hình cuối)
+          if (!this._windowScrollRaf) {
+            this._armProgrammaticScrollUnlock(180);
+          }
           return;
         }
         this._scheduleActiveCategoryUpdate();
       };
-      const onNaturalEnd = () => this._finishCategoryScroll({ resync: false });
+      const onNaturalEnd = () => {
+        // Không hủy vòng lặp rAF đang chạy giữa chừng khi trình duyệt bắn scrollend sớm sau mỗi bước scrollTo(0, y)
+        if (this._windowScrollRaf) return;
+        this._finishCategoryScroll({ resync: false });
+      };
       const onUserInterrupt = () => this._finishCategoryScroll({ resync: true });
 
       window.addEventListener('scroll', onScroll, { passive: true });
