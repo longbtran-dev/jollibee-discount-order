@@ -19,6 +19,7 @@ import {
 } from './utils.js';
 import { IconSliders, IconClock, IconPlus, IconMinus, IconSearch, IconZoomIn, IconFlame } from './icons.js';
 import { flyToCart, bounceCartBadge, fireFreeshipMilestone } from './effects.js';
+import { initContentProtection } from './protection.js';
 
 export class JollibeeApp {
   constructor() {
@@ -33,6 +34,7 @@ export class JollibeeApp {
     this.imageModal = new ImageModal();
     this.infoModal = new InfoModal(this.config);
     this.comboModal = new ComboModal('combo-modal-container', this.imageModal);
+    initContentProtection(this.config);
     this.cartDrawer = new CartDrawer(
       this.cart,
       this.config,

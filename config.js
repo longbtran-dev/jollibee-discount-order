@@ -12,6 +12,7 @@ window.JOLLIBEE_CONFIG = {
   facebookUrl: "https://www.facebook.com/trnblng",
   facebookMessengerUrl: "https://m.me/trnblng",
   hotline: "0985194873",
+  enableContentProtection: true, // Chống F12 / Ctrl+U / Chuột phải sao chép giao diện (đổi thành false khi chủ shop cần tự kiểm tra)
 
   // 2. Chính sách giảm giá & phí giao hàng
   discountStep: 100000,
