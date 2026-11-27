@@ -75,14 +75,14 @@ describe('Scrollable Time Wheel Picker', () => {
       scrollTop: 0,
       style: {},
       innerHTML: '',
-      addEventListener() {},
+      addEventListener(ev, fn) { listeners[`hourCol:${ev}`] = fn; },
       querySelectorAll: () => []
     };
     const mockMinCol = {
       scrollTop: 0,
       style: {},
       innerHTML: '',
-      addEventListener() {},
+      addEventListener(ev, fn) { listeners[`minCol:${ev}`] = fn; },
       querySelectorAll: () => []
     };
     const mockConfirmLabel = { textContent: '' };
@@ -146,9 +146,21 @@ describe('Scrollable Time Wheel Picker', () => {
     listeners['quick_60:click']?.();
     assert.ok(mockConfirmLabel.textContent.includes('15:10 hôm nay'));
 
+    // Chạm trực tiếp vào mục 16 giờ trên vòng cuộn -> đồng bộ tâm scrollTop = index * 40
+    listeners['hourCol:click']?.({
+      target: { closest: () => ({ dataset: { value: '16' } }) }
+    });
+    assert.ok(mockConfirmLabel.textContent.includes('16:10 hôm nay'));
+
+    // Chạm quay lại 14 giờ (giờ đầu tiên) -> phút 10 đã qua ở 14 giờ nên tự đẩy lên 14:40 hợp lệ!
+    listeners['hourCol:click']?.({
+      target: { closest: () => ({ dataset: { value: '14' } }) }
+    });
+    assert.ok(mockConfirmLabel.textContent.includes('14:40 hôm nay'));
+
     // Xác nhận chọn
     listeners['confirm:click']?.();
-    assert.equal(selectedText, '15:10 hôm nay');
+    assert.equal(selectedText, '14:40 hôm nay');
     assert.equal(getActiveModalCount(), 0);
   });
 });
