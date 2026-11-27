@@ -9,8 +9,9 @@
 import { registerOpenModal, unregisterOpenModal, trapFocusInModal } from '../utils.js';
 import { IconClock, IconX, IconCheck } from '../icons.js';
 
-const OPEN_HOUR = 8;
+const OPEN_HOUR = 9;
 const LAST_PICKUP_HOUR = 21;
+const OPEN_LABEL = `${String(OPEN_HOUR).padStart(2, '0')}:00`;
 const LAST_PICKUP_LABEL = `${LAST_PICKUP_HOUR}:00`;
 
 export const STORE_HOURS = Array.from(
@@ -160,14 +161,12 @@ export function getPickupDate(now = new Date()) {
   return storeDate.format(now);
 }
 
-/** Tính mốc 5 phút đầu tiên đủ thời gian chuẩn bị trong ngày tại Việt Nam (tối đa 21:00). */
+/** Tính mốc 5 phút đầu tiên đủ thời gian chuẩn bị trong khung giờ hoạt động 09:00 – 21:00 tại Việt Nam. */
 export function computeDefaultPickupTime(now = new Date(), addMinutes = MIN_PREP_MINUTES) {
   const [hour, minute] = storeClock.format(now).split(':').map(Number);
   const fraction = (now.getUTCSeconds() * 1000 + now.getUTCMilliseconds()) / 60000;
-  const target = Math.max(
-    OPEN_HOUR * 60 + 30,
-    Math.ceil((hour * 60 + minute + addMinutes + fraction) / 5) * 5
-  );
+  const effectiveStartMinutes = Math.max(OPEN_HOUR * 60, hour * 60 + minute + fraction);
+  const target = Math.ceil((effectiveStartMinutes + addMinutes) / 5) * 5;
   if (target > LAST_PICKUP_HOUR * 60) return null;
 
   return {
@@ -305,7 +304,7 @@ export function openTimeWheelPicker({ initialValue = '', onSelect, nowProvider =
         </div>
 
         <p id="time-wheel-note" aria-live="polite" class="text-[11px] text-center text-amber-900 bg-amber-50 border border-amber-200/80 rounded-xl py-1.5 px-2.5 font-semibold">
-          ⏱ Nhận món đến <b>${LAST_PICKUP_LABEL}</b>. Đơn cần <b>ít nhất 30 phút</b> chuẩn bị tính từ lúc đặt thành công.
+          ⏱ Khung giờ hoạt động <b>${OPEN_LABEL} – ${LAST_PICKUP_LABEL}</b> (chuẩn bị đơn <b>ít nhất 30 phút</b>).
         </p>
 
         <!-- Confirm Button -->

@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  STORE_HOURS,
   computeDefaultPickupTime,
   getAvailableTimeModel,
   isPickupTimeValid,
@@ -31,9 +32,18 @@ describe('Scrollable Time Wheel Picker', () => {
     assert.deepEqual(computeDefaultPickupTime(evening, 45), { hour: '21', minute: '00', dayLabel: 'hôm nay' });
     assert.equal(computeDefaultPickupTime(evening, 60), null);
 
-    // 06:00 sáng -> giới hạn trong khung mở cửa 08:30 hôm nay
-    const earlyMorning = new Date('2026-11-26T06:00:00+07:00');
-    assert.deepEqual(computeDefaultPickupTime(earlyMorning, 30), { hour: '08', minute: '30', dayLabel: 'hôm nay' });
+    // Trước giờ mở cửa 09:00 (VD: 06:00 hoặc 07:25 sáng) -> tính chuẩn từ mốc mở cửa 09:00 (+30p=09:30, +45p=09:45, +60p=10:00)
+    assert.equal(STORE_HOURS[0], '09', 'Khung giờ hoạt động bắt đầu từ 09:00');
+    assert.equal(STORE_HOURS[STORE_HOURS.length - 1], '21', 'Khung giờ hoạt động kết thúc lúc 21:00');
+    assert.equal(STORE_HOURS.includes('08'), false, 'Không hiển thị 08 giờ ngoài giờ mở cửa Jollibee');
+
+    const earlyMorning = new Date('2026-11-26T07:25:00+07:00');
+    assert.deepEqual(computeDefaultPickupTime(earlyMorning, 30), { hour: '09', minute: '30', dayLabel: 'hôm nay' });
+    assert.deepEqual(computeDefaultPickupTime(earlyMorning, 45), { hour: '09', minute: '45', dayLabel: 'hôm nay' });
+    assert.deepEqual(computeDefaultPickupTime(earlyMorning, 60), { hour: '10', minute: '00', dayLabel: 'hôm nay' });
+    assert.equal(isPickupTimeValid('08:30 hôm nay', earlyMorning), false, 'Chặn giờ trước 09:00');
+    assert.equal(isPickupTimeValid('09:15 hôm nay', earlyMorning), false, 'Chặn giờ chưa đủ 30p từ lúc mở cửa 09:00');
+    assert.equal(isPickupTimeValid('09:30 hôm nay', earlyMorning), true, 'Chấp nhận 09:30 hôm nay');
   });
 
   it('getAvailableTimeModel loại bỏ hoàn toàn các giờ và phút đã qua (chỉ cho chọn >= hiện tại + 30 phút)', () => {
